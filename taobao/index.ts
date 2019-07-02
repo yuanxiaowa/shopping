@@ -3,6 +3,9 @@ import { startsWith } from "ramda";
 import AutoShop from "../common/auto-shop";
 import request = require("request-promise-native");
 import { isSubmitOrder } from "../common/config";
+import { identity } from "ramda";
+import { getCookie } from "../utils/tools";
+import signData from "./h";
 
 export async function resolveTaokouling(text: string) {
   var data: string = await request.post(
@@ -709,4 +712,74 @@ export class Taobao extends AutoShop {
       console.error("订单提交出错", e);
     }
   }
+
+  appKey = "12574478";
+  getSign(data: string, t: number) {
+    var token = getCookie("_m_h5_tk", this.cookie);
+    token = token && token.split("_")![0];
+    var sign = signData([token, t, this.appKey, data].join("&"));
+    return sign;
+  }
+  async requestOnMobile(
+    url: string,
+    method: "get" | "post",
+    form?: any,
+    qs?: any
+  ): Promise<string> {
+    var t = Date.now();
+    if (method === "get") {
+      qs = form;
+      form = undefined;
+    }
+    qs.sign = this.getSign(method === "get" ? qs.data : form.data, t);
+    return this.req(url, {
+      method,
+      form,
+      qs,
+      transform: identity
+    });
+  }
+
+  async getCartInfoFromMobile() {
+    var text = await this.requestOnMobile(
+      "https://h5api.m.taobao.com/h5/mtop.trade.query.bag/5.0/",
+      "get",
+      {
+        jsv: "2.5.1",
+        appKey: "12574478",
+        api: "mtop.trade.query.bag",
+        v: "5.0",
+        type: "jsonp",
+        ttid: "h5",
+        isSec: "0",
+        ecode: "1",
+        AntiFlood: "true",
+        AntiCreep: "true",
+        H5Request: "true",
+        dataType: "jsonp",
+        callback: "mtopjsonp2",
+        data: JSON.stringify({
+          isPage: true,
+          extStatus: 0,
+          netType: 0,
+          exParams: JSON.stringify({
+            mergeCombo: "true",
+            version: "1.1.1",
+            globalSell: "1",
+            cartFrom: "taobao_client",
+            spm: "a2141.7756461.toolbar.i0"
+          }),
+          cartFrom: "taobao_client",
+          spm: "a2141.7756461.toolbar.i0"
+        })
+      }
+    );
+    var { data }: any = getJsonpData(text);
+    return data;
+  }
+
+  cartBuyFromMobile(items: string[]) {}
+}
+function getJsonpData(text: string) {
+  return /\((.*)\)/.exec(text)![1];
 }

@@ -10,6 +10,7 @@ const auto_shop_1 = __importDefault(require("../common/auto-shop"));
 const goods_1 = require("./goods");
 const config_1 = require("../common/config");
 const goods_2 = require("./goods");
+const other_1 = require("./other");
 const user = require("./user.json");
 async function getGoodsCoupons(skuId) {
     var { item } = await goods_2.getGoodsInfo(skuId);
@@ -206,16 +207,39 @@ class Jindong extends auto_shop_1.default {
                     // https://wq.jd.com/webportal/event/25842?cu=true&cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=4b1871b719e94013a1e77bb69fee767e&scpos=#st=460
                     // https://wq.jd.com/webportal/event/25842?cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=c39350c2555145809ef3f4c05465cdf0&scpos=#st=376
                     test: ramda_1.startsWith("https://wq.jd.com/webportal/event/"),
-                    async handler(url) {
-                        var page = await page_1.newPage();
+                    handler: async (url) => {
+                        var html = await this.req.get(url);
+                        var text = /window._componentConfig\s*=\s*(*);/.exec(html)[1];
+                        var items = JSON.parse(text).filter(({ name }) => name === "coupon");
+                        var now = Date.now();
+                        items.forEach(({ data: { list } }) => {
+                            list.forEach(({ begin, end, key, level }) => {
+                                if (new Date(begin).getTime() < now &&
+                                    new Date(end).getTime() > now) {
+                                    goods_2.obtainFloorCoupon({
+                                        key,
+                                        level
+                                    });
+                                }
+                            });
+                        });
+                        /* var page = await newPage();
                         await page.goto(url);
                         await page.evaluate(() => {
-                            Array.from(document.querySelectorAll(".atmosphere_coupon_1600_591_skin_ft_cloud:not(.disabled)")).forEach(ele => {
-                                ele.click();
-                            });
-                            Array.from(document.querySelectorAll(".coupon_2030_294_item")).forEach(ele => ele.click());
+                          Array.from(
+                            document.querySelectorAll<HTMLDivElement>(
+                              ".atmosphere_coupon_1600_591_skin_ft_cloud:not(.disabled)"
+                            )
+                          ).forEach(ele => {
+                            ele.click();
+                          });
+                          Array.from(
+                            document.querySelectorAll<HTMLDivElement>(
+                              ".coupon_2030_294_item"
+                            )
+                          ).forEach(ele => ele.click());
                         });
-                        return page;
+                        return page; */
                     }
                 },
                 couponCenter: {
@@ -321,7 +345,11 @@ class Jindong extends auto_shop_1.default {
                 getCartInfo: goods_1.getCartInfo
             }
         });
-        this.preservePcState();
+        page_1.browser_promise.then(() => {
+            this.preservePcState();
+            other_1.getPeriodCoupon();
+            other_1.getHongbao();
+        });
     }
     async preservePcState() {
         var b = await this.checkUrl("https://home.jd.com/");

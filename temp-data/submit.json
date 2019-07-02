@@ -1,0 +1,10 @@
+{
+  "url": "https://api.m.jd.com/client.action?appid=answer_20190513&t=1562029332681&functionId=answerSendHb&body={%22activityId%22:%2210043%22,%22pageId%22:%22873571%22,%22reqSrc%22:%22mainActivity%22,%22platform%22:%22APP/m%22,%22answer%22:1,%22select%22:%22%E7%94%B5%E8%AF%9D%22}&client=wh5&clientVersion=1.0.0&uuid=15617018266251592388825",
+  "data": {
+    "currentTime": 1562029333861,
+    "awardType": ["1"],
+    "couponList": null,
+    "discount": 0.3
+  },
+  "code": "0"
+}

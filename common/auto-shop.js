@@ -8,13 +8,6 @@ const fs_extra_1 = require("fs-extra");
 const page_1 = require("../utils/page");
 const tools_1 = require("../utils/tools");
 const iconv_lite_1 = __importDefault(require("iconv-lite"));
-function delayRun(time, label = "") {
-    return new Promise(resolve => {
-        let t = time ? tools_1.diffToNow(time) : 0;
-        console.log(`${label}:将在${(t / 60000) >> 0}分${((t / 1000) >> 0) % 60}秒后开始`);
-        setTimeout(resolve, t);
-    });
-}
 class AutoShop {
     constructor(data) {
         this.ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1";
@@ -38,7 +31,6 @@ class AutoShop {
         } catch (e) {
           return false;
         } */
-        await page_1.browser_promise;
         var page = await page_1.newPage();
         await page.goto(url);
         var b = page.url() === url;
@@ -117,7 +109,7 @@ class AutoShop {
                     url = page.url();
                     for (let key in this.handlers) {
                         if (this.handlers[key].test(url)) {
-                            await delayRun(d, `${this.name}抢单`);
+                            await tools_1.delayRun(d, `${this.name}抢单`);
                             await page.reload();
                             await this.handlers[key].handler(num, page);
                             await page.close();
@@ -127,11 +119,11 @@ class AutoShop {
                 [`${this.name}ToggleCart`]: this.toggleCart.bind(this),
                 [`${this.name}GetCartInfo`]: this.getCartInfo.bind(this),
                 [`${this.name}CartBuy`]: async (d, data) => {
-                    await delayRun(d, this.name + "从购物车中结算");
+                    await tools_1.delayRun(d, this.name + "从购物车中结算");
                     return this.cartBuy(data);
                 },
                 [`${this.name}DirectBuy`]: async (d, url) => {
-                    await delayRun(d, this.name + "直接购买");
+                    await tools_1.delayRun(d, this.name + "直接购买");
                     return this.directBuy(url);
                 }
             }

@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const request = require("request-promise-native");
+const fs_1 = require("fs");
 const log = (p) => p.then(console.log);
 const logs = (ps) => ps.forEach(log);
 // log(getWelfareList().then(({ data: { welActList } }) => welActList));
@@ -24,7 +25,7 @@ const logs = (ps) => ps.forEach(log);
 // );
 // doAdJindou();
 // log(doAdJindou());
-var cookie = "t=b17ba128cb87baf02481840d21f9f31f; cookie2=1f3b30f7497f8eb5bd877018dd80c334; _tb_token_=edeb7b783ff65; cna=Zx73FIp3JVUCAXLYX3jF+aoY; hng=CN%7Czh-CN%7CCNY%7C156; thw=cn; tg=0; enc=jGov4GoSfyUEFhJqC8lLDSlc8kPLH%2FxStvlRAbhyE2Vy5hWvnktaNoQnWvXpeNYSoPb0k8zE42943f%2BeLJrS7Q%3D%3D; miid=1328163568710991654; UM_distinctid=16b13dde2086f5-09dcc562d5c79-37647e03-13c680-16b13dde2097af; linezing_session=acyS6t0WS2fVC2MrcGMeX5lw_1561222401483mxt3_3; v=0; publishItemObj=Ng%3D%3D; tracknick=yuanxiaowaer; lgc=yuanxiaowaer; dnk=yuanxiaowaer; mt=ci=27_1&np=; unb=842405758; sg=r8d; _l_g_=Ug%3D%3D; skt=3dc73e28f4aef11f; cookie1=Vv6bWmeYv86mmEqDzTiNqknTnpFlk5e11%2BTyi5eXquQ%3D; csg=690561e2; uc3=vt3=F8dBy34dhqF4W8fZOvI%3D&id2=W80qN4V3GqCv&nk2=Gh6VT7X9cESW5Bav&lg2=WqG3DMC9VAQiUQ%3D%3D; existShop=MTU2MTg4MDk1Mg%3D%3D; _cc_=WqG3DMC9EA%3D%3D; _nk_=yuanxiaowaer; cookie17=W80qN4V3GqCv; uc1=cart_m=0&cookie14=UoTaGdU7q91TNg%3D%3D&lng=zh_CN&cookie16=VFC%2FuZ9az08KUQ56dCrZDlbNdA%3D%3D&existShop=false&cookie21=URm48syIYB%2Fc&tag=8&cookie15=UtASsssmOIJ0bQ%3D%3D&pas=0; isg=BNPTAHFpiuJ-0ECHcGx3_ZKLYlH9iGdKAfsJAIXwVfIoBPKmDVvbmrwWPjTPpL9C; l=bBTJoy3HvEn1rSUQBOCZlurza77TDIRfguPzaNbMi_5pK1Y_BUQOkAUohev6Vj5P9UTB4J_NPtwTnFqgJPDf.; _m_h5_tk=59a50292c628f1f55a89b215d33ff6cd_1561891892316; _m_h5_tk_enc=a7705c6cd225d2aee4844a33ad620182";
+var cookie = fs_1.readFileSync("taobao/cookie.txt", "utf8");
 var ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36";
 var headers = {
     Cookie: cookie,
@@ -118,7 +119,47 @@ function getUserInfo() {
         }
     });
 }
-getCoupon().then(console.log);
+// getCoupon().then(console.log);
+async function getMobileCartInfo() {
+    var t = Date.now();
+    var data = JSON.stringify({
+        isPage: true,
+        extStatus: 0,
+        netType: 0,
+        exParams: JSON.stringify({
+            mergeCombo: "true",
+            version: "1.1.1",
+            globalSell: "1",
+            cartFrom: "taobao_client",
+            spm: "a2141.7756461.toolbar.i0"
+        }),
+        cartFrom: "taobao_client",
+        spm: "a2141.7756461.toolbar.i0"
+    });
+    var text = await request.get("https://h5api.m.taobao.com/h5/mtop.trade.query.bag/5.0/", {
+        qs: {
+            jsv: "2.5.1",
+            appKey: "12574478",
+            t,
+            sign: getSign(data, t),
+            api: "mtop.trade.query.bag",
+            v: "5.0",
+            type: "jsonp",
+            ttid: "h5",
+            isSec: "0",
+            ecode: "1",
+            AntiFlood: "true",
+            AntiCreep: "true",
+            H5Request: "true",
+            dataType: "jsonp",
+            callback: "mtopjsonp2",
+            data
+        },
+        headers
+    });
+    console.log(text);
+}
+getMobileCartInfo();
 function getCookie(name) {
     return new RegExp(`${name}=([^;]+)`).exec(cookie)[1];
 }

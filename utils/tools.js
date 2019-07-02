@@ -109,3 +109,23 @@ function writeResult(filename) {
     };
 }
 exports.writeResult = writeResult;
+function delayRun(time, label = "") {
+    return new Promise(resolve => {
+        let t = 0;
+        if (time) {
+            if (typeof time === "string") {
+                t = diffToNow(time);
+            }
+            else {
+                t = time;
+            }
+        }
+        console.log(`${label}:将在${(t / 60000) >> 0}分${((t / 1000) >> 0) % 60}秒后开始`);
+        setTimeout(resolve, t);
+    });
+}
+exports.delayRun = delayRun;
+function getCookie(name, cookie) {
+    return new RegExp(`${name}=([^;]+)`).exec(cookie)[1];
+}
+exports.getCookie = getCookie;

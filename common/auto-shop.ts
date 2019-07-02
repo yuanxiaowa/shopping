@@ -7,7 +7,7 @@ import {
 import { readFileSync, writeFile, ensureDir } from "fs-extra";
 import { Page } from "puppeteer";
 import { browser_promise, newPage, injectDefaultPage } from "../utils/page";
-import { diffToNow } from "../utils/tools";
+import { diffToNow, delayRun } from "../utils/tools";
 import iconv from "iconv-lite";
 
 interface AutoShopOptions {
@@ -31,16 +31,6 @@ interface AutoShopOptions {
       handler(url: string): Promise<any>;
     }
   >;
-}
-
-function delayRun(time?: string, label = "") {
-  return new Promise(resolve => {
-    let t = time ? diffToNow(time) : 0;
-    console.log(
-      `${label}:将在${(t / 60000) >> 0}分${((t / 1000) >> 0) % 60}秒后开始`
-    );
-    setTimeout(resolve, t);
-  });
 }
 
 export default abstract class AutoShop implements AutoShopOptions {
@@ -88,7 +78,6 @@ export default abstract class AutoShop implements AutoShopOptions {
     } catch (e) {
       return false;
     } */
-    await browser_promise;
     var page = await newPage();
     await page.goto(url);
     var b = page.url() === url;

@@ -1,0 +1,19 @@
+{
+  "data": {
+    "answerStatusCode": 0,
+    "answerUserNum": 3681,
+    "currentTime": 1562029302814,
+    "hbStockPercent": 0.98,
+    "playTime": 20,
+    "shopLogoUrl": "",
+    "shopName": "",
+    "userVo": {
+      "additionalCount": 0,
+      "answerCount": 0,
+      "answerResult": 0,
+      "answerSelect": "",
+      "hbAmount": 0
+    }
+  },
+  "code": "0"
+}

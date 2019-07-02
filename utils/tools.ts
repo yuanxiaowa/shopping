@@ -102,3 +102,24 @@ export function writeResult(filename: string) {
     };
   };
 }
+
+export function delayRun(time?: string | number, label = "") {
+  return new Promise(resolve => {
+    let t = 0;
+    if (time) {
+      if (typeof time === "string") {
+        t = diffToNow(time);
+      } else {
+        t = time;
+      }
+    }
+    console.log(
+      `${label}:将在${(t / 60000) >> 0}分${((t / 1000) >> 0) % 60}秒后开始`
+    );
+    setTimeout(resolve, t);
+  });
+}
+
+export function getCookie(name: string, cookie: string) {
+  return new RegExp(`${name}=([^;]+)`).exec(cookie)![1];
+}

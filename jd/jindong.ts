@@ -409,6 +409,48 @@ export function getCoupon(id: number) {
     );
 }
 
+export async function getVideoHongbao() {
+  var url =
+    "https://h5.m.jd.com/babelDiy/Zeus/2QJAgm3fJGpAkibejRi36LAQaRto/index.html";
+  var text = await req.get(url, {
+    qs: {
+      _ts: Date.now(),
+      utm_source: "iosapp",
+      utm_medium: "appshare",
+      utm_campaign: "t_335139774",
+      utm_term: "Wxfriends",
+      ad_od: "share",
+      utm_user: "plusmember"
+    }
+  });
+  var { advertInfos } = JSON.parse(/\w+\((.*)\)/.exec(text)![1]);
+  var {
+    list: [{ comment, desc }]
+  } = advertInfos.find(
+    ({ groupId, groupName }: any) =>
+      groupId === "03303165" || groupName === "题目/选项/答案"
+  );
+
+  await req.get("https://api.m.jd.com/client.action", {
+    qs: {
+      appid: "answer_20190513",
+      t: "1561943106751",
+      functionId: "answerSendHb",
+      body: {
+        activityId: "10042",
+        pageId: "873571",
+        reqSrc: "mainActivity",
+        platform: "APP/m",
+        answer: 1,
+        select: "在开机键上"
+      },
+      client: "wh5",
+      clientVersion: "1.0.0",
+      uuid: "15617018266251592388825"
+    }
+  });
+}
+
 // var ins = new JinDong();
 // 1694276
 // getGoodsInfo(3857389).then(console.log);

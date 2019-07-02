@@ -15,6 +15,7 @@ import {
   queryActivityCoupons,
   obtainActivityCoupon
 } from "./goods";
+import { getPeriodCoupon, getHongbao } from "./other";
 
 const user = require("./user.json");
 
@@ -249,8 +250,27 @@ export class Jindong extends AutoShop {
           // https://wq.jd.com/webportal/event/25842?cu=true&cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=4b1871b719e94013a1e77bb69fee767e&scpos=#st=460
           // https://wq.jd.com/webportal/event/25842?cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=c39350c2555145809ef3f4c05465cdf0&scpos=#st=376
           test: startsWith("https://wq.jd.com/webportal/event/"),
-          async handler(url) {
-            var page = await newPage();
+          handler: async url => {
+            var html: string = await this.req.get(url);
+            var text = /window._componentConfig\s*=\s*(*);/.exec(html)![1];
+            var items = JSON.parse(text).filter(
+              ({ name }: any) => name === "coupon"
+            );
+            var now = Date.now();
+            items.forEach(({ data: { list } }: any) => {
+              list.forEach(({ begin, end, key, level }: any) => {
+                if (
+                  new Date(begin).getTime() < now &&
+                  new Date(end).getTime() > now
+                ) {
+                  obtainFloorCoupon({
+                    key,
+                    level
+                  });
+                }
+              });
+            });
+            /* var page = await newPage();
             await page.goto(url);
             await page.evaluate(() => {
               Array.from(
@@ -266,7 +286,7 @@ export class Jindong extends AutoShop {
                 )
               ).forEach(ele => ele.click());
             });
-            return page;
+            return page; */
           }
         },
         couponCenter: {
@@ -375,7 +395,11 @@ export class Jindong extends AutoShop {
         getCartInfo: getCartInfo
       }
     });
-    this.preservePcState();
+    browser_promise.then(() => {
+      this.preservePcState();
+      getPeriodCoupon();
+      getHongbao();
+    });
   }
 
   async preservePcState() {

@@ -8,6 +8,9 @@ const ramda_1 = require("ramda");
 const auto_shop_1 = __importDefault(require("../common/auto-shop"));
 const request = require("request-promise-native");
 const config_1 = require("../common/config");
+const ramda_2 = require("ramda");
+const tools_1 = require("../utils/tools");
+const h_1 = __importDefault(require("./h"));
 async function resolveTaokouling(text) {
     var data = await request.post("http://www.taokouling.com/index/taobao_tkljm", {
         form: {
@@ -209,6 +212,7 @@ class Taobao extends auto_shop_1.default {
                 }
             }
         });
+        this.appKey = "12574478";
     }
     async resolveUrl(url) {
         return url;
@@ -510,5 +514,62 @@ class Taobao extends auto_shop_1.default {
             console.error("订单提交出错", e);
         }
     }
+    getSign(data, t) {
+        var token = tools_1.getCookie("_m_h5_tk", this.cookie);
+        token = token && token.split("_")[0];
+        var sign = h_1.default([token, t, this.appKey, data].join("&"));
+        return sign;
+    }
+    async requestOnMobile(url, method, form, qs) {
+        var t = Date.now();
+        if (method === "get") {
+            qs = form;
+            form = undefined;
+        }
+        qs.sign = this.getSign(method === "get" ? qs.data : form.data, t);
+        return this.req(url, {
+            method,
+            form,
+            qs,
+            transform: ramda_2.identity
+        });
+    }
+    async getCartInfoFromMobile() {
+        var text = await this.requestOnMobile("https://h5api.m.taobao.com/h5/mtop.trade.query.bag/5.0/", "get", {
+            jsv: "2.5.1",
+            appKey: "12574478",
+            api: "mtop.trade.query.bag",
+            v: "5.0",
+            type: "jsonp",
+            ttid: "h5",
+            isSec: "0",
+            ecode: "1",
+            AntiFlood: "true",
+            AntiCreep: "true",
+            H5Request: "true",
+            dataType: "jsonp",
+            callback: "mtopjsonp2",
+            data: JSON.stringify({
+                isPage: true,
+                extStatus: 0,
+                netType: 0,
+                exParams: JSON.stringify({
+                    mergeCombo: "true",
+                    version: "1.1.1",
+                    globalSell: "1",
+                    cartFrom: "taobao_client",
+                    spm: "a2141.7756461.toolbar.i0"
+                }),
+                cartFrom: "taobao_client",
+                spm: "a2141.7756461.toolbar.i0"
+            })
+        });
+        var { data } = getJsonpData(text);
+        return data;
+    }
+    cartBuyFromMobile(items) { }
 }
 exports.Taobao = Taobao;
+function getJsonpData(text) {
+    return /\((.*)\)/.exec(text)[1];
+}

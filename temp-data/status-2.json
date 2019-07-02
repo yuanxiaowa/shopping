@@ -1,0 +1,20 @@
+{
+  "url": "https://api.m.jd.com/client.action?appid=answer_20190513&t=1562029301671&functionId=answerInfo&body={%22activityId%22:%2210043%22,%22pageId%22:%22873571%22,%22reqSrc%22:%22mainActivity%22,%22platform%22:%22APP/m%22,%22shopId%22:%221000000158%22}&client=wh5&clientVersion=1.0.0&uuid=15617018266251592388825",
+  "data": {
+    "answerStatusCode": 3,
+    "answerUserNum": 99412,
+    "currentTime": 1562032138133,
+    "hbStockPercent": 0.5,
+    "playTime": 20,
+    "shopLogoUrl": "",
+    "shopName": "",
+    "userVo": {
+      "additionalCount": 0,
+      "answerCount": 1,
+      "answerResult": 1,
+      "answerSelect": "电话",
+      "hbAmount": 0.3
+    }
+  },
+  "code": "0"
+}

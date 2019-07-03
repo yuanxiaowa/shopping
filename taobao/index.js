@@ -31,7 +31,6 @@ class Taobao extends auto_shop_1.default {
             login_url: "https://login.taobao.com/member/login.jhtml",
             cookie_filename: __dirname + "/cookie.txt",
             state_url: "https://shoucang.taobao.com/collectList.htm?spm=a1z09.2.a2109.d1000374.5aef2e8diVrQxZ&nekot=1470211439694",
-            encoding: null,
             handlers: {
                 tmall: {
                     test: ramda_1.startsWith("https://detail.tmall.com/item.htm"),

@@ -52,11 +52,17 @@ class AutoShop {
                 // 'Accept-Language': 'en-us'
             },
             gzip: true,
-            encoding: this.encoding
+            encoding: null,
+            transform(body, { headers }) {
+                var ctype = headers["content-type"];
+                if (/charset=(\w+)/i.test(ctype)) {
+                    if (RegExp.$1 && RegExp.$1.toLowerCase() !== "utf-8") {
+                        return iconv_lite_1.default.decode(body, RegExp.$1);
+                    }
+                }
+                return String(body);
+            }
         };
-        if (this.encoding === null) {
-            opts.transform = (buff) => iconv_lite_1.default.decode(buff, "gb2312");
-        }
         this.req = request_promise_native_1.default.defaults(opts);
         fs_extra_1.writeFile(this.cookie_filename, cookie);
         this.afterSetCookie();

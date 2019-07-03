@@ -50,6 +50,7 @@ export async function getHongbao() {
       })!;
       ele.click();
     }, desc);
+    await delayRun(2000);
   }
   await page.close();
 }
@@ -64,7 +65,7 @@ function delayPeriod(hours: number[]) {
 }
 
 export async function getPeriodCoupon(): Promise<any> {
-  var p = delayPeriod([10, 12, 14, 18]);
+  var p = delayPeriod([10, 12, 14, 18, 20]);
   if (p === false) {
     return;
   }

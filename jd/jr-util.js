@@ -34,6 +34,7 @@ async function doJinguo() {
     if (signData.workStatus === 0) {
         await tools_1.logReq("领取金果签到奖励", jinrong_1.signJinguo(signData.workType, 2));
     }
+    console.log("金果分享状态", shareData.workStatus);
     if (shareData.workStatus === 0) {
         await tools_1.logReq("金果分享", jinrong_1.signJinguo(shareData.workType, 1));
         shareData.workStatus = 1;

@@ -1,4 +1,4 @@
-import { RequestAPI, RequiredUriUrl } from "request";
+import { RequestAPI, RequiredUriUrl, Response } from "request";
 import {
   RequestPromise,
   RequestPromiseOptions,
@@ -16,7 +16,6 @@ interface AutoShopOptions {
   cookie_filename: string;
   state_url: string;
   login_url: string;
-  encoding?: any;
   handlers: Record<
     string,
     {
@@ -54,7 +53,6 @@ export default abstract class AutoShop implements AutoShopOptions {
   req!: RequestAPI<RequestPromise<any>, RequestPromiseOptions, RequiredUriUrl>;
   cookie!: string;
   interval_check = 1000 * 60 * 30;
-  encoding: any;
   afterSetCookie() {}
   constructor(data: AutoShopOptions) {
     Object.assign(this, data);
@@ -99,11 +97,17 @@ export default abstract class AutoShop implements AutoShopOptions {
         // 'Accept-Language': 'en-us'
       },
       gzip: true,
-      encoding: this.encoding
+      encoding: null,
+      transform(body: Buffer, { headers }: Response) {
+        var ctype = headers["content-type"]!;
+        if (/charset=(\w+)/i.test(ctype)) {
+          if (RegExp.$1 && RegExp.$1.toLowerCase() !== "utf-8") {
+            return iconv.decode(body, RegExp.$1);
+          }
+        }
+        return String(body);
+      }
     };
-    if (this.encoding === null) {
-      opts.transform = (buff: Buffer) => iconv.decode(buff, "gb2312");
-    }
     this.req = request.defaults(opts);
     writeFile(this.cookie_filename, cookie);
     this.afterSetCookie();

@@ -29,6 +29,7 @@ async function getHongbao() {
             });
             ele.click();
         }, desc);
+        await tools_1.delayRun(2000);
     }
     await page.close();
 }
@@ -42,7 +43,7 @@ function delayPeriod(hours) {
     return false;
 }
 async function getPeriodCoupon() {
-    var p = delayPeriod([10, 12, 14, 18]);
+    var p = delayPeriod([10, 12, 14, 18, 20]);
     if (p === false) {
         return;
     }

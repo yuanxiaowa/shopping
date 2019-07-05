@@ -52,7 +52,7 @@ export default abstract class AutoShop implements AutoShopOptions {
   >;
   req!: RequestAPI<RequestPromise<any>, RequestPromiseOptions, RequiredUriUrl>;
   cookie!: string;
-  interval_check = 1000 * 60 * 30;
+  interval_check = 1000 * 60 * 60;
   afterSetCookie() {}
   constructor(data: AutoShopOptions) {
     Object.assign(this, data);
@@ -100,7 +100,7 @@ export default abstract class AutoShop implements AutoShopOptions {
       encoding: null,
       transform(body: Buffer, { headers }: Response) {
         var ctype = headers["content-type"]!;
-        if (/charset=(\w+)/i.test(ctype)) {
+        if (/charset=([-\w]+)/i.test(ctype)) {
           if (RegExp.$1 && RegExp.$1.toLowerCase() !== "utf-8") {
             return iconv.decode(body, RegExp.$1);
           }

@@ -11,7 +11,7 @@ const iconv_lite_1 = __importDefault(require("iconv-lite"));
 class AutoShop {
     constructor(data) {
         this.ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1";
-        this.interval_check = 1000 * 60 * 30;
+        this.interval_check = 1000 * 60 * 60;
         Object.assign(this, data);
         this.init();
     }
@@ -55,7 +55,7 @@ class AutoShop {
             encoding: null,
             transform(body, { headers }) {
                 var ctype = headers["content-type"];
-                if (/charset=(\w+)/i.test(ctype)) {
+                if (/charset=([-\w]+)/i.test(ctype)) {
                     if (RegExp.$1 && RegExp.$1.toLowerCase() !== "utf-8") {
                         return iconv_lite_1.default.decode(body, RegExp.$1);
                     }

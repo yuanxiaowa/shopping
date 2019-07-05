@@ -252,7 +252,7 @@ export class Jindong extends AutoShop {
           test: startsWith("https://wq.jd.com/webportal/event/"),
           handler: async url => {
             var html: string = await this.req.get(url);
-            var text = /window._componentConfig\s*=\s*(*);/.exec(html)![1];
+            var text = /window._componentConfig\s*=\s*(.*);/.exec(html)![1];
             var items = JSON.parse(text).filter(
               ({ name }: any) => name === "coupon"
             );

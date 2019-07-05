@@ -335,7 +335,7 @@ export class Taobao extends AutoShop {
         am_id: "",
         cm_id: "",
         pm_id: "1501036000a02c5c3739",
-        pid: "mm_121093092_20166288_69356911",
+        // pid: "mm_121093092_20166288_69356911",
         clk1: "",
         unid: "",
         source_id: "",
@@ -513,7 +513,7 @@ export class Taobao extends AutoShop {
       return state;
     }, {});
     var ua_log = "";
-    var ret = await this.req.post(`https://buy.tmall.com${url}`, {
+    var ret: string = await this.req.post(`https://buy.tmall.com${url}`, {
       qs: {
         spm: "a220l.1.a22016.d011001001001.undefined",
         submitref: data.confirmOrder_1.fields.secretValue,
@@ -547,6 +547,11 @@ export class Taobao extends AutoShop {
         })
       }
     });
+    if (ret.indexOf("security-X5") > -1) {
+      console.log("-------提交碰到验证拦截--------");
+      this.logFile(ret, "订单提交验证拦截");
+      return;
+    }
     this.logFile(ret, "订单已提交");
     console.log("-----订单提交成功，等待付款----");
   }

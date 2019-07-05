@@ -16,7 +16,7 @@ import {
   getGiftInfo,
   getGift
 } from "./jinrong";
-import { timer, timerCondition, log, logReq } from "../utils/tools";
+import { timer, timerCondition, log, logReq, delay } from "../utils/tools";
 
 export async function doWelfareActions() {
   log("检查参加活动领金豆");
@@ -59,6 +59,7 @@ export async function doJinguo() {
   console.log("金果分享状态", shareData.workStatus);
   if (shareData.workStatus === 0) {
     await logReq("金果分享", signJinguo(shareData.workType, 1));
+    await delay(3000);
     shareData.workStatus = 1;
   }
   if (shareData.workStatus === 1) {

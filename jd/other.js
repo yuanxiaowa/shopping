@@ -34,34 +34,45 @@ async function getHongbao() {
     await page.close();
 }
 exports.getHongbao = getHongbao;
-function delayPeriod(hours) {
+function getNextHours(hours) {
     var now = new Date();
     var h = hours.find(n => n > now.getHours());
-    if (h !== undefined) {
-        return tools_1.delayRun(`${h}:00:00`);
-    }
-    return false;
+    return h;
 }
 async function getPeriodCoupon() {
-    var p = delayPeriod([10, 12, 14, 18, 20]);
-    if (p === false) {
+    var h = getNextHours([10, 12, 14, 18, 20]);
+    if (h === undefined) {
         return;
     }
+    var t = tools_1.diffToNow(`${h}:00:00`);
+    var p1 = tools_1.delay(t - 2000);
+    var p2 = tools_1.delay(t - 10);
+    await tools_1.delay(t - 5000);
+    console.log("开始准备领券");
     var page = await page_1.newPage();
     await page.goto("https://pro.m.jd.com/mall/active/4MtESUzHLukCr2mi8CLxPCjvrcht/index.html?ad_od=share&from=singlemessage&isappinstalled=0&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=442b91bf381643ceb18b3f42b8ffec69");
-    await p;
-    await page.evaluate(function () {
-        var eles = Array.from(document.querySelectorAll(".coupon"));
-        eles.forEach(ele => ele.click());
-    });
     page.waitForResponse(res => {
         if (res.url() ===
             "https://api.m.jd.com/client.action?functionId=newBabelAwardCollection") {
             res.json().then(console.log);
         }
         return false;
+    }, {
+        timeout: 0
     });
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await p1;
+    page.evaluate(() => {
+        var ele = document.querySelector(".coupon");
+        for (let i = 0; i < 2000; i += 50) {
+            setTimeout(() => ele.click(), i);
+        }
+    });
+    await p2;
+    await page.evaluate(function () {
+        var eles = Array.from(document.querySelectorAll(".coupon"));
+        eles.forEach(ele => ele.click());
+    });
+    await tools_1.delay(5000);
     await page.close();
     return getPeriodCoupon();
 }

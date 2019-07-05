@@ -311,7 +311,7 @@ class Taobao extends auto_shop_1.default {
                 am_id: "",
                 cm_id: "",
                 pm_id: "1501036000a02c5c3739",
-                pid: "mm_121093092_20166288_69356911",
+                // pid: "mm_121093092_20166288_69356911",
                 clk1: "",
                 unid: "",
                 source_id: "",
@@ -376,6 +376,11 @@ class Taobao extends auto_shop_1.default {
                     signature: linkage.signature
                 }) })
         });
+        if (ret.indexOf("security-X5") > -1) {
+            console.log("-------提交碰到验证拦截--------");
+            this.logFile(ret, "订单提交验证拦截");
+            return;
+        }
         this.logFile(ret, "订单已提交");
         console.log("-----订单提交成功，等待付款----");
     }

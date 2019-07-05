@@ -209,7 +209,7 @@ class Jindong extends auto_shop_1.default {
                     test: ramda_1.startsWith("https://wq.jd.com/webportal/event/"),
                     handler: async (url) => {
                         var html = await this.req.get(url);
-                        var text = /window._componentConfig\s*=\s*(*);/.exec(html)[1];
+                        var text = /window._componentConfig\s*=\s*(.*);/.exec(html)[1];
                         var items = JSON.parse(text).filter(({ name }) => name === "coupon");
                         var now = Date.now();
                         items.forEach(({ data: { list } }) => {

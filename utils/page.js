@@ -10,8 +10,9 @@ exports.browser_promise = (async () => {
     browser = await puppeteer_1.default.launch({
         headless: false,
         userDataDir: "./data-dir",
-        devtools: false,
-        executablePath: "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe"
+        devtools: false
+        // executablePath:
+        //   "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe"
     });
     [defaultPage] = await browser.pages();
     defaultPage.goto("http://localhost:8080/");

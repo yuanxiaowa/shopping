@@ -15,7 +15,7 @@ class AutoShop {
         Object.assign(this, data);
         this.init();
     }
-    afterSetCookie() { }
+    afterLogin() { }
     async logFile(content, label) {
         fs_extra_1.writeFile(`.data/${this.name}/${label}-${new Date()
             .toLocaleString()
@@ -24,7 +24,7 @@ class AutoShop {
                 .toString()
                 .substring(2, 6), content);
     }
-    async checkUrl(url) {
+    async checkUrl(url, page) {
         /* try {
           var p = this.req.get(url, {
             followRedirect: false
@@ -34,14 +34,8 @@ class AutoShop {
         } catch (e) {
           return false;
         } */
-        var page = await page_1.newPage();
         await page.goto(url);
-        var b = page.url() === url;
-        if (b) {
-            this.setCookie(await this.getPageCookie(page));
-        }
-        page.close();
-        return b;
+        return page.url() === url;
     }
     setCookie(cookie) {
         this.cookie = cookie;
@@ -68,7 +62,7 @@ class AutoShop {
         };
         this.req = request_promise_native_1.default.defaults(opts);
         fs_extra_1.writeFile(this.cookie_filename, cookie);
-        this.afterSetCookie();
+        this.afterLogin();
     }
     async qiangquan(url) {
         for (let key in this.coupon_handlers) {
@@ -85,15 +79,13 @@ class AutoShop {
             .join("; ");
         return cookie_str;
     }
-    async login() {
-        let page = await page_1.newPage();
+    async login(page) {
         await page.goto(this.login_url);
         await this.loginAction(page);
         await page.waitForNavigation({
             timeout: 1000 * 60 * 5
         });
-        this.setCookie(await this.getPageCookie(page));
-        await page.close();
+        await page.goto(this.state_url);
     }
     start() {
         page_1.injectDefaultPage({
@@ -131,9 +123,9 @@ class AutoShop {
                     await tools_1.delayRun(d, this.name + "从购物车中结算");
                     return this.cartBuy(data);
                 },
-                [`${this.name}DirectBuy`]: async (d, url) => {
+                [`${this.name}DirectBuy`]: async (d, url, quantity = 1) => {
                     await tools_1.delayRun(d, this.name + "直接购买");
-                    return this.directBuy(url);
+                    return this.directBuy(url, quantity);
                 }
             }
         });
@@ -142,11 +134,15 @@ class AutoShop {
         });
     }
     async preserveState() {
-        var logined = await this.checkUrl(this.state_url);
+        var page = await page_1.newPage();
+        var logined = await this.checkUrl(this.state_url, page);
         setTimeout(this.preserveState.bind(this), this.interval_check);
         if (!logined) {
-            return this.login();
+            await this.login(page);
         }
+        await page.goto(this.state_url);
+        this.setCookie(await this.getPageCookie(page));
+        await page.close();
     }
     init() {
         this.setCookie(fs_extra_1.readFileSync(this.cookie_filename, "utf8"));

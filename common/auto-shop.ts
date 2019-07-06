@@ -53,7 +53,7 @@ export default abstract class AutoShop implements AutoShopOptions {
   req!: RequestAPI<RequestPromise<any>, RequestPromiseOptions, RequiredUriUrl>;
   cookie!: string;
   interval_check = 1000 * 60 * 60;
-  afterSetCookie() {}
+  afterLogin() {}
   constructor(data: AutoShopOptions) {
     Object.assign(this, data);
     this.init();
@@ -69,7 +69,7 @@ export default abstract class AutoShop implements AutoShopOptions {
       content
     );
   }
-  async checkUrl(url: string) {
+  async checkUrl(url: string, page: Page) {
     /* try {
       var p = this.req.get(url, {
         followRedirect: false
@@ -79,14 +79,8 @@ export default abstract class AutoShop implements AutoShopOptions {
     } catch (e) {
       return false;
     } */
-    var page = await newPage();
     await page.goto(url);
-    var b = page.url() === url;
-    if (b) {
-      this.setCookie(await this.getPageCookie(page));
-    }
-    page.close();
-    return b;
+    return page.url() === url;
   }
   setCookie(cookie: string) {
     this.cookie = cookie;
@@ -113,7 +107,7 @@ export default abstract class AutoShop implements AutoShopOptions {
     };
     this.req = request.defaults(opts);
     writeFile(this.cookie_filename, cookie);
-    this.afterSetCookie();
+    this.afterLogin();
   }
   abstract resolveUrl(url: string): Promise<string>;
   abstract resolveUrls(text: string): Promise<string[]>;
@@ -128,7 +122,7 @@ export default abstract class AutoShop implements AutoShopOptions {
   abstract getCartInfo(): Promise<any>;
   abstract toggleCart(arr: any, checked: boolean): Promise<any>;
   abstract cartBuy(data: any): Promise<any>;
-  abstract directBuy(url: string): Promise<any>;
+  abstract directBuy(url: string, quantity: number): Promise<any>;
   async loginAction(page: Page) {}
   async getPageCookie(page: Page) {
     var cookies = await page.cookies();
@@ -137,15 +131,13 @@ export default abstract class AutoShop implements AutoShopOptions {
       .join("; ");
     return cookie_str;
   }
-  async login() {
-    let page = await newPage();
+  async login(page: Page) {
     await page.goto(this.login_url);
     await this.loginAction(page);
     await page.waitForNavigation({
       timeout: 1000 * 60 * 5
     });
-    this.setCookie(await this.getPageCookie(page));
-    await page.close();
+    await page.goto(this.state_url);
   }
   start() {
     injectDefaultPage({
@@ -186,9 +178,13 @@ export default abstract class AutoShop implements AutoShopOptions {
           await delayRun(d, this.name + "从购物车中结算");
           return this.cartBuy(data);
         },
-        [`${this.name}DirectBuy`]: async (d: string, url: any) => {
+        [`${this.name}DirectBuy`]: async (
+          d: string,
+          url: any,
+          quantity: number = 1
+        ) => {
           await delayRun(d, this.name + "直接购买");
-          return this.directBuy(url);
+          return this.directBuy(url, quantity);
         }
       }
     });
@@ -197,11 +193,15 @@ export default abstract class AutoShop implements AutoShopOptions {
     });
   }
   private async preserveState() {
-    var logined = await this.checkUrl(this.state_url);
+    var page = await newPage();
+    var logined = await this.checkUrl(this.state_url, page);
     setTimeout(this.preserveState.bind(this), this.interval_check);
     if (!logined) {
-      return this.login();
+      await this.login(page);
     }
+    await page.goto(this.state_url);
+    this.setCookie(await this.getPageCookie(page));
+    await page.close();
   }
   init() {
     this.setCookie(readFileSync(this.cookie_filename, "utf8"));

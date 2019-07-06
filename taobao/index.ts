@@ -6,6 +6,9 @@ import { isSubmitOrder } from "../common/config";
 import { identity } from "ramda";
 import { getCookie } from "../utils/tools";
 import signData from "./h";
+import { getMobileCartInfo, CartItem } from "./mobile";
+import { getPcCartInfo } from "./pc";
+import { Page } from "puppeteer";
 
 export async function resolveTaokouling(text: string) {
   var data: string = await request.post(
@@ -30,7 +33,7 @@ export class Taobao extends AutoShop {
       login_url: "https://login.taobao.com/member/login.jhtml",
       cookie_filename: __dirname + "/cookie.txt",
       state_url:
-        "https://shoucang.taobao.com/collectList.htm?spm=a1z09.2.a2109.d1000374.5aef2e8diVrQxZ&nekot=1470211439694",
+        "https://main.m.taobao.com/mytaobao/index.html?spm=a215s.7406091.toolbar.i2",
       handlers: {
         tmall: {
           test: startsWith("https://detail.tmall.com/item.htm"),
@@ -238,6 +241,19 @@ export class Taobao extends AutoShop {
       }
     });
   }
+
+  async checkUrl(url: string, page: Page) {
+    page.goto(url);
+    var res = await page.waitForResponse(res =>
+      res
+        .url()
+        .startsWith(
+          "https://h5api.m.taobao.com/h5/mtop.user.getusersimple/1.0/"
+        )
+    );
+    var text: string = await res.text();
+    return !text.includes("FAIL_SYS_SESSION_EXPIRED::SESSION失效");
+  }
   async resolveUrl(url: string) {
     return url;
   }
@@ -324,7 +340,7 @@ export class Taobao extends AutoShop {
     // await page.click(".go-btn");
   }
 
-  async getCartInfo() {
+  async cartInfoFromPc() {
     var html: string = await this.req.get(`https://cart.taobao.com/cart.htm`, {
       qs: {
         spm: "a231o.7712113/g.1997525049.1.3e004608MXPqWt",
@@ -343,111 +359,11 @@ export class Taobao extends AutoShop {
       }
     });
     var text = /var firstData = (.*);}catch \(e\)/.exec(html)![1];
-    var data: {
-      list: {
-        // s_3409507848
-        id: string;
-        sellerId: string;
-        shopId: string;
-        title: string;
-        // 失效为false
-        isValid: boolean;
-        // shop act
-        type: string;
-        promView: {
-          // shopbonus-8709336796_76620184988-1163365363256
-          id: string;
-          discount: number;
-          title: string;
-          point: number;
-          usePoint: number;
-        };
-        bundles: {
-          // s_3409507848_0
-          id: string;
-          // shop
-          type: string;
-          valid: boolean;
-          orders: {
-            id: string;
-            // 1355804953662
-            cartId: string;
-            itemId: string;
-            skuId: string;
-            // 2:可用 3：聚划算等待开团
-            skuStatus: number;
-            attr: string;
-            title: string;
-            skus: Record<string, string>;
-            leafCategory: number;
-            checked: boolean;
-            amount: {
-              now: number;
-              // 最大可选数量
-              max: number;
-              multiple: number;
-              supply: number;
-              demand: number;
-              // 库存
-              limit: number;
-            };
-            price: {
-              now: number;
-              origin: number;
-              save: number;
-              sum: number;
-            };
-            // 是否可选
-            isValid: boolean;
-
-            // 赠品
-            itemIcon?: Record<
-              string,
-              {
-                img: string;
-                link: string;
-                title: string;
-              }[]
-            >;
-            // 促销方式
-            promos?: {
-              title: string;
-              type: number;
-              usedPoint: number;
-              style: string;
-            }[][];
-            promotionDesc?: string[];
-
-            // 不可选的时候的提示信息
-            code?: string;
-            codeMsg?: string;
-
-            seller: string;
-            sellerId: string;
-            shopId: string;
-            shopName: string;
-            shopUrl: string;
-            // 是否为预售
-            isPreSell: boolean;
-            // 0
-            preSellStatus: string;
-            preSellText: string;
-            pic: string;
-            url: string;
-            createTime: number;
-            gmtModifiedTime: number;
-          }[];
-          // 享受的优惠
-          promos: string[];
-        }[];
-        // 店铺地址
-        url: string;
-      }[];
-    } = JSON.parse(text);
-    return data;
+    var res_data = JSON.parse(text);
+    return getPcCartInfo(res_data);
   }
 
-  async submitOrder(
+  async submitOrderFromPc(
     form: Record<string, any>,
     addr_url: string,
     Referer: string
@@ -457,8 +373,7 @@ export class Taobao extends AutoShop {
       form,
       headers: {
         Referer
-      },
-      encoding: null
+      }
     });
     this.logFile(addr_url + "\n" + html, "订单结算页");
     var text = /var orderData = (.*);/.exec(html)![1];
@@ -556,16 +471,14 @@ export class Taobao extends AutoShop {
     console.log("-----订单提交成功，等待付款----");
   }
 
-  async cartBuy(
+  async cartBuyFromPc(
     goods: {
-      sellerId: number;
+      sellerId: string;
       cartId: string;
-      itemId: string;
       skuId: string;
-      amount: {
-        now: number;
-      };
-      createTime: number;
+      itemId: string;
+      amount: number;
+      createTime: string;
       attr: string;
     }[]
   ) {
@@ -578,7 +491,7 @@ export class Taobao extends AutoShop {
         cartId,
         itemId,
         skuId,
-        quantity: amount.now,
+        quantity: amount,
         createTime,
         attr
       })
@@ -599,7 +512,7 @@ export class Taobao extends AutoShop {
         page_from: "cart",
         source_time: Date.now()
       };
-      await this.submitOrder(
+      await this.submitOrderFromPc(
         form,
         "https://buy.tmall.com/order/confirm_order.htm?spm=a1z0d.6639537.0.0.undefined",
         `https://cart.taobao.com/cart.htm?spm=a21bo.2017.1997525049.1.5af911d9eInVdr&from=mini&ad_id=&am_id=&cm_id=&pm_id=1501036000a02c5c3739`
@@ -609,7 +522,156 @@ export class Taobao extends AutoShop {
     }
   }
 
-  async directBuy(url: string) {
+  spm = "a222m.7628550.0.0";
+
+  async cartInfoFromMobile() {
+    var data = {
+      exParams: JSON.stringify({
+        mergeCombo: "true",
+        version: "1.0.0",
+        globalSell: "1",
+        spm: this.spm,
+        cartfrom: "detail"
+      }),
+      isPage: "false",
+      extStatus: "0",
+      spm: this.spm,
+      cartfrom: "detail"
+    };
+    var text: string = await this.requestOnMobile(
+      "https://acs.m.taobao.com/h5/mtop.trade.querybag/5.0/",
+      "get",
+      {
+        jsv: "2.3.26",
+        appKey: "12574478",
+        api: "mtop.trade.queryBag",
+        v: "5.0",
+        isSec: "0",
+        ecode: "1",
+        AntiFlood: "true",
+        AntiCreep: "true",
+        H5Request: "true",
+        LoginRequest: "true",
+        type: "jsonp",
+        dataType: "jsonp",
+        callback: "mtopjsonp1"
+      },
+      data
+    );
+    var res_data = getJsonpData(text);
+    return getMobileCartInfo(res_data);
+  }
+
+  getCartInfo() {
+    return this.cartInfoFromMobile();
+  }
+
+  async submitOrderFromMobile(data: any) {
+    // this.logFile(JSON.stringify(items), '手机准备进入订单结算页')
+    console.log("-------------开始进入手机订单结算页-------------");
+    var text = await this.requestOnMobile(
+      "https://h5api.m.taobao.com/h5/mtop.trade.buildorder.h5/3.0/",
+      "post",
+      {
+        jsv: "2.4.7",
+        appKey: this.appKey,
+        api: "mtop.trade.buildOrder.h5",
+        v: "3.0",
+        type: "originaljson",
+        timeout: "20000",
+        isSec: "1",
+        dataType: "json",
+        ecode: "1",
+        ttid: "#t#ip##_h5_2014",
+        AntiFlood: "true",
+        LoginRequest: "true",
+        H5Request: "true"
+      },
+      data
+    );
+    this.logFile(JSON.stringify(text), "手机订单结算页");
+    console.log("-------------进入手机订单结算页，准备提交-------------");
+    var {
+      data: {
+        data,
+        linkage,
+        hierarchy: { structure }
+      }
+    } = JSON.parse(text);
+    var ua = "";
+    var ret = await this.requestOnMobile(
+      "https://h5api.m.taobao.com/h5/mtop.trade.createorder.h5/3.0/",
+      "post",
+      {
+        jsv: "2.4.7",
+        appKey: this.appKey,
+        api: "mtop.trade.createOrder.h5",
+        v: "3.0",
+        type: "originaljson",
+        timeout: "20000",
+        dataType: "json",
+        isSec: "1",
+        ecode: "1",
+        ttid: "#t#ip##_h5_2014",
+        AntiFlood: "true",
+        LoginRequest: "true",
+        H5Request: "true",
+        submitref: "0a67f6"
+      },
+      {
+        params: JSON.stringify({
+          data: JSON.stringify(
+            Object.keys(data).reduce(
+              (state, name) => {
+                var item = data[name];
+                if (item.submit) {
+                  state[name] = item;
+                }
+                return state;
+              },
+              <any>{}
+            )
+          ),
+          hierarchy: JSON.stringify({
+            structure
+          }),
+          linkage: JSON.stringify({
+            common: {
+              compress: linkage.common.compress,
+              submitParams: linkage.common.submitParams,
+              validateParams: linkage.common.validateParams
+            },
+            signature: linkage.signature
+          })
+        }),
+        ua
+      },
+      ua
+    );
+    this.logFile(ret, "手机订单提交成功");
+    var {
+      ret: [msg]
+    } = JSON.parse(ret);
+    if (msg.startsWith("SUCCESS")) {
+      console.log("----------手机订单提交成功----------");
+    } else {
+      console.error(msg);
+    }
+  }
+
+  cartBuyFromMobile(items: CartItem[]) {
+    return this.submitOrderFromMobile({
+      buyNow: "false",
+      buyParam: items.map(({ settlement }) => settlement).join(","),
+      spm: this.spm
+    });
+  }
+
+  cartBuy(items: any[]) {
+    return this.cartBuyFromMobile(items);
+  }
+
+  async directBuyFromPc(url: string, quantity: number) {
     var html: string = await this.req.get(url, {
       headers: {
         "user-agent":
@@ -647,7 +709,7 @@ export class Taobao extends AutoShop {
 
       allow_quantity: itemDO.quantity,
       buy_param: [itemDO.itemId, 1, skuId].join("_"),
-      quantity: 1,
+      quantity,
       _tb_token_: "edeb7b783ff65",
       skuInfo: [itemDO.title].join(";"),
       _input_charset: "UTF-8",
@@ -687,7 +749,7 @@ export class Taobao extends AutoShop {
     }); */
     var qs_data = {
       "x-itemid": itemDO.itemId,
-      "x-uid": /unb=(\w+)/.exec(this.cookie)
+      "x-uid": getCookie("unb", this.cookie)
     };
     /* var page = await newPage();
     // await page.goto(url);
@@ -706,7 +768,11 @@ export class Taobao extends AutoShop {
     }, form); */
     console.log("进入订单结算页");
     try {
-      var ret = await this.submitOrder(form, "https:" + tradeConfig[2], url);
+      var ret = await this.submitOrderFromPc(
+        form,
+        "https:" + tradeConfig[2],
+        url
+      );
       /* var ret = await this.req.post("https:" + tradeConfig[2], {
         form,
         qs: qs_data
@@ -715,6 +781,48 @@ export class Taobao extends AutoShop {
     } catch (e) {
       console.error("订单提交出错", e);
     }
+  }
+
+  directBuy(url: string, quantity: number) {
+    return this.directBuyFromMobile(url, quantity);
+  }
+
+  async directBuyFromMobile(url: string, quantity: number) {
+    var itemId = /id=(\d+)/.exec(url)![1];
+    var text = await this.requestOnMobile(
+      "https://h5api.m.taobao.com/h5/mtop.taobao.detail.getdetail/6.0/",
+      "get",
+      {
+        jsv: "2.4.8",
+        appKey: "12574478",
+        api: "mtop.taobao.detail.getdetail",
+        v: "6.0",
+        dataType: "jsonp",
+        ttid: "2017@taobao_h5_6.6.0",
+        AntiCreep: "true",
+        type: "jsonp",
+        callback: "mtopjsonp2"
+      },
+      { itemNumId: itemId }
+    );
+    var {
+      data: {
+        skuBase: { props, skus }
+      }
+    } = getJsonpData(text);
+    var skuId = skus[0].skuId;
+    // var xUid = getCookie("unb", this.cookie);
+    await this.submitOrderFromMobile({
+      buyNow: true,
+      exParams: JSON.stringify({
+        addressId: "9607477385",
+        buyFrom: "tmall_h5_detail"
+      }),
+      itemId,
+      quantity,
+      serviceId: null,
+      skuId: skuId
+    });
   }
 
   appKey = "12574478";
@@ -727,63 +835,32 @@ export class Taobao extends AutoShop {
   async requestOnMobile(
     url: string,
     method: "get" | "post",
-    form?: any,
-    qs?: any
+    qs: Record<string, any>,
+    data: Record<string, any>,
+    ua?: string
   ): Promise<string> {
     var t = Date.now();
+    var data_str = JSON.stringify(data);
+    var form: Record<string, string> | undefined;
+    qs.sign = this.getSign(data_str, t);
+    qs.t = t;
     if (method === "get") {
-      qs = form;
-      form = undefined;
+      qs.data = data_str;
+    } else {
+      form = {
+        data: data_str
+      };
+      if (ua) {
+        form.ua = ua;
+      }
     }
-    qs.sign = this.getSign(method === "get" ? qs.data : form.data, t);
     return this.req(url, {
       method,
       form,
-      qs,
-      transform: identity
+      qs
     });
   }
-
-  async getCartInfoFromMobile() {
-    var text = await this.requestOnMobile(
-      "https://h5api.m.taobao.com/h5/mtop.trade.query.bag/5.0/",
-      "get",
-      {
-        jsv: "2.5.1",
-        appKey: "12574478",
-        api: "mtop.trade.query.bag",
-        v: "5.0",
-        type: "jsonp",
-        ttid: "h5",
-        isSec: "0",
-        ecode: "1",
-        AntiFlood: "true",
-        AntiCreep: "true",
-        H5Request: "true",
-        dataType: "jsonp",
-        callback: "mtopjsonp2",
-        data: JSON.stringify({
-          isPage: true,
-          extStatus: 0,
-          netType: 0,
-          exParams: JSON.stringify({
-            mergeCombo: "true",
-            version: "1.1.1",
-            globalSell: "1",
-            cartFrom: "taobao_client",
-            spm: "a2141.7756461.toolbar.i0"
-          }),
-          cartFrom: "taobao_client",
-          spm: "a2141.7756461.toolbar.i0"
-        })
-      }
-    );
-    var { data }: any = getJsonpData(text);
-    return data;
-  }
-
-  cartBuyFromMobile(items: string[]) {}
 }
 function getJsonpData(text: string) {
-  return /\((.*)\)/.exec(text)![1];
+  return JSON.parse(/\((.*)\)/.exec(text)![1]);
 }

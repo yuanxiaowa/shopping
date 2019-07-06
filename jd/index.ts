@@ -384,7 +384,7 @@ export class Jindong extends AutoShop {
     await page.waitForNavigation();
     await page.close();
   }
-  directBuy(url: string): Promise<any> {
+  directBuy(url: string, quantity: number): Promise<any> {
     throw new Error("Method not implemented.");
   }
 
@@ -403,17 +403,17 @@ export class Jindong extends AutoShop {
   }
 
   async preservePcState() {
-    var b = await this.checkUrl("https://home.jd.com/");
+    var page = await newPage();
+    var b = await this.checkUrl("https://home.jd.com/", page);
     setTimeout(
       this.preservePcState.bind(this),
       this.interval_check + 1000 * 60 * 5
     );
     if (!b) {
       await browser_promise;
-      let page = await newPage();
       await login(page);
-      await page.close();
     }
+    await page.close();
   }
 
   async loginAction(page: Page) {
@@ -422,7 +422,7 @@ export class Jindong extends AutoShop {
     await page.click("#loginBtn");
   }
 
-  afterSetCookie() {
+  afterLogin() {
     setReq(this.req, this.cookie);
   }
 }

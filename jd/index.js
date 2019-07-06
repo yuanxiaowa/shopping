@@ -335,7 +335,7 @@ class Jindong extends auto_shop_1.default {
         await page.waitForNavigation();
         await page.close();
     }
-    directBuy(url) {
+    directBuy(url, quantity) {
         throw new Error("Method not implemented.");
     }
     start() {
@@ -352,21 +352,21 @@ class Jindong extends auto_shop_1.default {
         });
     }
     async preservePcState() {
-        var b = await this.checkUrl("https://home.jd.com/");
+        var page = await page_1.newPage();
+        var b = await this.checkUrl("https://home.jd.com/", page);
         setTimeout(this.preservePcState.bind(this), this.interval_check + 1000 * 60 * 5);
         if (!b) {
             await page_1.browser_promise;
-            let page = await page_1.newPage();
             await login(page);
-            await page.close();
         }
+        await page.close();
     }
     async loginAction(page) {
         await page.type("#username", user.username);
         await page.type("#password", user.password);
         await page.click("#loginBtn");
     }
-    afterSetCookie() {
+    afterLogin() {
         goods_1.setReq(this.req, this.cookie);
     }
 }

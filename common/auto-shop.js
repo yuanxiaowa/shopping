@@ -19,7 +19,10 @@ class AutoShop {
     async logFile(content, label) {
         fs_extra_1.writeFile(`.data/${this.name}/${label}-${new Date()
             .toLocaleString()
-            .replace(/:/g, "_")}`, content);
+            .replace(/(:|\/|,|\s)/g, "_")}` +
+            Math.random()
+                .toString()
+                .substring(2, 6), content);
     }
     async checkUrl(url) {
         /* try {

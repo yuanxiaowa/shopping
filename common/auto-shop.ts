@@ -62,7 +62,10 @@ export default abstract class AutoShop implements AutoShopOptions {
     writeFile(
       `.data/${this.name}/${label}-${new Date()
         .toLocaleString()
-        .replace(/:/g, "_")}`,
+        .replace(/(:|\/|,|\s)/g, "_")}` +
+        Math.random()
+          .toString()
+          .substring(2, 6),
       content
     );
   }

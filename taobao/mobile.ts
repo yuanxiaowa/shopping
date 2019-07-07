@@ -1,5 +1,3 @@
-import { readJSONSync } from "fs-extra";
-
 export interface CartItemBase {
   id: string;
   title: string;
@@ -125,5 +123,3 @@ export function getMobileCartInfo(resData: any) {
   findData(hierarchy.root);
   return ret;
 }
-
-console.log(getMobileCartInfo(readJSONSync(__dirname + "/cart.json")));

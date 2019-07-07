@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const fs_extra_1 = require("fs-extra");
 const pattern = /\$\{(.*)\}/;
 function getMobileCartInfo(resData) {
     var { data: { hierarchy, data, controlParas } } = resData;
@@ -73,4 +72,3 @@ function getMobileCartInfo(resData) {
     return ret;
 }
 exports.getMobileCartInfo = getMobileCartInfo;
-console.log(getMobileCartInfo(fs_extra_1.readJSONSync(__dirname + "/cart.json")));

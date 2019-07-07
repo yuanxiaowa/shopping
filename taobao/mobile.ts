@@ -1,3 +1,5 @@
+import { readJSONSync } from "fs-extra";
+
 export interface CartItemBase {
   id: string;
   title: string;
@@ -45,6 +47,40 @@ export function getMobileCartInfo(resData: any) {
     );
   }
 
+  function mapper(key: string) {
+    var { id, fields } = data[key];
+    var {
+      title,
+      valid,
+      settlement,
+      quantity: { quantity },
+      sellerId,
+      cartId,
+      shopId,
+      itemId,
+      sku: { skuId },
+      pay: { now },
+      pic,
+      checked
+    } = fields;
+    return <CartItem>{
+      id,
+      title,
+      valid,
+      settlement,
+      amount: quantity,
+      sellerId,
+      cartId,
+      shopId,
+      itemId,
+      skuId,
+      price: now / 100,
+      img: pic,
+      url: getPatternUrl(fields),
+      checked
+    };
+  }
+
   var ret: VendorInfo[] = [];
   function findData(name: string) {
     if (!structure[name]) {
@@ -57,39 +93,7 @@ export function getMobileCartInfo(resData: any) {
     if (items[0].startsWith("shop")) {
       let { id, fields } = data[items[0]];
       let groups = items.filter(item => item.startsWith("group_"));
-      let children = structure[groups[groups.length - 1]].map(key => {
-        var { id, fields } = data[key];
-        var {
-          title,
-          valid,
-          settlement,
-          quantity: { quantity },
-          sellerId,
-          cartId,
-          shopId,
-          itemId,
-          sku: { skuId },
-          pay: { now },
-          pic,
-          checked
-        } = fields;
-        return <CartItem>{
-          id,
-          title,
-          valid,
-          settlement,
-          amount: quantity,
-          sellerId,
-          cartId,
-          shopId,
-          itemId,
-          skuId,
-          price: now / 100,
-          img: pic,
-          url: getPatternUrl(fields),
-          checked
-        };
-      });
+      let children = structure[groups[groups.length - 1]].map(mapper);
       ret.push({
         id,
         title: fields.title,
@@ -100,6 +104,20 @@ export function getMobileCartInfo(resData: any) {
         items: children
       });
     } else {
+      if (name === "bundlev2_invalid") {
+        ret.push({
+          id: "",
+          title: "聚划算未开团",
+          sellerId: "",
+          shopId: "",
+          valid: false,
+          url: "",
+          items: items
+            .filter(key => data[key].fields.titleInCheckBox === "预热")
+            .map(mapper)
+        });
+        return;
+      }
       structure[name].forEach(key => findData(key));
     }
   }
@@ -107,3 +125,5 @@ export function getMobileCartInfo(resData: any) {
   findData(hierarchy.root);
   return ret;
 }
+
+console.log(getMobileCartInfo(readJSONSync(__dirname + "/cart.json")));

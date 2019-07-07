@@ -461,6 +461,7 @@ class Taobao extends auto_shop_1.default {
     getCartInfo() {
         return this.cartInfoFromMobile();
     }
+    // @ts-ignore
     async submitOrderFromMobile(data) {
         // this.logFile(JSON.stringify(items), '手机准备进入订单结算页')
         console.log("-------------开始进入手机订单结算页-------------");
@@ -479,6 +480,11 @@ class Taobao extends auto_shop_1.default {
             LoginRequest: "true",
             H5Request: "true"
         }, data);
+        if (text.includes("FAIL_SYS_TRAFFIC_LIMIT")) {
+            console.log(text);
+            console.log("正在重试");
+            return this.submitOrderFromMobile(data);
+        }
         this.logFile(JSON.stringify(text), "手机订单结算页");
         console.log("-------------进入手机订单结算页，准备提交-------------");
         var { data: { data, linkage, hierarchy: { structure } } } = JSON.parse(text);

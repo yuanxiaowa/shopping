@@ -3,7 +3,13 @@ import { Page } from "puppeteer";
 import { startsWith } from "ramda";
 import request = require("request-promise-native");
 import AutoShop from "../common/auto-shop";
-import { setReq, getCartInfo, submitOrder, toggleCartChecked } from "./goods";
+import {
+  setReq,
+  getCartInfo,
+  submitOrder,
+  toggleCartChecked,
+  getShopJindou
+} from "./goods";
 import { isSubmitOrder } from "../common/config";
 
 import {
@@ -383,6 +389,7 @@ export class Jindong extends AutoShop {
     page.click("#btnPayOnLine");
     await page.waitForNavigation();
     await page.close();
+    // return submitOrder();
   }
   directBuy(url: string, quantity: number): Promise<any> {
     throw new Error("Method not implemented.");
@@ -424,5 +431,6 @@ export class Jindong extends AutoShop {
 
   afterLogin() {
     setReq(this.req, this.cookie);
+    getShopJindou();
   }
 }

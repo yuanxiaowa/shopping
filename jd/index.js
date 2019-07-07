@@ -334,6 +334,7 @@ class Jindong extends auto_shop_1.default {
         page.click("#btnPayOnLine");
         await page.waitForNavigation();
         await page.close();
+        // return submitOrder();
     }
     directBuy(url, quantity) {
         throw new Error("Method not implemented.");
@@ -368,6 +369,7 @@ class Jindong extends auto_shop_1.default {
     }
     afterLogin() {
         goods_1.setReq(this.req, this.cookie);
+        goods_1.getShopJindou();
     }
 }
 exports.Jindong = Jindong;

@@ -1,6 +1,7 @@
 import request = require("request-promise-native");
 import { extractJsonpData } from "../utils/tools";
 import { RequestAPI, RequiredUriUrl } from "request";
+import { writeFileSync } from "fs";
 
 var req: RequestAPI<
   request.RequestPromise<any>,
@@ -443,35 +444,110 @@ export async function toggleCartChecked(
 export async function submitOrder() {
   var html: string = await req.get("https://p.m.jd.com/norder/order.action");
   var text = /window.dealData =([\s\S]*?)<\/script>/.exec(html)![1];
-  var data: {
+  var dealData: {
     token2: string;
     skulist: string;
     traceId: string;
+    order: any;
   } = eval(`(${text})`);
-  await req.post("https://wqdeal.jd.com/deal/msubmit/confirm", {
-    qs: {
-      paytype: "0",
-      paychannel: "1",
-      action: "0",
-      reg: "1",
-      type: "0",
-      token2: data.token2,
-      dpid: "",
-      skulist: data.skulist,
-      scan_orig: "",
-      gpolicy: "",
-      platprice: "0",
-      ship: "2|67|663630|||||||||||0",
-      pick: "",
-      savepayship: "0",
-      callback: "cbConfirmA",
-      uuid: "",
-      validatecode: "",
-      valuableskus: "48579522590,1,20080,3399",
-      r: "0.5329083863388784",
-      sceneval: "2",
-      rtk: "b69f5a15d5003d27283fd9f4f218ea34",
-      traceid: data.traceId
+  var { token2, order, traceId } = dealData;
+
+  var valuableskus = (() => {
+    var ret: any[] = [];
+    order.venderCart.forEach(({ mfsuits }: any) => {
+      mfsuits.forEach(({ products }: any) => {
+        products.forEach(({ mainSku }: any) => {
+          var u;
+          if (mainSku.cid.includes("_")) {
+            u = mainSku.cid.split("_")[2];
+          }
+          if (!u) {
+            u = mainSku.cid;
+          }
+          ret.push(
+            [
+              mainSku.id,
+              mainSku.num,
+              parseInt(mainSku.promotion.price) -
+                parseInt(mainSku.promotion.discount),
+              u
+            ].join(",")
+          );
+        });
+      });
+    });
+    return ret.join("|");
+  })();
+  var ship = (() => {
+    return order.venderCart
+      .map((vender: any) => {
+        var o = new Array(14).fill("");
+        o[0] = vender.shipment[0].type;
+        o[1] = vender.shipment[0].id;
+        o[2] = vender.venderId;
+        o[13] = 0;
+        return o.join("|");
+      })
+      .join("$");
+  })();
+  var qs = {
+    paytype: "0", // 1
+    paychannel: "1", // dealData.kaplerSource !== '0'时候为'6'，否则为1
+    action: "0", // R.action
+    reg: 1, // 1
+    type: "0", // url:type || '0'
+    token2, // dealData.token2
+    dpid: "", // url:dpid || ''
+    skulist: dealData.skulist, // 1
+    scan_orig: "", // url:scan_orig || ''
+    gpolicy: "", // 1
+    platprice: order.usePcPrice, // dealData.order.usePcPrice
+    ship, // h[0] || ''
+    // '2|67|675918|||||||||||0$5|68|749057|2019-7-8|09:00-21:00|{"1":2,"35":4,"161":0,"30":2}|1|||||||0$2|67|10072685|||||||||||0',
+    pick: "", // h[1] || ''
+    savepayship: "0", // 1
+    callback: "cbConfirmA", // 1
+    uuid: getCookie("mba_muid"), // 1
+    validatecode: "", // 1
+    valuableskus,
+    r: Math.random(), // 1
+    sceneval: "2", // url:sceneVal || url:sceneval || ""
+    rtk: "b0683b27fb2f9f98629907f6ba04c4db",
+    traceid: traceId, // dealData.traceid
+    g_tk: time33(getCookie("wq_skey")),
+    g_ty: "ls" // 1
+  };
+
+  var ret = await req.post("https://wqdeal.jd.com/deal/msubmit/confirm", {
+    qs,
+    headers: {
+      Referer: "https://p.m.jd.com/norder/order.action"
     }
   });
+}
+
+export async function getShopJindou() {
+  var text: string = await req.post(
+    "https://bean.jd.com/myJingBean/getPopSign",
+    {
+      headers: {
+        cookie
+      }
+    }
+  );
+  var { data } = JSON.parse(text);
+  data.forEach(
+    async ({ shopUrl, signed }: { shopUrl: string; signed: boolean }) => {
+      if (!signed) {
+        let id: string;
+        if (/mall\.jd\.com\/index-(\w+)/.test(shopUrl)) {
+          id = RegExp.$1;
+        } else {
+          let html: string = await req.get(shopUrl);
+          id = /var shopId = "(\d+)"/.exec(html)![1];
+        }
+        await req.get(`https://mall.jd.com/shopSign-${id}.html`);
+      }
+    }
+  );
 }

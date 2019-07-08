@@ -10,6 +10,7 @@ const auto_shop_1 = __importDefault(require("../common/auto-shop"));
 const goods_1 = require("./goods");
 const config_1 = require("../common/config");
 const goods_2 = require("./goods");
+const tools_1 = require("../utils/tools");
 const user = require("./user.json");
 async function getGoodsCoupons(skuId) {
     var { item } = await goods_2.getGoodsInfo(skuId);
@@ -331,7 +332,17 @@ class Jindong extends auto_shop_1.default {
             await page.setOfflineMode(true);
         }
         page.click("#btnPayOnLine");
-        await page.waitForNavigation();
+        var res = await page.waitForResponse(res => res.url().startsWith("https://wqdeal.jd.com/deal/msubmit/confirm?"));
+        var text = await res.text();
+        console.log(text);
+        if (text.includes("您要购买的商品无货了") ||
+            text.includes("多次提交过快，请稍后再试")) {
+            await page.close();
+            await tools_1.delay(2000);
+            console.log("retry");
+            return this.cartBuy();
+        }
+        // await page.waitForNavigation();
         await page.close();
         // return submitOrder();
     }

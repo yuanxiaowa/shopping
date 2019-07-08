@@ -480,8 +480,11 @@ class Taobao extends auto_shop_1.default {
             LoginRequest: "true",
             H5Request: "true"
         }, data);
-        if (text.includes("FAIL_SYS_TRAFFIC_LIMIT")) {
-            console.log(text);
+        if ((typeof text === "string" && text.includes("FAIL_SYS_TRAFFIC_LIMIT")) ||
+            (typeof text === "object" &&
+                // @ts-ignore
+                text.ret[0].includes("FAIL_SYS_TRAFFIC_LIMIT"))) {
+            console.log(typeof text);
             console.log("正在重试");
             return this.submitOrderFromMobile(data);
         }

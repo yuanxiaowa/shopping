@@ -23,6 +23,7 @@ import {
   obtainActivityCoupon
 } from "./goods";
 import { getPeriodCoupon, getHongbao } from "./other";
+import { delay } from "../utils/tools";
 
 const user = require("./user.json");
 
@@ -388,7 +389,21 @@ export class Jindong extends AutoShop {
       await page.setOfflineMode(true);
     }
     page.click("#btnPayOnLine");
-    await page.waitForNavigation();
+    var res = await page.waitForResponse(res =>
+      res.url().startsWith("https://wqdeal.jd.com/deal/msubmit/confirm?")
+    );
+    var text = await res.text();
+    console.log(text);
+    if (
+      text.includes("您要购买的商品无货了") ||
+      text.includes("多次提交过快，请稍后再试")
+    ) {
+      await page.close();
+      await delay(2000);
+      console.log("retry");
+      return this.cartBuy();
+    }
+    // await page.waitForNavigation();
     await page.close();
     // return submitOrder();
   }

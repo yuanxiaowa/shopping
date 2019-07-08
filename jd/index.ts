@@ -1,4 +1,4 @@
-import { newPage, browser_promise, injectDefaultPage } from "../utils/page";
+import { newPage, injectDefaultPage } from "../utils/page";
 import { Page } from "puppeteer";
 import { startsWith } from "ramda";
 import request = require("request-promise-native");
@@ -8,7 +8,8 @@ import {
   getCartInfo,
   submitOrder,
   toggleCartChecked,
-  getShopJindou
+  getShopJindou,
+  getVideoHongbao
 } from "./goods";
 import { isSubmitOrder } from "../common/config";
 
@@ -395,18 +396,14 @@ export class Jindong extends AutoShop {
     throw new Error("Method not implemented.");
   }
 
-  start() {
-    super.start();
+  async start() {
+    await super.start();
     injectDefaultPage({
       globalFns: {
         getCartInfo: getCartInfo
       }
     });
-    browser_promise.then(() => {
-      this.preservePcState();
-      getPeriodCoupon();
-      getHongbao();
-    });
+    this.preservePcState();
   }
 
   async preservePcState() {
@@ -417,7 +414,6 @@ export class Jindong extends AutoShop {
       this.interval_check + 1000 * 60 * 5
     );
     if (!b) {
-      await browser_promise;
       await login(page);
     }
     await page.close();

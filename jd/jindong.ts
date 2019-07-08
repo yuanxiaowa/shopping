@@ -409,7 +409,7 @@ export function getCoupon(id: number) {
     );
 }
 
-export async function getVideoHongbao() {
+export async function _getVideoHongbao() {
   var url =
     "https://h5.m.jd.com/babelDiy/Zeus/2QJAgm3fJGpAkibejRi36LAQaRto/index.html";
   var text = await req.get(url, {

@@ -52,7 +52,7 @@ export async function getHongbao() {
     }, desc);
     await delayRun(2000);
   }
-  await page.close();
+  // await page.close();
 }
 
 function getNextHours(hours: number[]) {

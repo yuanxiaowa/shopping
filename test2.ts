@@ -15,70 +15,70 @@ const req = request.defaults({
   }
 });
 
-async function directBuy(url: string) {
-  var html: string = await req.get(url);
-  var pdetail = req.get("https:" + /var l,url='([^']+)/.exec(html)![1], {
-    headers: {
-      Referer: url
-    }
-  });
-  var text = /TShop.Setup\(\s*(.*)\s*\);/.exec(html)![1];
-  var { itemDO, valItemInfo } = JSON.parse(text);
-  var form_str = /<form id="J_FrmBid"[^>]*>([\s\S]*?)<\/form>/.exec(html)![1];
-  var form_item_r = /\sname="([^"]+)"\s+value="([^"]*)"/g;
-  var form: Record<string, string> = {};
-  while (form_item_r.test(form_str)) {
-    form[RegExp.$1] = RegExp.$2;
-  }
-  if (!form.buyer_from) {
-    form.buyer_from = "ecity";
-  }
-  var skuId = valItemInfo.skuList[0].skuId;
-  Object.assign(form, {
-    root_refer: "",
-    item_url_refer: "",
+// async function directBuy(url: string) {
+//   var html: string = await req.get(url);
+//   var pdetail = req.get("https:" + /var l,url='([^']+)/.exec(html)![1], {
+//     headers: {
+//       Referer: url
+//     }
+//   });
+//   var text = /TShop.Setup\(\s*(.*)\s*\);/.exec(html)![1];
+//   var { itemDO, valItemInfo } = JSON.parse(text);
+//   var form_str = /<form id="J_FrmBid"[^>]*>([\s\S]*?)<\/form>/.exec(html)![1];
+//   var form_item_r = /\sname="([^"]+)"\s+value="([^"]*)"/g;
+//   var form: Record<string, string> = {};
+//   while (form_item_r.test(form_str)) {
+//     form[RegExp.$1] = RegExp.$2;
+//   }
+//   if (!form.buyer_from) {
+//     form.buyer_from = "ecity";
+//   }
+//   var skuId = valItemInfo.skuList[0].skuId;
+//   Object.assign(form, {
+//     root_refer: "",
+//     item_url_refer: "",
 
-    allow_quantity: itemDO.quantity,
-    buy_param: [itemDO.itemId].join("_"),
-    quantity: 1,
-    _tb_token_: "edeb7b783ff65",
-    skuInfo: [itemDO.itemId, 1, skuId].join(";"),
-    _input_charset: "UTF-8",
-    skuId,
-    bankfrom: "",
-    from_etao: "",
-    item_id_num: itemDO.itemId,
-    item_id: itemDO.itemId,
-    auction_id: itemDO.itemId,
-    seller_rank: "0",
-    seller_rate_sum: "0",
-    is_orginal: "no",
-    point_price: "false",
-    secure_pay: "true",
-    pay_method: "\u6b3e\u5230\u53d1\u8d27",
-    from: "item_detail",
-    buy_now: itemDO.reservePrice,
-    current_price: itemDO.reservePrice,
-    auction_type: itemDO.auctionType,
-    seller_num_id: itemDO.userId,
-    activity: "",
-    chargeTypeId: ""
-  });
-  var detail_text = await pdetail;
-  var {
-    defaultModel: {
-      deliveryDO: { areaId }
-    }
-  } = JSON.parse(/\((.*)\)/.exec(detail_text)![1]);
-  Object.assign(form, {
-    destination: areaId
-  });
-  var qs_data = {
-    "x-itemid": itemDO.itemId,
-    "x-uid": user.unb
-  };
-}
+//     allow_quantity: itemDO.quantity,
+//     buy_param: [itemDO.itemId].join("_"),
+//     quantity: 1,
+//     _tb_token_: "edeb7b783ff65",
+//     skuInfo: [itemDO.itemId, 1, skuId].join(";"),
+//     _input_charset: "UTF-8",
+//     skuId,
+//     bankfrom: "",
+//     from_etao: "",
+//     item_id_num: itemDO.itemId,
+//     item_id: itemDO.itemId,
+//     auction_id: itemDO.itemId,
+//     seller_rank: "0",
+//     seller_rate_sum: "0",
+//     is_orginal: "no",
+//     point_price: "false",
+//     secure_pay: "true",
+//     pay_method: "\u6b3e\u5230\u53d1\u8d27",
+//     from: "item_detail",
+//     buy_now: itemDO.reservePrice,
+//     current_price: itemDO.reservePrice,
+//     auction_type: itemDO.auctionType,
+//     seller_num_id: itemDO.userId,
+//     activity: "",
+//     chargeTypeId: ""
+//   });
+//   var detail_text = await pdetail;
+//   var {
+//     defaultModel: {
+//       deliveryDO: { areaId }
+//     }
+//   } = JSON.parse(/\((.*)\)/.exec(detail_text)![1]);
+//   Object.assign(form, {
+//     destination: areaId
+//   });
+//   var qs_data = {
+//     "x-itemid": itemDO.itemId,
+//     "x-uid": user.unb
+//   };
+// }
 
-directBuy(
-  "https://detail.tmall.com/item.htm?spm=a220l.1.0.0.76577f33XEjg8i&id=594102186015&skuId=4323285303573"
-);
+// directBuy(
+//   "https://detail.tmall.com/item.htm?spm=a220l.1.0.0.76577f33XEjg8i&id=594102186015&skuId=4323285303573"
+// );

@@ -31,7 +31,7 @@ async function getHongbao() {
         }, desc);
         await tools_1.delayRun(2000);
     }
-    await page.close();
+    // await page.close();
 }
 exports.getHongbao = getHongbao;
 function getNextHours(hours) {

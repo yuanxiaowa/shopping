@@ -249,7 +249,7 @@ function getCoupon(id) {
         .then(({ resultData: { drawCouponDto } }) => drawCouponDto);
 }
 exports.getCoupon = getCoupon;
-async function getVideoHongbao() {
+async function _getVideoHongbao() {
     var url = "https://h5.m.jd.com/babelDiy/Zeus/2QJAgm3fJGpAkibejRi36LAQaRto/index.html";
     var text = await exports.req.get(url, {
         qs: {
@@ -283,7 +283,7 @@ async function getVideoHongbao() {
         }
     });
 }
-exports.getVideoHongbao = getVideoHongbao;
+exports._getVideoHongbao = _getVideoHongbao;
 // var ins = new JinDong();
 // 1694276
 // getGoodsInfo(3857389).then(console.log);

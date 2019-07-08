@@ -87,8 +87,8 @@ class AutoShop {
         });
         await page.goto(this.state_url);
     }
-    start() {
-        page_1.injectDefaultPage({
+    async start() {
+        await page_1.injectDefaultPage({
             globalFns: {
                 [`${this.name}ResolveUrls`]: this.resolveUrls.bind(this),
                 [`${this.name}Coudan`]: this.coudan.bind(this),
@@ -129,9 +129,7 @@ class AutoShop {
                 }
             }
         });
-        page_1.browser_promise.then(() => {
-            this.preserveState();
-        });
+        this.preserveState();
     }
     async preserveState() {
         var page = await page_1.newPage();
@@ -145,7 +143,6 @@ class AutoShop {
         await page.close();
     }
     init() {
-        this.setCookie(fs_extra_1.readFileSync(this.cookie_filename, "utf8"));
         fs_extra_1.ensureDir(".data/" + this.name);
     }
 }

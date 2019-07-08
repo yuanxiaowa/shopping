@@ -10,7 +10,6 @@ const auto_shop_1 = __importDefault(require("../common/auto-shop"));
 const goods_1 = require("./goods");
 const config_1 = require("../common/config");
 const goods_2 = require("./goods");
-const other_1 = require("./other");
 const user = require("./user.json");
 async function getGoodsCoupons(skuId) {
     var { item } = await goods_2.getGoodsInfo(skuId);
@@ -339,25 +338,20 @@ class Jindong extends auto_shop_1.default {
     directBuy(url, quantity) {
         throw new Error("Method not implemented.");
     }
-    start() {
-        super.start();
+    async start() {
+        await super.start();
         page_1.injectDefaultPage({
             globalFns: {
                 getCartInfo: goods_1.getCartInfo
             }
         });
-        page_1.browser_promise.then(() => {
-            this.preservePcState();
-            other_1.getPeriodCoupon();
-            other_1.getHongbao();
-        });
+        this.preservePcState();
     }
     async preservePcState() {
         var page = await page_1.newPage();
         var b = await this.checkUrl("https://home.jd.com/", page);
         setTimeout(this.preservePcState.bind(this), this.interval_check + 1000 * 60 * 5);
         if (!b) {
-            await page_1.browser_promise;
             await login(page);
         }
         await page.close();

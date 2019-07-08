@@ -139,8 +139,8 @@ export default abstract class AutoShop implements AutoShopOptions {
     });
     await page.goto(this.state_url);
   }
-  start() {
-    injectDefaultPage({
+  async start() {
+    await injectDefaultPage({
       globalFns: {
         [`${this.name}ResolveUrls`]: this.resolveUrls.bind(this),
         [`${this.name}Coudan`]: this.coudan.bind(this),
@@ -188,9 +188,7 @@ export default abstract class AutoShop implements AutoShopOptions {
         }
       }
     });
-    browser_promise.then(() => {
-      this.preserveState();
-    });
+    this.preserveState();
   }
   private async preserveState() {
     var page = await newPage();
@@ -204,7 +202,6 @@ export default abstract class AutoShop implements AutoShopOptions {
     await page.close();
   }
   init() {
-    this.setCookie(readFileSync(this.cookie_filename, "utf8"));
     ensureDir(".data/" + this.name);
   }
 }

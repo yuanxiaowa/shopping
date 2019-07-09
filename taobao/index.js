@@ -344,59 +344,60 @@ class Taobao extends auto_shop_1.default {
         var text = /var orderData = (.*);/.exec(html)[1];
         var { data, linkage, hierarchy: { structure } } = JSON.parse(text);
         console.log("-----进入订单结算页，准备提交订单----");
-        var url = /action="([^"]*)/.exec(html)[1].replace("&amp;", "&");
-        var formData = [
-            "_tb_token_",
-            "action",
-            "event_submit_do_confirm",
-            "input_charset",
-            // "praper_alipay_cashier_domain",
-            "authYiYao",
-            "authHealth",
-            "F_nick"
-        ].reduce((state, name) => {
-            state[name] = new RegExp(`name=['"]${name}['"].*? value=['"](.*?)['"]`).exec(html)[1];
-            return state;
-        }, {});
-        var ua_log = "";
-        var ret = await this.req.post(`https://buy.tmall.com${url}`, {
-            qs: {
-                spm: "a220l.1.a22016.d011001001001.undefined",
-                submitref: data.confirmOrder_1.fields.secretValue,
-                sparam1: data.confirmOrder_1.fields.sparam1
-            },
-            form: Object.assign({}, formData, { praper_alipay_cashier_domain: "cashierstl", hierarchy: JSON.stringify({
-                    structure
-                }), data: JSON.stringify(Object.keys(data).reduce((state, name) => {
-                    var item = data[name];
-                    if (item.submit) {
-                        if (item.tag === "submitOrder") {
-                            if (item.fields) {
-                                if (ua_log) {
-                                    item.fields.ua = ua_log;
+        try {
+            var url = /action="([^"]*)/.exec(html)[1].replace("&amp;", "&");
+            var formData = [
+                "_tb_token_",
+                "action",
+                "event_submit_do_confirm",
+                "input_charset",
+                // "praper_alipay_cashier_domain",
+                "authYiYao",
+                "authHealth",
+                "F_nick"
+            ].reduce((state, name) => {
+                state[name] = new RegExp(`name=['"]${name}['"].*? value=['"](.*?)['"]`).exec(html)[1];
+                return state;
+            }, {});
+            var ua_log = "";
+            var ret = await this.req.post(`https://buy.tmall.com${url}`, {
+                qs: {
+                    spm: "a220l.1.a22016.d011001001001.undefined",
+                    submitref: data.confirmOrder_1.fields.secretValue,
+                    sparam1: data.confirmOrder_1.fields.sparam1
+                },
+                form: Object.assign({}, formData, { praper_alipay_cashier_domain: "cashierstl", hierarchy: JSON.stringify({
+                        structure
+                    }), data: JSON.stringify(Object.keys(data).reduce((state, name) => {
+                        var item = data[name];
+                        if (item.submit) {
+                            if (item.tag === "submitOrder") {
+                                if (item.fields) {
+                                    if (ua_log) {
+                                        item.fields.ua = ua_log;
+                                    }
                                 }
                             }
+                            state[name] = item;
                         }
-                        state[name] = item;
-                    }
-                    return state;
-                }, {})), linkage: JSON.stringify({
-                    common: linkage.common,
-                    signature: linkage.signature
-                }) })
-        }, (err, res) => {
-            if (err) {
-                console.error(err);
-                console.log(res.statusCode, res.headers);
+                        return state;
+                    }, {})), linkage: JSON.stringify({
+                        common: linkage.common,
+                        signature: linkage.signature
+                    }) })
+            });
+            if (ret.indexOf("security-X5") > -1) {
+                console.log("-------提交碰到验证拦截--------");
+                this.logFile(ret, "订单提交验证拦截");
+                return;
             }
-        });
-        if (ret.indexOf("security-X5") > -1) {
-            console.log("-------提交碰到验证拦截--------");
-            this.logFile(ret, "订单提交验证拦截");
-            return;
+            this.logFile(ret, "订单已提交");
+            console.log("-----订单提交成功，等待付款----");
         }
-        this.logFile(ret, "订单已提交");
-        console.log("-----订单提交成功，等待付款----");
+        catch (e) {
+            console.trace(e);
+            return this.submitOrderFromPc(form, addr_url, Referer);
+        }
     }
     async cartBuyFromPc(goods) {
         var cartIdStr = goods.map(({ cartId }) => cartId).join(",");
@@ -410,28 +411,21 @@ class Taobao extends auto_shop_1.default {
             attr
         }));
         console.log("进入订单结算页");
-        try {
-            var form = {
-                hex: "n",
-                cartId: cartIdStr,
-                sellerid: sellerIdStr,
-                cart_param: JSON.stringify({
-                    items
-                }),
-                unbalance: "",
-                delCartIds: cartIdStr,
-                use_cod: false,
-                buyer_from: "cart",
-                page_from: "cart",
-                source_time: Date.now()
-            };
-            await this.submitOrderFromPc(form, `https://buy.tmall.com/order/confirm_order.htm?spm=${this.spm}`, `https://cart.taobao.com/cart.htm?spm=a21bo.2017.1997525049.1.5af911d9eInVdr&from=mini&ad_id=&am_id=&cm_id=`);
-        }
-        catch (e) {
-            console.trace(e);
-            console.log("重试中");
-            return this.cartBuyFromPc(goods);
-        }
+        var form = {
+            hex: "n",
+            cartId: cartIdStr,
+            sellerid: sellerIdStr,
+            cart_param: JSON.stringify({
+                items
+            }),
+            unbalance: "",
+            delCartIds: cartIdStr,
+            use_cod: false,
+            buyer_from: "cart",
+            page_from: "cart",
+            source_time: Date.now()
+        };
+        await this.submitOrderFromPc(form, `https://buy.tmall.com/order/confirm_order.htm?spm=${this.spm}`, `https://cart.taobao.com/cart.htm?spm=a21bo.2017.1997525049.1.5af911d9eInVdr&from=mini&ad_id=&am_id=&cm_id=`);
     }
     async cartInfoFromMobile() {
         var data = {
@@ -466,8 +460,8 @@ class Taobao extends auto_shop_1.default {
         return mobile_1.getMobileCartInfo(res_data);
     }
     getCartInfo() {
-        // return this.cartInfoFromPc();
-        return this.cartInfoFromMobile();
+        return this.cartInfoFromPc();
+        // return this.cartInfoFromMobile();
     }
     // @ts-ignore
     async submitOrderFromMobile(data) {
@@ -488,10 +482,7 @@ class Taobao extends auto_shop_1.default {
             LoginRequest: "true",
             H5Request: "true"
         }, data);
-        if ((typeof text === "string" && text.includes("FAIL_SYS_TRAFFIC_LIMIT")) ||
-            (typeof text === "object" &&
-                // @ts-ignore
-                text.ret[0].includes("FAIL_SYS_TRAFFIC_LIMIT"))) {
+        if (text.ret[0].includes("FAIL_SYS_TRAFFIC_LIMIT")) {
             console.log(typeof text);
             console.log("正在重试");
             return this.submitOrderFromMobile(data);
@@ -544,6 +535,11 @@ class Taobao extends auto_shop_1.default {
             console.log("----------手机订单提交成功----------");
         }
         else {
+            if (msg.includes("对不起，系统繁忙，请稍候再试")) {
+                console.log(msg);
+                console.log("正在重试");
+                return this.submitOrderFromMobile(data);
+            }
             console.error(msg);
         }
     }
@@ -555,8 +551,8 @@ class Taobao extends auto_shop_1.default {
         });
     }
     cartBuy(items) {
-        // return this.cartBuyFromPc(items);
-        return this.cartBuyFromMobile(items);
+        return this.cartBuyFromPc(items);
+        // return this.cartBuyFromMobile(items);
     }
     async directBuyFromPc(url, quantity) {
         var html = await this.req.get(url, {
@@ -660,7 +656,8 @@ class Taobao extends auto_shop_1.default {
         }
     }
     directBuy(url, quantity) {
-        return this.directBuyFromMobile(url, quantity);
+        return this.directBuyFromPc(url, quantity);
+        // return this.directBuyFromMobile(url, quantity);
     }
     async directBuyFromMobile(url, quantity) {
         var itemId = /id=(\d+)/.exec(url)[1];

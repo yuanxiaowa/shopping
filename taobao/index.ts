@@ -367,7 +367,7 @@ export class Taobao extends AutoShop {
     form: Record<string, any>,
     addr_url: string,
     Referer: string
-  ) {
+  ): Promise<any> {
     this.logFile(addr_url + "\n" + JSON.stringify(form), "进入订单结算页");
     var html: string = await this.req.post(addr_url, {
       form,
@@ -411,26 +411,25 @@ export class Taobao extends AutoShop {
       };
     } = JSON.parse(text);
     console.log("-----进入订单结算页，准备提交订单----");
-    var url = /action="([^"]*)/.exec(html)![1].replace("&amp;", "&");
-    var formData = [
-      "_tb_token_",
-      "action",
-      "event_submit_do_confirm",
-      "input_charset",
-      // "praper_alipay_cashier_domain",
-      "authYiYao",
-      "authHealth",
-      "F_nick"
-    ].reduce((state: any, name) => {
-      state[name] = new RegExp(
-        `name=['"]${name}['"].*? value=['"](.*?)['"]`
-      ).exec(html)![1];
-      return state;
-    }, {});
-    var ua_log = "";
-    var ret: string = await this.req.post(
-      `https://buy.tmall.com${url}`,
-      {
+    try {
+      var url = /action="([^"]*)/.exec(html)![1].replace("&amp;", "&");
+      var formData = [
+        "_tb_token_",
+        "action",
+        "event_submit_do_confirm",
+        "input_charset",
+        // "praper_alipay_cashier_domain",
+        "authYiYao",
+        "authHealth",
+        "F_nick"
+      ].reduce((state: any, name) => {
+        state[name] = new RegExp(
+          `name=['"]${name}['"].*? value=['"](.*?)['"]`
+        ).exec(html)![1];
+        return state;
+      }, {});
+      var ua_log = "";
+      var ret: string = await this.req.post(`https://buy.tmall.com${url}`, {
         qs: {
           spm: "a220l.1.a22016.d011001001001.undefined",
           submitref: data.confirmOrder_1.fields.secretValue,
@@ -463,21 +462,18 @@ export class Taobao extends AutoShop {
             signature: linkage.signature
           })
         }
-      },
-      (err, res) => {
-        if (err) {
-          console.error(err);
-          console.log(res.statusCode, res.headers);
-        }
+      });
+      if (ret.indexOf("security-X5") > -1) {
+        console.log("-------提交碰到验证拦截--------");
+        this.logFile(ret, "订单提交验证拦截");
+        return;
       }
-    );
-    if (ret.indexOf("security-X5") > -1) {
-      console.log("-------提交碰到验证拦截--------");
-      this.logFile(ret, "订单提交验证拦截");
-      return;
+      this.logFile(ret, "订单已提交");
+      console.log("-----订单提交成功，等待付款----");
+    } catch (e) {
+      console.trace(e);
+      return this.submitOrderFromPc(form, addr_url, Referer);
     }
-    this.logFile(ret, "订单已提交");
-    console.log("-----订单提交成功，等待付款----");
   }
 
   async cartBuyFromPc(
@@ -506,31 +502,25 @@ export class Taobao extends AutoShop {
       })
     );
     console.log("进入订单结算页");
-    try {
-      var form = {
-        hex: "n",
-        cartId: cartIdStr,
-        sellerid: sellerIdStr,
-        cart_param: JSON.stringify({
-          items
-        }),
-        unbalance: "",
-        delCartIds: cartIdStr,
-        use_cod: false,
-        buyer_from: "cart",
-        page_from: "cart",
-        source_time: Date.now()
-      };
-      await this.submitOrderFromPc(
-        form,
-        `https://buy.tmall.com/order/confirm_order.htm?spm=${this.spm}`,
-        `https://cart.taobao.com/cart.htm?spm=a21bo.2017.1997525049.1.5af911d9eInVdr&from=mini&ad_id=&am_id=&cm_id=`
-      );
-    } catch (e) {
-      console.trace(e);
-      console.log("重试中");
-      return this.cartBuyFromPc(goods);
-    }
+    var form = {
+      hex: "n",
+      cartId: cartIdStr,
+      sellerid: sellerIdStr,
+      cart_param: JSON.stringify({
+        items
+      }),
+      unbalance: "",
+      delCartIds: cartIdStr,
+      use_cod: false,
+      buyer_from: "cart",
+      page_from: "cart",
+      source_time: Date.now()
+    };
+    await this.submitOrderFromPc(
+      form,
+      `https://buy.tmall.com/order/confirm_order.htm?spm=${this.spm}`,
+      `https://cart.taobao.com/cart.htm?spm=a21bo.2017.1997525049.1.5af911d9eInVdr&from=mini&ad_id=&am_id=&cm_id=`
+    );
   }
 
   spm = "a222m.7628550.0.0";
@@ -574,15 +564,15 @@ export class Taobao extends AutoShop {
   }
 
   getCartInfo() {
-    // return this.cartInfoFromPc();
-    return this.cartInfoFromMobile();
+    return this.cartInfoFromPc();
+    // return this.cartInfoFromMobile();
   }
 
   // @ts-ignore
   async submitOrderFromMobile(data: any) {
     // this.logFile(JSON.stringify(items), '手机准备进入订单结算页')
     console.log("-------------开始进入手机订单结算页-------------");
-    var text = await this.requestOnMobile(
+    var text: any = await this.requestOnMobile(
       "https://h5api.m.taobao.com/h5/mtop.trade.buildorder.h5/3.0/",
       "post",
       {
@@ -602,12 +592,7 @@ export class Taobao extends AutoShop {
       },
       data
     );
-    if (
-      (typeof text === "string" && text.includes("FAIL_SYS_TRAFFIC_LIMIT")) ||
-      (typeof text === "object" &&
-        // @ts-ignore
-        text.ret[0].includes("FAIL_SYS_TRAFFIC_LIMIT"))
-    ) {
+    if (text.ret[0].includes("FAIL_SYS_TRAFFIC_LIMIT")) {
       console.log(typeof text);
       console.log("正在重试");
       return this.submitOrderFromMobile(data);
@@ -678,6 +663,11 @@ export class Taobao extends AutoShop {
     if (msg.startsWith("SUCCESS")) {
       console.log("----------手机订单提交成功----------");
     } else {
+      if (msg.includes("对不起，系统繁忙，请稍候再试")) {
+        console.log(msg);
+        console.log("正在重试");
+        return this.submitOrderFromMobile(data);
+      }
       console.error(msg);
     }
   }
@@ -691,8 +681,8 @@ export class Taobao extends AutoShop {
   }
 
   cartBuy(items: any[]) {
-    // return this.cartBuyFromPc(items);
-    return this.cartBuyFromMobile(items);
+    return this.cartBuyFromPc(items);
+    // return this.cartBuyFromMobile(items);
   }
 
   async directBuyFromPc(url: string, quantity: number) {
@@ -808,7 +798,8 @@ export class Taobao extends AutoShop {
   }
 
   directBuy(url: string, quantity: number) {
-    return this.directBuyFromMobile(url, quantity);
+    return this.directBuyFromPc(url, quantity);
+    // return this.directBuyFromMobile(url, quantity);
   }
 
   async directBuyFromMobile(url: string, quantity: number) {

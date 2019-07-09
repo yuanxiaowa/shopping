@@ -122,6 +122,7 @@ class AutoShop {
                 [`${this.name}GetCartInfo`]: this.getCartInfo.bind(this),
                 [`${this.name}CartBuy`]: async (d, data) => {
                     await tools_1.delayRun(d, this.name + "从购物车中结算");
+                    await tools_1.delay(100);
                     return this.cartBuy(data);
                 },
                 [`${this.name}DirectBuy`]: async (d, url, quantity = 1) => {

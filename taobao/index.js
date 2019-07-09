@@ -485,14 +485,17 @@ class Taobao extends auto_shop_1.default {
             LoginRequest: "true",
             H5Request: "true"
         }, data);
+        this.logFile(text, "手机订单结算页");
+        if (typeof text === "string") {
+            text = JSON.parse(text);
+        }
         if (text.ret[0].includes("FAIL_SYS_TRAFFIC_LIMIT")) {
             console.log(typeof text);
             console.log("正在重试");
             return this.submitOrderFromMobile(data);
         }
-        this.logFile(JSON.stringify(text), "手机订单结算页");
         console.log("-------------进入手机订单结算页，准备提交-------------");
-        var { data: { data, linkage, hierarchy: { structure } } } = JSON.parse(text);
+        var { data: { data, linkage, hierarchy: { structure } } } = text;
         var ua = "";
         var ret = await this.requestOnMobile("https://h5api.m.taobao.com/h5/mtop.trade.createorder.h5/3.0/", "post", {
             jsv: "2.4.7",

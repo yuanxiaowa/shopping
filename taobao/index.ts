@@ -528,6 +528,8 @@ export class Taobao extends AutoShop {
       );
     } catch (e) {
       console.trace(e);
+      console.log("重试中");
+      return this.cartBuyFromPc(goods);
     }
   }
 

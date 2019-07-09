@@ -177,7 +177,7 @@ export default abstract class AutoShop implements AutoShopOptions {
         [`${this.name}GetCartInfo`]: this.getCartInfo.bind(this),
         [`${this.name}CartBuy`]: async (d: string, data: any) => {
           await delayRun(d, this.name + "从购物车中结算");
-          await delay(100);
+          await delay(50);
           return this.cartBuy(data);
         },
         [`${this.name}DirectBuy`]: async (

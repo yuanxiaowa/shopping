@@ -596,6 +596,10 @@ export class Taobao extends AutoShop {
       },
       data
     );
+    console.log(
+      "-------------已经进入手机订单结算页-------------",
+      typeof text
+    );
     this.logFile(text, "手机订单结算页");
     if (typeof text === "string") {
       text = JSON.parse(text);

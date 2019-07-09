@@ -84,7 +84,7 @@ export default abstract class AutoShop implements AutoShopOptions {
   }
   setCookie(cookie: string) {
     this.cookie = cookie;
-    var opts: any = {
+    var opts: RequestPromiseOptions = {
       headers: {
         "Accept-Encoding": "br, gzip, deflate",
         Cookie: cookie,
@@ -103,7 +103,8 @@ export default abstract class AutoShop implements AutoShopOptions {
           }
         }
         return String(body);
-      }
+      },
+      jar: request.jar()
     };
     this.req = request.defaults(opts);
     writeFile(this.cookie_filename, cookie);

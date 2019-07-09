@@ -443,5 +443,6 @@ export class Jindong extends AutoShop {
   afterLogin() {
     setReq(this.req, this.cookie);
     getShopJindou();
+    getVideoHongbao();
   }
 }

@@ -384,6 +384,11 @@ class Taobao extends auto_shop_1.default {
                     common: linkage.common,
                     signature: linkage.signature
                 }) })
+        }, (err, res) => {
+            if (err) {
+                console.error(err);
+                console.log(res.statusCode, res.headers);
+            }
         });
         if (ret.indexOf("security-X5") > -1) {
             console.log("-------提交碰到验证拦截--------");
@@ -420,10 +425,10 @@ class Taobao extends auto_shop_1.default {
                 page_from: "cart",
                 source_time: Date.now()
             };
-            await this.submitOrderFromPc(form, "https://buy.tmall.com/order/confirm_order.htm?spm=a1z0d.6639537.0.0.undefined", `https://cart.taobao.com/cart.htm?spm=a21bo.2017.1997525049.1.5af911d9eInVdr&from=mini&ad_id=&am_id=&cm_id=&pm_id=1501036000a02c5c3739`);
+            await this.submitOrderFromPc(form, `https://buy.tmall.com/order/confirm_order.htm?spm=${this.spm}`, `https://cart.taobao.com/cart.htm?spm=a21bo.2017.1997525049.1.5af911d9eInVdr&from=mini&ad_id=&am_id=&cm_id=`);
         }
         catch (e) {
-            console.error(e);
+            console.trace(e);
         }
     }
     async cartInfoFromMobile() {
@@ -459,6 +464,7 @@ class Taobao extends auto_shop_1.default {
         return mobile_1.getMobileCartInfo(res_data);
     }
     getCartInfo() {
+        // return this.cartInfoFromPc();
         return this.cartInfoFromMobile();
     }
     // @ts-ignore
@@ -547,6 +553,7 @@ class Taobao extends auto_shop_1.default {
         });
     }
     cartBuy(items) {
+        // return this.cartBuyFromPc(items);
         return this.cartBuyFromMobile(items);
     }
     async directBuyFromPc(url, quantity) {

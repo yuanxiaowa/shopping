@@ -4,15 +4,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const puppeteer_1 = __importDefault(require("puppeteer"));
+const os_1 = __importDefault(require("os"));
 var browser;
 var defaultPage;
 exports.browser_promise = (async () => {
+    var executablePath;
+    if (os_1.default.type().startsWith("Windows")) {
+        executablePath =
+            "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe";
+    }
     browser = await puppeteer_1.default.launch({
         headless: false,
         userDataDir: "./data-dir",
-        devtools: true
-        // executablePath:
-        //   "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe"
+        devtools: false,
+        executablePath
     });
     [defaultPage] = await browser.pages();
     defaultPage.goto("http://localhost:8080/");

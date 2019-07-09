@@ -1,7 +1,6 @@
 import request = require("request-promise-native");
 import { extractJsonpData, delayRun } from "../utils/tools";
 import { RequestAPI, RequiredUriUrl } from "request";
-import { writeFileSync } from "fs";
 
 var req: RequestAPI<
   request.RequestPromise<any>,
@@ -527,13 +526,9 @@ export async function submitOrder() {
 }
 
 export async function getShopJindou() {
+  await req.get("https://bean.jd.com/myJingBean/list");
   var text: string = await req.post(
-    "https://bean.jd.com/myJingBean/getPopSign",
-    {
-      headers: {
-        cookie
-      }
-    }
+    "https://bean.jd.com/myJingBean/getPopSign"
   );
   var { data } = JSON.parse(text);
   data.forEach(
@@ -557,6 +552,7 @@ export function getUuid() {
 }
 
 export async function getVideoHongbao() {
+  console.log("检查视频红包活动");
   var uuid = getUuid();
   var config_text = await req.get(
     "https://storage.360buyimg.com/babel/00395792/873571/production/dev/config.js",
@@ -637,7 +633,7 @@ export async function getVideoHongbao() {
     (item: any) =>
       item.groupId === "03303165" || item.groupName === "题目/选项/答案"
   );
-  await req.get("https://api.m.jd.com/client.action", {
+  let res = await req.get("https://api.m.jd.com/client.action", {
     qs: {
       appid: "answer_20190513",
       t: now.getTime(),
@@ -655,6 +651,7 @@ export async function getVideoHongbao() {
       uuid
     }
   });
+  console.log(res);
 
   // {"data":{"currentTime":1562548312483,"awardType":["1"],"couponList":null,"discount":0.50},"code":"0"}
 }

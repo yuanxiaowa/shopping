@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// const log = p => p.then(console.log);
+const jinrong_1 = require("./jd/jinrong");
+const log = p => p.then(console.log);
+log(jinrong_1.getLottery());
 // request
 //   .get(
 //     "https://cart.taobao.com/cart.htm?spm=a21bo.2017.1997525049.1.5af911d95m9pSa&from=mini&ad_id=&am_id=&cm_id=&pm_id=1501036000a02c5c3739",

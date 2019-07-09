@@ -375,6 +375,7 @@ class Jindong extends auto_shop_1.default {
     afterLogin() {
         goods_1.setReq(this.req, this.cookie);
         goods_1.getShopJindou();
+        goods_1.getVideoHongbao();
     }
 }
 exports.Jindong = Jindong;

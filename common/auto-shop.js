@@ -58,7 +58,8 @@ class AutoShop {
                     }
                 }
                 return String(body);
-            }
+            },
+            jar: request_promise_native_1.default.jar()
         };
         this.req = request_promise_native_1.default.defaults(opts);
         fs_extra_1.writeFile(this.cookie_filename, cookie);

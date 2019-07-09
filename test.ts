@@ -1,10 +1,12 @@
-import { getJinguoDayWork, signJinguo } from "./jd/jinrong";
+import { getJinguoDayWork, signJinguo, getLottery } from "./jd/jinrong";
 import { logReq } from "./utils/tools";
 import request = require("request-promise-native");
 import { writeFile } from "fs-extra";
 import iconv from "iconv-lite";
 
-// const log = p => p.then(console.log);
+const log = p => p.then(console.log);
+
+log(getLottery());
 // request
 //   .get(
 //     "https://cart.taobao.com/cart.htm?spm=a21bo.2017.1997525049.1.5af911d95m9pSa&from=mini&ad_id=&am_id=&cm_id=&pm_id=1501036000a02c5c3739",

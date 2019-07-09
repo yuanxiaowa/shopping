@@ -428,40 +428,49 @@ export class Taobao extends AutoShop {
       return state;
     }, {});
     var ua_log = "";
-    var ret: string = await this.req.post(`https://buy.tmall.com${url}`, {
-      qs: {
-        spm: "a220l.1.a22016.d011001001001.undefined",
-        submitref: data.confirmOrder_1.fields.secretValue,
-        sparam1: data.confirmOrder_1.fields.sparam1
-      },
-      form: {
-        ...formData,
-        praper_alipay_cashier_domain: "cashierstl",
-        hierarchy: JSON.stringify({
-          structure
-        }),
-        data: JSON.stringify(
-          Object.keys(data).reduce((state: any, name) => {
-            var item = data[name];
-            if (item.submit) {
-              if (item.tag === "submitOrder") {
-                if (item.fields) {
-                  if (ua_log) {
-                    item.fields.ua = ua_log;
+    var ret: string = await this.req.post(
+      `https://buy.tmall.com${url}`,
+      {
+        qs: {
+          spm: "a220l.1.a22016.d011001001001.undefined",
+          submitref: data.confirmOrder_1.fields.secretValue,
+          sparam1: data.confirmOrder_1.fields.sparam1
+        },
+        form: {
+          ...formData,
+          praper_alipay_cashier_domain: "cashierstl",
+          hierarchy: JSON.stringify({
+            structure
+          }),
+          data: JSON.stringify(
+            Object.keys(data).reduce((state: any, name) => {
+              var item = data[name];
+              if (item.submit) {
+                if (item.tag === "submitOrder") {
+                  if (item.fields) {
+                    if (ua_log) {
+                      item.fields.ua = ua_log;
+                    }
                   }
                 }
+                state[name] = item;
               }
-              state[name] = item;
-            }
-            return state;
-          }, {})
-        ),
-        linkage: JSON.stringify({
-          common: linkage.common,
-          signature: linkage.signature
-        })
+              return state;
+            }, {})
+          ),
+          linkage: JSON.stringify({
+            common: linkage.common,
+            signature: linkage.signature
+          })
+        }
+      },
+      (err, res) => {
+        if (err) {
+          console.error(err);
+          console.log(res.statusCode, res.headers);
+        }
       }
-    });
+    );
     if (ret.indexOf("security-X5") > -1) {
       console.log("-------提交碰到验证拦截--------");
       this.logFile(ret, "订单提交验证拦截");
@@ -514,11 +523,11 @@ export class Taobao extends AutoShop {
       };
       await this.submitOrderFromPc(
         form,
-        "https://buy.tmall.com/order/confirm_order.htm?spm=a1z0d.6639537.0.0.undefined",
-        `https://cart.taobao.com/cart.htm?spm=a21bo.2017.1997525049.1.5af911d9eInVdr&from=mini&ad_id=&am_id=&cm_id=&pm_id=1501036000a02c5c3739`
+        `https://buy.tmall.com/order/confirm_order.htm?spm=${this.spm}`,
+        `https://cart.taobao.com/cart.htm?spm=a21bo.2017.1997525049.1.5af911d9eInVdr&from=mini&ad_id=&am_id=&cm_id=`
       );
     } catch (e) {
-      console.error(e);
+      console.trace(e);
     }
   }
 
@@ -563,6 +572,7 @@ export class Taobao extends AutoShop {
   }
 
   getCartInfo() {
+    // return this.cartInfoFromPc();
     return this.cartInfoFromMobile();
   }
 
@@ -679,6 +689,7 @@ export class Taobao extends AutoShop {
   }
 
   cartBuy(items: any[]) {
+    // return this.cartBuyFromPc(items);
     return this.cartBuyFromMobile(items);
   }
 

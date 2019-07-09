@@ -340,6 +340,8 @@ export class Taobao extends AutoShop {
     // await page.click(".go-btn");
   }
 
+  mobile = true;
+
   async cartInfoFromPc() {
     var html: string = await this.req.get(`https://cart.taobao.com/cart.htm`, {
       qs: {
@@ -564,8 +566,10 @@ export class Taobao extends AutoShop {
   }
 
   getCartInfo() {
+    if (this.mobile) {
+      return this.cartInfoFromMobile();
+    }
     return this.cartInfoFromPc();
-    // return this.cartInfoFromMobile();
   }
 
   // @ts-ignore
@@ -681,8 +685,10 @@ export class Taobao extends AutoShop {
   }
 
   cartBuy(items: any[]) {
+    if (this.mobile) {
+      return this.cartBuyFromMobile(items);
+    }
     return this.cartBuyFromPc(items);
-    // return this.cartBuyFromMobile(items);
   }
 
   async directBuyFromPc(url: string, quantity: number) {
@@ -798,8 +804,10 @@ export class Taobao extends AutoShop {
   }
 
   directBuy(url: string, quantity: number) {
+    if (this.mobile) {
+      return this.directBuyFromMobile(url, quantity);
+    }
     return this.directBuyFromPc(url, quantity);
-    // return this.directBuyFromMobile(url, quantity);
   }
 
   async directBuyFromMobile(url: string, quantity: number) {

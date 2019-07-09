@@ -212,6 +212,7 @@ class Taobao extends auto_shop_1.default {
                 }
             }
         });
+        this.mobile = true;
         this.spm = "a222m.7628550.0.0";
         this.appKey = "12574478";
     }
@@ -460,8 +461,10 @@ class Taobao extends auto_shop_1.default {
         return mobile_1.getMobileCartInfo(res_data);
     }
     getCartInfo() {
+        if (this.mobile) {
+            return this.cartInfoFromMobile();
+        }
         return this.cartInfoFromPc();
-        // return this.cartInfoFromMobile();
     }
     // @ts-ignore
     async submitOrderFromMobile(data) {
@@ -551,8 +554,10 @@ class Taobao extends auto_shop_1.default {
         });
     }
     cartBuy(items) {
+        if (this.mobile) {
+            return this.cartBuyFromMobile(items);
+        }
         return this.cartBuyFromPc(items);
-        // return this.cartBuyFromMobile(items);
     }
     async directBuyFromPc(url, quantity) {
         var html = await this.req.get(url, {
@@ -656,8 +661,10 @@ class Taobao extends auto_shop_1.default {
         }
     }
     directBuy(url, quantity) {
+        if (this.mobile) {
+            return this.directBuyFromMobile(url, quantity);
+        }
         return this.directBuyFromPc(url, quantity);
-        // return this.directBuyFromMobile(url, quantity);
     }
     async directBuyFromMobile(url, quantity) {
         var itemId = /id=(\d+)/.exec(url)[1];

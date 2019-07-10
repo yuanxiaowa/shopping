@@ -331,7 +331,12 @@ class Jindong extends auto_shop_1.default {
         if (!config_1.isSubmitOrder) {
             await page.setOfflineMode(true);
         }
-        page.click("#btnPayOnLine");
+        await page.evaluate(() => {
+            document.querySelector("#shortPassInput").value =
+                "870092";
+            document.querySelector("#btnPayOnLine").click();
+        });
+        // page.click("#btnPayOnLine");
         var res = await page.waitForResponse(res => res.url().startsWith("https://wqdeal.jd.com/deal/msubmit/confirm?"));
         var text = await res.text();
         console.log(text);

@@ -1,0 +1,1 @@
+https://api.m.taobao.com/h5/mtop.shop.querybuyerbonus/1.0/?v=1.0&api=mtop.shop.querybuyerbonus&appKey=12574478&t=1562864140427&callback=mtopjsonp1&type=jsonp&sign=254f01615e2b4b37f5798557abe92083&data=%7B%22sellerId%22%3A%223087951928%22%2C%22spm%22%3A%22a220l.11009277.coupon.i11009277%22%7D

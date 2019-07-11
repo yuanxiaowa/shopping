@@ -1,5 +1,5 @@
-import { Jindong } from "./jd";
-import { Taobao } from "./taobao";
+import { Jindong } from "./app/platform/jd";
+import { Taobao } from "./app/platform/taobao";
 
 new Jindong().start();
 new Taobao().start();

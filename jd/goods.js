@@ -368,7 +368,10 @@ async function getVideoHongbao() {
         if (h < 10) {
             h = "0" + h;
         }
-        await tools_1.delayRun(`${h}:00:25`);
+        await tools_1.delayRun(`${h}:00:20`);
+    }
+    else if (h > answerTime[1]) {
+        return;
     }
     // 获取视频信息
     var text = await req.get("https://api.m.jd.com/client.action", {
@@ -410,9 +413,13 @@ async function getVideoHongbao() {
             uuid
         }
     });
-    let { data: { answerStatusCode, userVo } } = JSON.parse(state_text);
+    let { data: { answerStatusCode, hbStockPercent, userVo } } = JSON.parse(state_text);
     if (answerStatusCode === 3) {
         console.log("看视频赢红包活动，已获得", userVo.hbAmount);
+        return;
+    }
+    if (hbStockPercent === 1) {
+        console.log("视频红包已发放完");
         return;
     }
     // {"data":{"answerStatusCode":0,"answerUserNum":40276,"currentTime":1562548286331,"hbStockPercent":0.82,"playTime":20,"shopLogoUrl":"","shopName":"","userVo":{"additionalCount":0,"answerCount":0,"answerResult":0,"answerSelect":"","hbAmount":0}},"code":"0"}

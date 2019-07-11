@@ -22,7 +22,9 @@ exports.req = request_promise_native_1.default.defaults({
         // 'Accept-Language': 'en-us'
     },
     gzip: true,
+    jar: true,
     transform(body) {
+        console.log(body);
         if (typeof body === "string") {
             if (body.startsWith("jsonp")) {
                 body = body.replace(/^\w+\((.*)\);?/, "$1");
@@ -249,7 +251,10 @@ function getCoupon(id) {
         .then(({ resultData: { drawCouponDto } }) => drawCouponDto);
 }
 exports.getCoupon = getCoupon;
-async function _getVideoHongbao() {
+/**
+ * 获取每日看视频选答案红包
+ */
+async function getVideoHongbao() {
     var url = "https://h5.m.jd.com/babelDiy/Zeus/2QJAgm3fJGpAkibejRi36LAQaRto/index.html";
     var text = await exports.req.get(url, {
         qs: {
@@ -283,7 +288,30 @@ async function _getVideoHongbao() {
         }
     });
 }
-exports._getVideoHongbao = _getVideoHongbao;
+exports.getVideoHongbao = getVideoHongbao;
+/**
+ * 获取店铺奖励
+ */
+async function getShopJindou() {
+    await exports.req.get("https://bean.jd.com/myJingBean/list");
+    var text = await exports.req.post("https://bean.jd.com/myJingBean/getPopSign");
+    console.log(text);
+    var { data } = JSON.parse(text);
+    data.forEach(async ({ shopUrl, signed }) => {
+        if (!signed) {
+            let id;
+            if (/mall\.jd\.com\/index-(\w+)/.test(shopUrl)) {
+                id = RegExp.$1;
+            }
+            else {
+                let html = await exports.req.get(shopUrl);
+                id = /var shopId = "(\d+)"/.exec(html)[1];
+            }
+            await exports.req.get(`https://mall.jd.com/shopSign-${id}.html`);
+        }
+    });
+}
+exports.getShopJindou = getShopJindou;
 // var ins = new JinDong();
 // 1694276
 // getGoodsInfo(3857389).then(console.log);

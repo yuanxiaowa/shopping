@@ -388,7 +388,12 @@ export class Jindong extends AutoShop {
     if (!isSubmitOrder) {
       await page.setOfflineMode(true);
     }
-    page.click("#btnPayOnLine");
+    await page.evaluate(() => {
+      document.querySelector<HTMLInputElement>("#shortPassInput")!.value =
+        "870092";
+      document.querySelector<HTMLElement>("#btnPayOnLine")!.click();
+    });
+    // page.click("#btnPayOnLine");
     var res = await page.waitForResponse(res =>
       res.url().startsWith("https://wqdeal.jd.com/deal/msubmit/confirm?")
     );

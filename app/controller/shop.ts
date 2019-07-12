@@ -11,7 +11,7 @@ export default class ShopController extends Controller {
   public async cartBuy() {
     const { ctx, app } = this;
     var { platform, t } = ctx.query;
-    var data = ctx.body;
+    var { data } = ctx.body;
     console.log(platform, moment(t).fromNow(), "从购物车购买");
     await delay(moment().diff(t));
     ctx.body = await app[platform].cartBuy(data);
@@ -51,13 +51,13 @@ export default class ShopController extends Controller {
   public async coudan() {
     const { ctx, app } = this;
     var { platform } = ctx.query;
-    var data = ctx.body;
+    var { data } = ctx.body;
     ctx.body = await app[platform].coudan(data);
   }
   public async qiangquan() {
     const { ctx, app } = this;
     var { platform } = ctx.query;
-    var data = ctx.body;
+    var { data } = ctx.body;
     ctx.body = await app[platform].qiangquan(data);
   }
   public async commentList() {
@@ -74,13 +74,13 @@ export default class ShopController extends Controller {
   public async resolveUrl() {
     const { ctx, app } = this;
     var { platform } = ctx.query;
-    var data = ctx.body;
+    var { data } = ctx.body;
     ctx.body = await app[platform].resolveUrl(data);
   }
   public async resolveUrls() {
     const { ctx, app } = this;
     var { platform } = ctx.query;
-    var data = ctx.body;
+    var { data } = ctx.body;
     ctx.body = await app[platform].resolveUrls(data);
   }
 }

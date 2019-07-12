@@ -1,6 +1,8 @@
-import request, { RequestPromise } from "request-promise-native";
+import { RequestPromise } from "request-promise-native";
+import request = require("request-promise-native");
 import * as R from "ramda";
 import { readFileSync } from "fs";
+import { getJsonpData } from "../../../utils/tools";
 
 var req = request.defaults({
   headers: {
@@ -28,10 +30,6 @@ function getFormData(data: any) {
   return {
     reqData: JSON.stringify(data)
   };
-}
-
-function getJsonpData(body: string) {
-  return JSON.parse(body.replace(/[\w$]+\((.*)\)/, "$1"));
 }
 
 /**
@@ -453,7 +451,7 @@ export async function getFanpaiInfo(): Promise<
     gzip: true,
     transform: R.identity
   });
-  return getJsonpData(body)[0];
+  return getJsonpData(body);
 }
 
 export async function fanpai(): Promise<FanpaiRes<{}>> {
@@ -468,7 +466,7 @@ export async function fanpai(): Promise<FanpaiRes<{}>> {
     transform: R.identity,
     gzip: true
   });
-  return getJsonpData(body)[0];
+  return getJsonpData(body);
 }
 
 // --------------------免费领金豆-----------

@@ -1,5 +1,5 @@
 import request = require("request-promise-native");
-import { extractJsonpData, delayRun } from "../../../utils/tools";
+import { delayRun, getJsonpData } from "../../../utils/tools";
 import { RequestAPI, RequiredUriUrl } from "request";
 
 var req: RequestAPI<
@@ -83,7 +83,7 @@ export async function queryGoodsCoupon(data: {
       }
     }
   );
-  var { coupons } = extractJsonpData<{
+  var { coupons } = getJsonpData<{
     coupons: {
       key: string;
       roleId: number;
@@ -112,7 +112,7 @@ export async function queryGoodsCoupon(data: {
       couponKind: number;
       name: string;
     }[];
-  }>(text, "getCouponListCBA");
+  }>(text);
   return coupons;
 }
 
@@ -135,12 +135,12 @@ export async function obtainGoodsCoupon(data: { roleId: number; key: string }) {
       }
     }
   );
-  return extractJsonpData<{
+  return getJsonpData<{
     batchid: string;
     code: number;
     couponid: string;
     message: string;
-  }>(text, "ObtainJdShopFreeCouponCallBackA");
+  }>(text);
 }
 
 /**
@@ -354,7 +354,7 @@ function getCookie(name: string) {
   }
 }
 
-export async function getCartInfo() {
+export async function getCartList() {
   var html: string = await req.get(
     "https://p.m.jd.com/cart/cart.action?sceneval=2"
   );

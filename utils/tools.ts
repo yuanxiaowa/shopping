@@ -1,4 +1,5 @@
-import fs from "fs-extra";
+import fs = require("fs-extra");
+import { join } from "path";
 
 export function remain(h: number, m = 0) {
   var now = new Date();
@@ -87,9 +88,8 @@ export function logResult(msg: string) {
     };
   };
 }
-
-export function extractJsonpData<T>(text: string, key: string): T {
-  return JSON.parse(new RegExp(`${key}\\((.*)\\);`).exec(text)![1]);
+export function getJsonpData<T>(body: string): T {
+  return JSON.parse(/[\w$]+\(([\s\S]*)\)/.exec(body)![1]);
 }
 
 export function writeResult(filename: string) {
@@ -122,4 +122,16 @@ export function delayRun(time?: string | number, label = "") {
 
 export function getCookie(name: string, cookie: string) {
   return new RegExp(`${name}=([^;]+)`).exec(cookie)![1];
+}
+
+export function getCookieFilename(name: string) {
+  return join(process.cwd(), ".data", "cookies", name + ".txt");
+}
+
+export function getCookieFromFile(name: string) {
+  var filename = getCookieFilename(name);
+  if (fs.existsSync(filename)) {
+    return fs.readFileSync(filename, "utf8");
+  }
+  return "";
 }

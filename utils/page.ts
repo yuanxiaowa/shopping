@@ -1,9 +1,11 @@
-import puppeteer, { Browser, Request, Page } from "puppeteer";
-import os from "os";
+import puppeteer = require("puppeteer");
+import { Browser, Page } from "puppeteer";
+import os = require("os");
 
 var browser: Browser;
 var defaultPage: Page;
-export var browser_promise = (async () => {
+
+export async function bootstrapBrowser() {
   var executablePath;
   if (os.type().startsWith("Windows")) {
     executablePath =
@@ -29,14 +31,12 @@ export var browser_promise = (async () => {
   defaultPage.exposeFunction("evalFile", async (filename, refresh = false) => {
     console.log(require.resolve(filename));
     if (refresh) {
-      filename = require.resolve(filename, {
-        paths: [process.cwd()]
-      });
+      filename = require.resolve(filename);
       delete require.cache[filename];
     }
     require(filename);
   });
-})();
+}
 
 export async function newPage() {
   var page = await browser.newPage();
@@ -71,26 +71,4 @@ export async function newPage() {
   //   }
   // });
   return page;
-}
-
-/**
- * @return {Promise<Page>}
- */
-export async function injectDefaultPage({
-  reqFilter,
-  handle,
-  globalFns
-}: {
-  reqFilter?: (url: string) => boolean;
-  handle?: (request: Request) => any;
-  globalFns?: Record<string, any>;
-}) {
-  if (!browser) {
-    await browser_promise;
-  }
-  if (globalFns) {
-    Object.keys(globalFns).forEach(name =>
-      defaultPage.exposeFunction(name, globalFns[name])
-    );
-  }
 }

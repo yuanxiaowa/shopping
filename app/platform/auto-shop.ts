@@ -1,14 +1,10 @@
 import { RequestAPI, RequiredUriUrl, Response } from "request";
-import {
-  RequestPromise,
-  RequestPromiseOptions,
-  default as request
-} from "request-promise-native";
-import { readFileSync, writeFile, ensureDir } from "fs-extra";
+import request = require("request-promise-native");
+import { RequestPromise, RequestPromiseOptions } from "request-promise-native";
+import { writeFile, ensureDir } from "fs-extra";
 import { Page } from "puppeteer";
-import { browser_promise, newPage, injectDefaultPage } from "../../utils/page";
-import { diffToNow, delayRun, delay } from "../../utils/tools";
-import iconv from "iconv-lite";
+import { newPage } from "../../utils/page";
+import iconv = require("iconv-lite");
 
 interface AutoShopOptions {
   name: string;
@@ -120,10 +116,16 @@ export default abstract class AutoShop implements AutoShopOptions {
     }
   }
   abstract coudan(items: [string, number][]): Promise<any>;
-  abstract getCartInfo(): Promise<any>;
-  abstract toggleCart(arr: any, checked: boolean): Promise<any>;
+  abstract cartList(): Promise<any>;
   abstract cartBuy(data: any): Promise<any>;
-  abstract directBuy(url: string, quantity: number): Promise<any>;
+  abstract cartToggle(data: { items: any; checked: boolean }): Promise<any>;
+  abstract cartAdd(data: any): Promise<any>;
+  abstract cartDel(data: any): Promise<any>;
+  abstract cartUpdateQuantity(data: any): Promise<any>;
+  abstract comment(data: any): Promise<any>;
+  abstract commentList(): Promise<any>;
+  abstract buyDirect(data: { url: string; quantity: number }): Promise<any>;
+
   async loginAction(page: Page) {}
   async getPageCookie(page: Page) {
     var cookies = await page.cookies();
@@ -141,55 +143,6 @@ export default abstract class AutoShop implements AutoShopOptions {
     await page.goto(this.state_url);
   }
   async start() {
-    await injectDefaultPage({
-      globalFns: {
-        [`${this.name}ResolveUrls`]: this.resolveUrls.bind(this),
-        [`${this.name}Coudan`]: this.coudan.bind(this),
-        [`${this.name}Qiangquan`]: async (url: string) => {
-          url = await this.resolveUrl(url);
-          return this.qiangquan(url);
-        },
-        [`${this.name}Qiangdan`]: async (
-          url: string,
-          num: number = 1,
-          d?: string
-        ) => {
-          url = await this.resolveUrl(url);
-          let r = await this.qiangquan(url);
-          let page: Page;
-          if (!r || typeof r === "string") {
-            page = await newPage();
-            await page.goto(r || url);
-          } else {
-            page = r;
-          }
-          url = page.url();
-          for (let key in this.handlers) {
-            if (this.handlers[key].test(url)) {
-              await delayRun(d, `${this.name}抢单`);
-              await page.reload();
-              await this.handlers[key].handler(num, page);
-              await page.close();
-            }
-          }
-        },
-        [`${this.name}ToggleCart`]: this.toggleCart.bind(this),
-        [`${this.name}GetCartInfo`]: this.getCartInfo.bind(this),
-        [`${this.name}CartBuy`]: async (d: string, data: any) => {
-          await delayRun(d, this.name + "从购物车中结算");
-          // await delay(50);
-          return this.cartBuy(data);
-        },
-        [`${this.name}DirectBuy`]: async (
-          d: string,
-          url: any,
-          quantity: number = 1
-        ) => {
-          await delayRun(d, this.name + "直接购买");
-          return this.directBuy(url, quantity);
-        }
-      }
-    });
     this.preserveState();
   }
   private async preserveState() {

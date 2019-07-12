@@ -31,7 +31,7 @@ export interface CartItem extends CartItemBase {
 }
 const pattern = /\$\{(.*)\}/;
 
-export function getMobileCartInfo(resData: any) {
+export function getMobileCartList(resData: any) {
   var {
     data: { hierarchy, data, controlParas }
   } = resData;

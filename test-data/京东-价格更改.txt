@@ -1,0 +1,28 @@
+try {
+  cbConfirmA({
+    errId: "8730",
+    errMsg:
+      '[{"id":49811796955,"name":"百草味 零食大礼包 休闲食品干果 网红一整箱散装办公室小吃 套餐八·甜蜜零食包430g（含每日坚果）/共4包","imgUrl":"jfs/t1/43567/22/8386/299724/5d1da43aEf68bfcb3/9e36944375c994d1.jpg","pricePrevious":99.00,"promotionDiscountPrevious":98.00,"priceNow":99.00,"promotionDiscountNow":39.10,"giftList":null,"yanBaoList":null,"discountPricePrevious":1.00,"discountPriceNow":59.90}]',
+    nextUrl: "",
+    idc: "",
+    traceId: "684590321069683911",
+    outOfStock: [],
+    rmInvalidSku: [],
+    resultCode: "600160",
+    pin: "",
+    appid: "",
+    dealId: "",
+    totalPrice: "",
+    ordeType: "",
+    riskResult: "0",
+    phoneNumber: "",
+    uuid: "160deded-798b-4f64-b639-9d8aca67bcc9",
+    cancelscaleskus: [],
+    commonstocksku: [],
+    limitedbuyskus: []
+  });
+} catch (e) {
+  if (window.confirm_badJs) {
+    window.confirm_badJs(e);
+  }
+}

@@ -6,14 +6,23 @@ import {
   toggleCartChecked,
   getShopJindou,
   getVideoHongbao,
-  getCartList
+  getCartList,
+  getCommentList,
+  addComment,
+  addCart,
+  delCart,
+  updateCartQuantity
 } from "./goods";
 import jingdongHandlers from "./handlers";
 import jingdongCouponHandlers from "./coupon-handlers";
 import { resolveUrl } from "./tools";
 import { isSubmitOrder } from "../../common/config";
-import { delay, getCookieFilename } from "../../../utils/tools";
+import { delay, getCookieFilename, getCookie } from "../../../utils/tools";
+import qs = require("querystring");
 
+const getSkuId = (url: string) => {
+  return /(\d+)\.html/.exec(url)![1];
+};
 const user = require("./user.json");
 
 export async function buy(page: Page) {
@@ -28,7 +37,7 @@ export async function addToCart(url: string, page: Page) {
   /* if (page.url().startsWith("https://item.m.jd.com/")){
     return page.click('#addCart2')
     } */
-  var id = /(\d+)/.exec(url)![1];
+  var id = getSkuId(url);
   return page.goto(
     `https://cart.jd.com/gate.action?pid=${id}&pcount=1&ptype=1`
   );
@@ -81,38 +90,95 @@ export class Jindong extends AutoShop {
       let url = await resolveUrl(text);
       urls.push(url);
     }
-    return urls;
+    return Promise.all(urls.map(this.resolveUrl));
   }
   coudan(items: [string, number][]): Promise<any> {
-    throw new Error("Method not implemented.");
+    return this.cartBuy(undefined);
   }
   cartList() {
     return getCartList();
   }
-  cartToggle(data: { items: any; checked: boolean }): Promise<any> {
-    return toggleCartChecked(data.items, data.checked);
+  cartToggle(data): Promise<any> {
+    return toggleCartChecked(data);
+  }
+  cartToggleAll(data) {
+    return toggleCartChecked(
+      Object.assign(data, {
+        items: []
+      })
+    );
   }
   cartAdd(data: any): Promise<any> {
-    throw new Error("Method not implemented.");
+    let skuId = getSkuId(data.url);
+    return addCart(skuId, data.quantity);
   }
-  cartDel(data: any): Promise<any> {
-    throw new Error("Method not implemented.");
+  async cartDel(data: any) {
+    return delCart(data);
   }
-  cartUpdateQuantity(data: any): Promise<any> {
-    throw new Error("Method not implemented.");
+  async cartUpdateQuantity(data: any): Promise<any> {
+    return updateCartQuantity(data);
   }
-  comment(data: any): Promise<any> {
-    throw new Error("Method not implemented.");
+  async comment(data: any): Promise<any> {
+    for (let orderId of data.orderIds) {
+      await addComment(orderId);
+      await delay(3000);
+    }
   }
-  commentList(): Promise<any> {
-    throw new Error("Method not implemented.");
+  commentList(data: { page: number }): Promise<any> {
+    // 5:已取消 6:已完成
+    return getCommentList(6, data.page);
   }
-  buyDirect(data: { url: string; quantity: number }): Promise<any> {
-    throw new Error("Method not implemented.");
+  async buyDirect({
+    url,
+    quantity,
+    other
+  }: {
+    url: string;
+    quantity: number;
+    other: any;
+  }): Promise<any> {
+    // var data = await getGoodsInfo(skuId);
+    var data = this.getNextDataByGoodsInfo({ skuId: getSkuId(url) }, quantity);
+    return this.submitOrder(data);
   }
   async cartBuy(data: any) {
+    return this.submitOrder({
+      submit_url: "https://p.m.jd.com/norder/order.action"
+    });
+  }
+  async getGoodsInfo(url: string, skus?: number[] | undefined): Promise<any> {
+    return {
+      skuId: getSkuId(url)
+    };
+  }
+  getNextDataByGoodsInfo({ skuId }: any, quantity: number) {
+    var submit_url =
+      "https://wq.jd.com/deal/confirmorder/main?" +
+      qs.stringify({
+        sceneval: "2",
+        bid: "",
+        wdref: `https://item.m.jd.com/product/${skuId}.html`,
+        scene: "jd",
+        isCanEdit: "1",
+        EncryptInfo: "",
+        Token: "",
+        commlist: [skuId, "", quantity, skuId, 1, 0, 0].join(","),
+        locationid: (getCookie("jdAddrId", this.cookie) || "")
+          .split("_")
+          .slice(0, 3)
+          .join("-"),
+        type: "0",
+        lg: "0",
+        supm: "0"
+      });
+    return {
+      submit_url
+    };
+  }
+
+  async submitOrder(data: any, other?: any): Promise<any> {
     var page = await newPage();
-    await page.goto("https://p.m.jd.com/norder/order.action");
+    await page.goto(data.submit_url);
     if (!isSubmitOrder) {
       await page.setOfflineMode(true);
     }
@@ -121,7 +187,6 @@ export class Jindong extends AutoShop {
         "870092";
       document.querySelector<HTMLElement>("#btnPayOnLine")!.click();
     });
-    // page.click("#btnPayOnLine");
     var res = await page.waitForResponse(res =>
       res.url().startsWith("https://wqdeal.jd.com/deal/msubmit/confirm?")
     );
@@ -136,14 +201,14 @@ export class Jindong extends AutoShop {
       console.log("retry");
       return this.cartBuy(data);
     }
-    // await page.waitForNavigation();
+    await page.waitForNavigation();
     await page.close();
-    // return submitOrder();
   }
 
   async start() {
     await super.start();
-    this.preservePcState();
+    await this.preservePcState();
+    this.onFirstLogin();
   }
 
   async preservePcState() {
@@ -165,9 +230,13 @@ export class Jindong extends AutoShop {
     await page.click("#loginBtn");
   }
 
-  afterLogin() {
-    setReq(this.req, this.cookie);
+  onFirstLogin() {
     getShopJindou();
     getVideoHongbao();
+    this.req.get("https://vip.jd.com/sign/index");
+  }
+
+  onAfterLogin() {
+    setReq(this.req, this.cookie);
   }
 }

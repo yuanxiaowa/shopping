@@ -1,6 +1,7 @@
 import request = require("request-promise-native");
-import { delayRun, getJsonpData } from "../../../utils/tools";
+import { delayRun, getJsonpData, delay } from "../../../utils/tools";
 import { RequestAPI, RequiredUriUrl } from "request";
+import { getComment } from "../comment-tpl";
 
 var req: RequestAPI<
   request.RequestPromise<any>,
@@ -29,7 +30,7 @@ export async function getGoodsInfo(skuId: string) {
   var ret: string = await req.get(
     `https://item.m.jd.com/product/${skuId}.html`
   );
-  return <
+  var res = <
     {
       item: {
         skuId: string;
@@ -60,7 +61,8 @@ export async function getGoodsInfo(skuId: string) {
         }[];
       }[];
     }
-  >JSON.parse(/window\._itemInfo\s*=\s*\(([\s\S]*?})\);/.exec(ret)![1]);
+  >JSON.parse(/window\._itemOnly\s*=\s*\(([\s\S]*?})\);/.exec(ret)![1]);
+  return res.item;
 }
 
 export async function queryGoodsCoupon(data: {
@@ -395,16 +397,49 @@ export async function getCartList() {
       }[];
     };
   } = JSON.parse(text);
-  return data;
+  var other = {
+    areaId: data.areaId,
+    traceId: data.traceId
+  };
+  var items = data.cart.venderCart.map(item => {
+    var vendor: any = {
+      id: item.popInfo.vid,
+      title: item.popInfo.vname,
+      items: [],
+      checked: item.checkType === "1"
+    };
+    item.sortedItems.forEach(({ polyItem, itemId, polyType }: any) => {
+      polyItem.products.forEach(product => {
+        var sku = product.mainSku;
+        return vendor.items.push({
+          id: sku.id,
+          itemId: itemId,
+          title: sku.name,
+          cid: sku.cid,
+          img: "//img10.360buyimg.com/cms/s80x80_" + sku.image,
+          url: `https://item.jd.com/${sku.id}.html`,
+          price: product.price / 100,
+          quantity: product.num,
+          polyType,
+          checked: product.checkType === "1"
+        });
+      });
+    });
+    return vendor;
+  });
+  return {
+    other,
+    items
+  };
 }
 
-export async function toggleCartChecked(
+async function operateCart(
+  url: string,
   data: {
     areaId: string;
     traceId: string;
-    items: [string, string, string][];
-  },
-  checked = true
+    items: any[];
+  }
 ) {
   var qs = {
     templete: "1",
@@ -412,32 +447,80 @@ export async function toggleCartChecked(
     sceneval: "2",
     // mainSku.id,,1,mainSku.id,11,itemid,0
     commlist: data.items
-      .map(
-        ([sid, itemId, polyType]) =>
-          `${sid},,1,${sid},${Number(polyType).toString(2)},${itemId},0`
+      .map(item =>
+        [
+          item.id,
+          ,
+          item.quantity,
+          item.id,
+          Number(item.polyType).toString(2),
+          item.polyType === "1" ? "" : item.itemId,
+          0
+        ].join(",")
       )
       .join("$"),
     callback: "checkCmdyCbA",
     type: "0",
-    all: "0",
+    all: data.items.length === 0 ? 1 : 0,
+    checked: "0",
     reg: "1",
     traceid: data.traceId,
     locationid: data.areaId,
     t: Math.random()
   };
-  console.log(qs);
-  var text: string = await req.get(
-    `https://wqdeal.jd.com/deal/mshopcart/${
-      checked ? "checkcmdy" : "uncheckcmdy"
-    }`,
-    {
-      qs,
-      headers: {
-        Referer: "https://p.m.jd.com/cart/cart.action?sceneval=2"
-      }
+  var text = await req.get(url, {
+    qs,
+    headers: {
+      Referer: "https://p.m.jd.com/cart/cart.action?sceneval=2"
     }
+  });
+  var { errId, errMsg } = getJsonpData(text);
+  if (errId !== "0") {
+    throw new Error(errMsg);
+  }
+}
+
+export async function toggleCartChecked(data) {
+  return operateCart(
+    `https://wqdeal.jd.com/deal/mshopcart/${
+      data.checked ? "checkcmdy" : "uncheckcmdy"
+    }`,
+    data
   );
-  return JSON.parse(text.replace(/\w+\(([\s\S]+)\)/, "$1"));
+}
+
+export async function addCart(skuId: string, quantity: number) {
+  var text = await req.get("https://wq.jd.com/deal/mshopcart/addcmdy", {
+    qs: {
+      callback: "addCartCBA",
+      sceneval: "2",
+      reg: "1",
+      scene: "2",
+      type: "0",
+      commlist: [skuId, , quantity, skuId, 1, 0, 0].join(","),
+      // locationid: "12-988-40034",
+      t: Math.random()
+    },
+    headers: {
+      Referer: `https://item.m.jd.com/product/${skuId}.html`
+    }
+  });
+  var { errId, errMsg } = getJsonpData(text);
+  if (errId !== "0") {
+    throw new Error(errMsg);
+  }
+  return skuId;
+}
+
+export function delCart(data: any) {
+  return operateCart("https://wqdeal.jd.com/deal/mshopcart/rmvCmdy", data);
+}
+
+export function updateCartQuantity(data: any) {
+  return operateCart(
+    "https://wqdeal.jd.com/deal/mshopcart/modifycmdynum",
+    data
+  );
 }
 
 export async function submitOrder() {
@@ -551,6 +634,9 @@ export function getUuid() {
   return getCookie("mba_muid");
 }
 
+/**
+ * 每日视频红包
+ */
 export async function getVideoHongbao() {
   console.log("检查视频红包活动");
   var uuid = getUuid();
@@ -660,4 +746,206 @@ export async function getVideoHongbao() {
   console.log(res);
 
   // {"data":{"currentTime":1562548312483,"awardType":["1"],"couponList":null,"discount":0.50},"code":"0"}
+}
+
+export async function getCommentList(type: number, page: number) {
+  var Referer =
+    "https://wqs.jd.com/order/orderlist_merge.shtml?tab=1&ptag=7155.1.11&sceneval=2#page=2&itemInd=0&curTab=waitComment";
+  var text: string = await req.get(
+    "https://wqdeal.jd.com/bases/orderlist/deallist",
+    {
+      qs: {
+        callersource: "mainorder",
+        order_type: type,
+        start_page: page,
+        last_page: "0",
+        page_size: "10",
+        recycle: "0",
+        isoldpin: "0",
+        utfswitch: "1",
+        sceneval: 2,
+        // traceid: '685039158036729252',
+        _: Date.now(),
+        g_login_type: "1",
+        callback: "dealList_Cb",
+        g_ty: "ls"
+      },
+      headers: {
+        Referer
+      }
+    }
+  );
+  var { total_count, deal_list } = getJsonpData(text);
+
+  text = await req.get("https://wqdeal.jd.com/bases/orderlist/GetOrderShare", {
+    qs: {
+      orderids: deal_list.map(({ deal_id }) => deal_id).join(","),
+      sceneval: 2,
+      // traceid: "685088953887582016",
+      _: Date.now(),
+      g_login_type: "1",
+      callback: "orderShare_Cb",
+      g_ty: "ls"
+    },
+    headers: {
+      Referer
+    }
+  });
+  var {
+    jingdong_club_listorderhandlestate_get_responce: { vouchers }
+  } = getJsonpData(text);
+  var items = deal_list
+    .filter((_, i) => vouchers[i].isAppraise || vouchers[i].isNotBeenEvaluated)
+    .map(item => {
+      var id = item.deal_id;
+      var items = item.trade_list.map(item => ({
+        id: item.item_skuid,
+        title: item.item_title,
+        img: item.item_pic,
+        url: `https://item.jd.com/${item.item_skuid}.html`
+      }));
+      return {
+        id,
+        items
+      };
+    });
+  return {
+    items,
+    more: Number(total_count) >= 10
+  };
+}
+
+export async function addComment(orderId: string) {
+  var Referer = `https://wqs.jd.com/wxsq_project/comment/evalProduct/index.html?orderid=${orderId}&ordertype=1&sceneval=2`;
+  var res = await req.get("https://wq.jd.com/eval/GetEvalPage", {
+    qs: {
+      orderId,
+      operation: 16,
+      pageIndex: 1,
+      pageSize: "100",
+      _: Date.now(),
+      sceneval: "2",
+      g_login_type: "1",
+      callback: "jsonpCBKA",
+      g_ty: "ls"
+    },
+    headers: {
+      Referer
+    }
+  });
+  var {
+    data: {
+      jingdong_club_voucherbyorderid_get_response: {
+        success,
+        userCommentVoList
+      }
+    }
+  } = getJsonpData(res);
+  if (!success) {
+    throw new Error("出错了");
+  }
+  await Promise.all(
+    userCommentVoList
+      .filter(({ commentStatus }) => commentStatus === "0")
+      .map(item => commentGoodsItem(item, Referer))
+  );
+  // 总体评价
+  await req.get("https://wq.jd.com/eval/SendDSR", {
+    qs: {
+      pin: getCookie("pin"),
+      userclient: "29",
+      orderId,
+      otype: "1",
+      // 商品符合度
+      DSR1: 5,
+      // 店铺服务态度
+      DSR2: 5,
+      // 物流发货速度
+      DSR3: 5,
+      // 配送员服务
+      DSR4: 5,
+      _: Date.now(),
+      sceneval: "2",
+      g_login_type: "1",
+      callback: "jsonpCBKC",
+      g_ty: "ls"
+    },
+    headers: {
+      Referer
+    }
+  });
+}
+
+export async function commentGoodsItem(data, Referer: string) {
+  let res = await req.post(
+    "https://wq.jd.com/eval/SendEval?sceneval=2&g_login_type=1&g_ty=ajax",
+    {
+      form: {
+        productId: data.productId,
+        orderId: data.orderId,
+        score: 5,
+        content: getComment(),
+        commentTagStr: "1",
+        userclient: "29",
+        imageJson: `//img30.360buyimg.com/shaidan//${
+          data.productSolrInfo.imgUrl
+        }`,
+        anonymous: "0",
+        syncsg: "0",
+        scence: "101100000",
+        videoid: "",
+        URL: ""
+      },
+      headers: {
+        Referer
+      }
+    }
+  );
+  let {
+    data: {
+      jingdong_club_productcomment_weixinsave_responce: {
+        resultCode,
+        errorMessage
+      }
+    }
+  } = JSON.parse(res);
+  if (resultCode === "11") {
+    console.log(errorMessage);
+    await delay(3000);
+    return commentGoodsItem(data, Referer);
+  }
+}
+
+export async function getGoodsCommentList(skuId: string) {
+  var text: string = await req.get(
+    "https://wq.jd.com/commodity/comment/getcommentlist",
+    {
+      qs: {
+        callback: "skuJDEvalA",
+        pagesize: "10",
+        sceneval: "2",
+        score: "0",
+        sku: skuId,
+        sorttype: "5",
+        page: "1",
+        t: Math.random(),
+        g_tk: time33(getCookie("wq_skey")),
+        g_ty: "ls"
+      },
+      headers: {
+        Referer: `https://item.m.jd.com/product/${skuId}.html`
+      }
+    }
+  );
+  var {
+    result: { comments }
+  } = getJsonpData(text);
+  return <
+    {
+      content: string;
+      images: {
+        imgUrl: string;
+      };
+    }[]
+  >comments;
 }

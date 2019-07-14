@@ -1,8 +1,10 @@
+import { getJsonpData } from "../../../utils/tools";
+
 export interface CartItemBase {
   id: string;
   title: string;
   valid: boolean;
-  amount: number;
+  quantity: number;
   skuId: string;
   price: number;
   img: string;
@@ -66,7 +68,7 @@ export function getMobileCartList(resData: any) {
       title,
       valid,
       settlement,
-      amount: quantity,
+      quantity,
       sellerId,
       cartId,
       shopId,
@@ -122,4 +124,50 @@ export function getMobileCartList(resData: any) {
 
   findData(hierarchy.root);
   return ret;
+}
+
+export function getMobileGoodsInfo(resData: string, skus?: number[]) {
+  let {
+    data: { apiStack }
+  } = getJsonpData(resData);
+  let { delivery, item, trade, skuBase, skuCore } = JSON.parse(
+    apiStack[0].value
+  );
+  let buyEnable = trade.buyEnable === "true";
+  let cartEnable = trade.cartEnable === "true";
+  let msg: string | undefined;
+  if (!buyEnable) {
+    if (trade.hintBanner) {
+      msg = trade.hintBanner.text;
+    } else {
+      msg = trade.reason;
+    }
+  }
+  let skuId = 0;
+  if (skuBase && skuBase.props) {
+    let choosedSkus = skus || [];
+    let propPath = skuBase.props
+      .map(({ pid, values }, i) => `${pid}:${values[choosedSkus[i] || 0].vid}`)
+      .join(";");
+    let skuItem = skuBase.skus.find(item => item.propPath === propPath);
+    if (!skuItem) {
+      msg = "指定商品型号不存在";
+    } else {
+      skuId = skuItem.skuId;
+    }
+  }
+  if (skuCore) {
+    let item = skuCore.sku2info[skuId];
+    if (item && item.quantity === "0") {
+      throw new Error("无库存了");
+    }
+  }
+  return {
+    itemId: item.itemId,
+    buyEnable,
+    cartEnable,
+    msg,
+    skuId,
+    delivery
+  };
 }

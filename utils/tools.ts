@@ -89,7 +89,7 @@ export function logResult(msg: string) {
   };
 }
 export function getJsonpData<T>(body: string): T {
-  return JSON.parse(/[\w$]+\(([\s\S]*)\)/.exec(body)![1]);
+  return JSON.parse(/[\w$]+\(([\s\S]*)\)(;|$)/.exec(body.trim())![1]);
 }
 
 export function writeResult(filename: string) {
@@ -121,7 +121,11 @@ export function delayRun(time?: string | number, label = "") {
 }
 
 export function getCookie(name: string, cookie: string) {
-  return new RegExp(`${name}=([^;]+)`).exec(cookie)![1];
+  var arr = new RegExp(`${name}=([^;]+)`).exec(cookie);
+  if (arr) {
+    return arr[1];
+  }
+  return "";
 }
 
 export function getCookieFilename(name: string) {

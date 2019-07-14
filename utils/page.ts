@@ -1,21 +1,18 @@
 import puppeteer = require("puppeteer");
 import { Browser, Page } from "puppeteer";
+import resolver = require("puppeteer-chromium-resolver");
 import os = require("os");
 
 var browser: Browser;
 var defaultPage: Page;
 
 export async function bootstrapBrowser() {
-  var executablePath;
-  if (os.type().startsWith("Windows")) {
-    executablePath =
-      "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe";
-  }
+  var revisionInfo = await resolver();
   browser = await puppeteer.launch({
     headless: false,
     userDataDir: "./data-dir",
     devtools: false,
-    executablePath
+    executablePath: revisionInfo.executablePath
   });
   [defaultPage] = await browser.pages();
   defaultPage.goto("http://localhost:8080/");

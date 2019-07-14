@@ -7,6 +7,7 @@ export default (app: Application) => {
   router.get("/cart", controller.shop.cartList);
   router.post("/cart/buy", controller.shop.cartBuy);
   router.post("/cart/toggle", controller.shop.cartToggle);
+  router.post("/cart/toggle-all", controller.shop.cartToggleAll);
   router.post("/cart/add", controller.shop.cartAdd);
   router.post("/cart/del", controller.shop.cartDel);
   router.post("/cart/quantity", controller.shop.cartUpdateQuantity);
@@ -17,4 +18,6 @@ export default (app: Application) => {
   router.post("/comment/add", controller.shop.comment);
   router.post("/resolve/url", controller.shop.resolveUrl);
   router.post("/resolve/urls", controller.shop.resolveUrls);
+
+  router.get("/qrcode/generate", controller.common.qrcode);
 };

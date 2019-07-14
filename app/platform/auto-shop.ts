@@ -49,7 +49,8 @@ export default abstract class AutoShop implements AutoShopOptions {
   req!: RequestAPI<RequestPromise<any>, RequestPromiseOptions, RequiredUriUrl>;
   cookie!: string;
   interval_check = 1000 * 60 * 60;
-  afterLogin() {}
+  async onBeforeLogin(page: Page): Promise<any> {}
+  onAfterLogin() {}
   constructor(data: AutoShopOptions) {
     Object.assign(this, data);
     this.init();
@@ -104,7 +105,7 @@ export default abstract class AutoShop implements AutoShopOptions {
     };
     this.req = request.defaults(opts);
     writeFile(this.cookie_filename, cookie);
-    this.afterLogin();
+    this.onAfterLogin();
   }
   abstract resolveUrl(url: string): Promise<string>;
   abstract resolveUrls(text: string): Promise<string[]>;
@@ -118,13 +119,21 @@ export default abstract class AutoShop implements AutoShopOptions {
   abstract coudan(items: [string, number][]): Promise<any>;
   abstract cartList(): Promise<any>;
   abstract cartBuy(data: any): Promise<any>;
-  abstract cartToggle(data: { items: any; checked: boolean }): Promise<any>;
+  async cartToggle(data: { items: any; checked: boolean }): Promise<any> {}
+  async cartToggleAll(data: any): Promise<any> {}
   abstract cartAdd(data: any): Promise<any>;
   abstract cartDel(data: any): Promise<any>;
   abstract cartUpdateQuantity(data: any): Promise<any>;
   abstract comment(data: any): Promise<any>;
-  abstract commentList(): Promise<any>;
-  abstract buyDirect(data: { url: string; quantity: number }): Promise<any>;
+  abstract commentList(data: { page: number; type: number }): Promise<any>;
+  abstract buyDirect(data: {
+    url: string;
+    quantity: number;
+    skus?: number[];
+  }): Promise<any>;
+  abstract getGoodsInfo(url: string, skus?: number[]): Promise<any>;
+  abstract getNextDataByGoodsInfo(data: any, quantity: number): any;
+  abstract submitOrder(data: any, other?: any): Promise<any>;
 
   async loginAction(page: Page) {}
   async getPageCookie(page: Page) {
@@ -136,6 +145,7 @@ export default abstract class AutoShop implements AutoShopOptions {
   }
   async login(page: Page) {
     await page.goto(this.login_url);
+    await this.onBeforeLogin(page);
     await this.loginAction(page);
     await page.waitForNavigation({
       timeout: 1000 * 60 * 5
@@ -143,7 +153,7 @@ export default abstract class AutoShop implements AutoShopOptions {
     await page.goto(this.state_url);
   }
   async start() {
-    this.preserveState();
+    return this.preserveState();
   }
   private async preserveState() {
     var page = await newPage();

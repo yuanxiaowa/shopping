@@ -25,11 +25,11 @@
     "egg": "^2.6.1",
     "egg-cors": "^2.2.0",
     "egg-scripts": "^2.6.0",
+    "puppeteer-chromium-resolver": "^1.0.12",
     "ts-node": "^8.3.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^7.0.0",
-    "@types/iconv-lite": "^0.0.1",
     "@types/jest": "^24.0.15",
     "@types/mocha": "^2.2.40",
     "@types/node": "^7.0.12",
@@ -37,7 +37,6 @@
     "@types/ramda": "^0.26.9",
     "@types/request-promise-native": "^1.0.16",
     "@types/supertest": "^2.0.0",
-    "@types/vue": "^2.0.0",
     "autod": "^3.0.1",
     "autod-egg": "^1.1.0",
     "egg-bin": "^4.11.0",

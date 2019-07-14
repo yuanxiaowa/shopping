@@ -2,6 +2,7 @@ import { getActivityCoupons, getGoodsCoupons, getFloorCoupons } from "./tools";
 import { startsWith } from "ramda";
 import { obtainFloorCoupon } from "./goods";
 import { newPage } from "../../../utils/page";
+import { delay } from "../../../utils/tools";
 
 const jingdongCouponHandlers = {
   wq: {
@@ -56,7 +57,6 @@ const jingdongCouponHandlers = {
           document.querySelectorAll<HTMLDivElement>(".coupon_btn")
         ).forEach(ele => ele.click());
       });
-      return page;
     }
   },
   jingfen: {
@@ -64,31 +64,41 @@ const jingdongCouponHandlers = {
     async handler(url) {
       var page = await newPage();
       await page.goto(url);
-      var b = await page.evaluate(() => {
+      var success = await page.evaluate(() => {
         let button = document.querySelector<HTMLElement>(".btnget span")!;
         let text = button.innerText;
         if (text === "立即领取") {
           button.click();
-        } else if (text === "已领完") {
-          if (!confirm("券已领完，确定要继续吗？")) {
-            return false;
+          let t = document
+            .querySelector<HTMLSpanElement>("#price_usecoupon")!
+            .innerText.trim();
+          if (t === "已下架") {
+            success = false;
           }
-        } else {
-          document.querySelector<HTMLParagraphElement>(".content")!.click();
+        } else if (text === "已领完") {
+          return false;
         }
+        document.querySelector<HTMLParagraphElement>(".content")!.click();
+        return true;
       });
-      if (b === false) {
-        page.close();
-        throw new Error("券光了~");
-      }
-      await page.waitForNavigation();
-      return page;
+      (async () => {
+        await delay(1000);
+        await page.close();
+      })();
+      return {
+        success,
+        url: `https://item.jd.com/${/sku=(\d+)/.exec(url)![1]}.html`
+      };
     }
   },
   goods_m: {
     test: startsWith("https://item.m.jd.com/product/"),
     async handler(url) {
       await getGoodsCoupons(/product\/(\w+)/.exec(url)![1]);
+      return {
+        success: true,
+        url
+      };
     }
   },
   floor: {

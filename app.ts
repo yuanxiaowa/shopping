@@ -37,7 +37,6 @@ export default class AppBootHook implements IBoot {
     // 可以做一些数据初始化等操作，这些操作成功才会启动应用
     // 例如：从数据库加载数据到内存缓存
     // this.app.cacheData = await this.app.model.query(QUERY_CACHE_SQL);
-    await bootstrap();
   }
 
   // async didReady() {
@@ -53,5 +52,6 @@ export default class AppBootHook implements IBoot {
     // this.app.server.on("timeout", socket => {
     //   // handle socket timeout
     // });
+    bootstrap();
   }
 }

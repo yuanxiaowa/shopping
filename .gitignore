@@ -13,6 +13,7 @@ logs/
 *.lock
 *.js
 !.autod.conf.js
+!app/platform/taobao/h.js
 
 app/**/*.js
 test/**/*.js

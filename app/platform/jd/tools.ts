@@ -11,7 +11,7 @@ import {
 } from "./goods";
 
 export async function getGoodsCoupons(skuId: string) {
-  var { item } = await getGoodsInfo(skuId);
+  var item = await getGoodsInfo(skuId);
   var coupons = await queryGoodsCoupon({
     skuId,
     vid: item.venderID,

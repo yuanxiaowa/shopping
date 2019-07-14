@@ -5,12 +5,14 @@ import {
   getCookieFilename
 } from "../../../utils/tools";
 import signData from "./h";
-import { getMobileCartList, CartItem } from "./mobile";
+import { getMobileCartList, getMobileGoodsInfo } from "./mobile";
 import { getPcCartInfo } from "./pc";
 import { Page } from "puppeteer";
 import taobaoHandlers from "./handlers";
 import taobaoCouponHandlers from "./coupon-handlers";
 import { resolveTaokouling } from "./tools";
+
+const getItemId = (url: string) => /id=(\d+)/.exec(url)![1];
 
 export class Taobao extends AutoShop {
   mobile = true;
@@ -44,46 +46,203 @@ export class Taobao extends AutoShop {
   }
   async resolveUrls(text: string): Promise<string[]> {
     var urls: string[] = [];
-    if (!/^https?:/.test(text)) {
-      let tkl_e = /(￥\w+￥)/.exec(text);
-      if (tkl_e) {
-        let url = await resolveTaokouling(text);
-        urls.push(url);
-      } else {
-        urls = text.match(/https?:\/\/\w+(?:\.\w+){2,}[^ ]*/)!;
-      }
+    if (!/https?:/.test(text)) {
+      // let tkl_e = /(￥\w+￥)/.exec(text);
+      let url = await resolveTaokouling(text);
+      urls.push(url);
     } else {
-      urls.push(text);
+      urls = text.match(/https?:\/\/\w+(?:\.\w+){2,}[^ ]*/)!;
     }
-    return urls;
+    return Promise.all(
+      urls.map(url => {
+        if (url.startsWith("https://s.click.taobao.com/t")) {
+          return (async () => {
+            var text = await this.req.get(url);
+            url = /URL=([^"]*)/.exec(text)![1].replace(/&amp;/g, "&");
+            var p = this.req.get(url);
+            await p;
+            return p.response!.request.href as string;
+          })();
+        }
+        return url;
+      })
+    );
   }
 
-  cartList() {
+  async cartList() {
+    var items;
     if (this.mobile) {
-      return this.cartListFromMobile();
+      items = await this.cartListFromMobile();
+    } else {
+      items = await this.cartListFromPc();
     }
-    return this.cartListFromPc();
+    return { items };
   }
-  cartAdd(data: any): Promise<any> {
-    throw new Error("Method not implemented.");
+  async cartAdd(args: {
+    url: string;
+    quantity: number;
+    skus?: number[];
+  }): Promise<any> {
+    var itemId;
+    var skuId;
+    if (/skuId=(\d+)/.test(args.url)) {
+      skuId = RegExp.$1;
+      itemId = /id=(\d+)/.exec(args.url)![1];
+    } else {
+      var res = await this.getGoodsInfo(args.url, args.skus);
+      skuId = res.skuId;
+      itemId = res.itemId;
+    }
+    var text = await this.requestOnMobile(
+      "https://h5api.m.tmall.com/h5/mtop.trade.addbag/3.1/",
+      "post",
+      {
+        jsv: "2.4.8",
+        appKey: this.appKey,
+        api: "mtop.trade.addBag",
+        v: "3.1",
+        ecode: "1",
+        type: "originaljson",
+        ttid: "tmalldetail",
+        dataType: "jsonp"
+      },
+      {
+        itemId,
+        quantity: args.quantity,
+        exParams: JSON.stringify({
+          addressId: "9607477385",
+          etm: "",
+          buyNow: "true",
+          _input_charset: "utf-8",
+          areaId: "320583",
+          divisionId: "320583"
+        }),
+        skuId
+      }
+    );
+    let { data, ret } = JSON.parse(text);
+    if (ret[0].startsWith("SUCCESS")) {
+      return data.cartId;
+    }
+    throw new Error(data.msg);
   }
   cartDel(data: any): Promise<any> {
-    throw new Error("Method not implemented.");
+    return this.cartUpdate(data, "deleteSome");
   }
-  cartUpdateQuantity(data: any): Promise<any> {
-    throw new Error("Method not implemented.");
+  async cartUpdateQuantity(data) {
+    this.cartUpdate(data, "update");
+  }
+  async cartUpdate({ items }: any, action: string): Promise<any> {
+    var { cartId, quantity } = items[0];
+    var {
+      data: { hierarchy, data }
+    }: any = await this.cartListRawFromMobile();
+    var updateKey = Object.keys(data).find(
+      key => data[key].fields.cartId === cartId
+    )!;
+    var key = Object.keys(hierarchy.structure).find(key =>
+      hierarchy.structure[key].includes(updateKey)
+    )!;
+    var cdata = hierarchy.structure[key].reduce((state, key) => {
+      var { fields } = data[key];
+      state[key] = {
+        fields: {
+          bundleId: fields.bundleId,
+          cartId: fields.cartId,
+          checked: fields.checked,
+          itemId: fields.itemId,
+          quantity: fields.quantity.quantity,
+          shopId: fields.shopId,
+          valid: fields.valid
+        }
+      };
+      return state;
+    }, {});
+    cdata[updateKey].fields.quantity = quantity;
+    var text = await this.requestOnMobile(
+      "https://acs.m.taobao.com/h5/mtop.trade.updatebag/4.0/",
+      "post",
+      {
+        jsv: "2.3.26",
+        appKey: "12574478",
+        api: "mtop.trade.updateBag",
+        v: "4.0",
+        type: "originaljson",
+        dataType: "json",
+        isSec: "0",
+        ecode: "1",
+        AntiFlood: "true",
+        AntiCreep: "true",
+        H5Request: "true",
+        LoginRequest: "true"
+      },
+      {
+        p: JSON.stringify({
+          data: cdata,
+          operate: { [action]: [updateKey] },
+          hierarchy
+        }),
+        extStatus: "0",
+        feature: '{"gzip":false}',
+        exParams: JSON.stringify({
+          mergeCombo: "true",
+          version: "1.0.0",
+          globalSell: "1",
+          spm: this.spm,
+          cartfrom: "detail"
+        }),
+        spm: this.spm,
+        cartfrom: "detail"
+      }
+    );
+    var { data, ret } = JSON.parse(text);
+    if (ret[0].startsWith("SUCCESS")) {
+      return data.cartId;
+    }
+    throw new Error(data.msg);
   }
   comment(data: any): Promise<any> {
+    /* this.req.post("", {
+      form: {
+        callback: "RateWriteCallback548",
+        _tb_token_: "edeb7b783ff65",
+        um_token: "T0eb928a011b00316c98a9fed9edb4b2b",
+        action: "new_rate_write_action",
+        event_submit_do_write: "any",
+        sellerId: "2200811872345",
+        bizOrderIdList: "492409251844405857",
+        itemId492409251844405857: "591795307112",
+        eventId492409251844405857: "",
+        parentOrderId: "492409251844405857",
+        qualityContent492409251844405857: "fdsfdsafdsaf",
+        serviceContent492409251844405857: "fdsaf",
+        Filedata: "",
+        urls: "",
+        merDsr492409251844405857: "5",
+        serviceQualityScore: "5",
+        saleConsignmentScore: "5",
+        anony: "1",
+        ishares: "",
+        ua:
+          "118#ZVWZz7teaQVZ0e/LdH2mpZZTZsHhce/ezeVnvsqTzHRzZRbZXoTXOrezpgqTVHR4Zg2ZOzqTze0cZgYUHDqVze2zZCFhXHvnzhtZZzu7zeRZZgZZ2Yq4zH2zgeu1THWVZZ2ZZ2HhzHRzVgzYcoqVze2ZZVbhXHJmgiguZaq2zeRZZgZZfDqVzOqZzeZ4yH1JZBD1c78nByRuZZYCXfqYZH2zZZCTcHCVx20rEfqhzHWxzZZZV5q44aPiueZhXTVHZg2ZumqTzeRzZZZuVfq4zH2ZZZFhVHW4ZZ2uZ0bTzeRzZZZZ23Z4ze2zZZuXTiXejg2ZjUi5zPErwZubQozqF00nMWTKzLQvxN9m3LIVTHjaVcjjc2L3sKqSh8gTP5S8FDpKyTHCugZCmrDtKHZzhaquuI0DRgZTlItysC/ATH+z8N2Crbz04R4GIE3fdf3gV2gbTR2B7+zF3qqMmOW3N4mlfO6N1SuNkGAumAnxsKbe43gCE87ooXXoLBK3lPdtfJk4fgNaaid3jZa5RF8Y2HhI1WMgXAaXoZuDzJi8DMJT31BZjQHGH2432fvCzMLqB2yvwTQni66GyfOOVCFmOWAV0r+PqIDp5hZ1eB5Bn+p7OMJZSthhoMbH6k0vVh9Quf4xEHzfWFoHsYEPPDKiX23KElhfshnArhpIViJU4HlG5zsJuLxlGC7bW5Oltr5xn91jM4b4w44HlbDpVR9JXL2IQRJRJDV7xegJS2PZd/mtYaf0yA7dr8hb8PGj6N4Snl9fzfvVBqKY7XK/R41in/X1d+tazXEIugNPh4B8nxoRAYgk09rbCXRmoc+ffVjbrkh9hwIywk0m/xX4aP4z0jkihzBTyLDdz3xOp7FdrIbfBA0xlcfAftRigVieQTOVzg==",
+        "492409251844405857_srNameList": ""
+      }
+    }); */
     throw new Error("Method not implemented.");
   }
   commentList(): Promise<any> {
     throw new Error("Method not implemented.");
   }
-  buyDirect(data: { url: string; quantity: number }): Promise<any> {
+  buyDirect(data: {
+    url: string;
+    quantity: number;
+    skus?: number[];
+    other?: any;
+  }): Promise<any> {
     if (this.mobile) {
-      return this.buyDirectFromMobile(data.url, data.quantity);
+      return this.buyDirectFromMobile(data);
     }
-    return this.buyDirectFromPc(data.url, data.quantity);
+    return this.buyDirectFromPc(data);
   }
   coudan(items: [string, number][]): Promise<any> {
     throw new Error("Method not implemented.");
@@ -113,9 +272,16 @@ export class Taobao extends AutoShop {
   }
 
   async submitOrderFromPc(
-    form: Record<string, any>,
-    addr_url: string,
-    Referer: string
+    {
+      form,
+      addr_url,
+      Referer
+    }: {
+      form: Record<string, any>;
+      addr_url: string;
+      Referer: string;
+    },
+    other: any = {}
   ): Promise<any> {
     this.logFile(addr_url + "\n" + JSON.stringify(form), "进入订单结算页");
     var html: string = await this.req.post(addr_url, {
@@ -221,7 +387,7 @@ export class Taobao extends AutoShop {
       console.log("-----订单提交成功，等待付款----");
     } catch (e) {
       console.trace(e);
-      return this.submitOrderFromPc(form, addr_url, Referer);
+      return this.submitOrderFromPc({ form, addr_url, Referer });
     }
   }
 
@@ -231,7 +397,7 @@ export class Taobao extends AutoShop {
       cartId: string;
       skuId: string;
       itemId: string;
-      amount: number;
+      quantity: number;
       createTime: string;
       attr: string;
     }[]
@@ -241,11 +407,11 @@ export class Taobao extends AutoShop {
       ","
     );
     var items = goods.map(
-      ({ cartId, itemId, skuId, amount, createTime, attr }) => ({
+      ({ cartId, itemId, skuId, quantity, createTime, attr }) => ({
         cartId,
         itemId,
         skuId,
-        quantity: amount,
+        quantity,
         createTime,
         attr
       })
@@ -265,16 +431,18 @@ export class Taobao extends AutoShop {
       page_from: "cart",
       source_time: Date.now()
     };
-    await this.submitOrderFromPc(
+    await this.submitOrderFromPc({
       form,
-      `https://buy.tmall.com/order/confirm_order.htm?spm=${this.spm}`,
-      `https://cart.taobao.com/cart.htm?spm=a21bo.2017.1997525049.1.5af911d9eInVdr&from=mini&ad_id=&am_id=&cm_id=`
-    );
+      addr_url: `https://buy.tmall.com/order/confirm_order.htm?spm=${this.spm}`,
+      Referer: `https://cart.taobao.com/cart.htm?spm=a21bo.2017.1997525049.1.5af911d9eInVdr&from=mini&ad_id=&am_id=&cm_id=`
+    });
   }
 
   spm = "a222m.7628550.0.0";
-
   async cartListFromMobile() {
+    return getMobileCartList(await this.cartListRawFromMobile());
+  }
+  async cartListRawFromMobile() {
     var data = {
       exParams: JSON.stringify({
         mergeCombo: "true",
@@ -308,10 +476,10 @@ export class Taobao extends AutoShop {
       },
       data
     );
-    var res_data = getJsonpData(text);
-    return getMobileCartList(res_data);
+    return getJsonpData(text);
   }
-  async submitOrderFromMobile(data: any) {
+  async submitOrderFromMobile(data: any, other: any = {}) {
+    // other.memo other.ComplexInput
     // this.logFile(JSON.stringify(items), '手机准备进入订单结算页')
     console.log("-------------开始进入手机订单结算页-------------");
     var text: any = await this.requestOnMobile(
@@ -345,16 +513,21 @@ export class Taobao extends AutoShop {
     if (text.ret[0].includes("FAIL_SYS_TRAFFIC_LIMIT")) {
       console.log(typeof text);
       console.log("正在重试");
-      return this.submitOrderFromMobile(data);
+      return this.submitOrderFromMobile(data, other);
     }
     console.log("-------------进入手机订单结算页，准备提交-------------");
     var {
       data: {
         data,
         linkage,
-        hierarchy: { structure }
+        hierarchy: { structure, root }
       }
     } = text;
+    var invalids = structure[root].filter(name => name.startsWith("invalid"));
+    if (invalids.length > 0) {
+      this.logFile(text, "提交失败，不能提交");
+      throw new Error("有失效宝贝");
+    }
     var ua = "";
     var ret = await this.requestOnMobile(
       "https://h5api.m.taobao.com/h5/mtop.trade.createorder.h5/3.0/",
@@ -382,6 +555,7 @@ export class Taobao extends AutoShop {
               (state, name) => {
                 var item = data[name];
                 if (item.submit) {
+                  item.fields.value = other[item.tag];
                   state[name] = item;
                 }
                 return state;
@@ -415,18 +589,21 @@ export class Taobao extends AutoShop {
       if (msg.includes("对不起，系统繁忙，请稍候再试")) {
         console.log(msg);
         console.log("正在重试");
-        return this.submitOrderFromMobile(data);
+        return this.submitOrderFromMobile(data, other);
       }
       console.error(msg);
     }
   }
 
-  cartBuyFromMobile(items: CartItem[]) {
-    return this.submitOrderFromMobile({
-      buyNow: "false",
-      buyParam: items.map(({ settlement }) => settlement).join(","),
-      spm: this.spm
-    });
+  cartBuyFromMobile(data) {
+    return this.submitOrderFromMobile(
+      {
+        buyNow: "false",
+        buyParam: data.items.map(({ settlement }) => settlement).join(","),
+        spm: this.spm
+      },
+      data.other
+    );
   }
 
   cartBuy(items: any[]) {
@@ -436,7 +613,14 @@ export class Taobao extends AutoShop {
     return this.cartBuyFromPc(items);
   }
 
-  async buyDirectFromPc(url: string, quantity: number) {
+  async buyDirectFromPc({
+    url,
+    quantity
+  }: {
+    url: string;
+    quantity: number;
+    other?: any;
+  }) {
     var html: string = await this.req.get(url, {
       headers: {
         "user-agent":
@@ -533,11 +717,11 @@ export class Taobao extends AutoShop {
     }, form); */
     console.log("进入订单结算页");
     try {
-      var ret = await this.submitOrderFromPc(
+      var ret = await this.submitOrderFromPc({
         form,
-        "https:" + tradeConfig[2],
-        url
-      );
+        addr_url: "https:" + tradeConfig[2],
+        Referer: url
+      });
       /* var ret = await this.req.post("https:" + tradeConfig[2], {
         form,
         qs: qs_data
@@ -548,8 +732,19 @@ export class Taobao extends AutoShop {
     }
   }
 
-  async buyDirectFromMobile(url: string, quantity: number) {
-    var itemId = /id=(\d+)/.exec(url)![1];
+  submitOrder(data, other: any = {}) {
+    if (this.mobile) {
+      return this.submitOrderFromMobile(data, other);
+    }
+    return this.submitOrderFromPc(data, other);
+  }
+
+  async getGoodsInfo(url: string, skus?: number[]) {
+    return this.getGoodsInfoFromMobile(url, skus);
+  }
+
+  async getGoodsInfoFromMobile(url: string, skus?: number[]) {
+    var itemId = getItemId(url);
     var text = await this.requestOnMobile(
       "https://h5api.m.taobao.com/h5/mtop.taobao.detail.getdetail/6.0/",
       "get",
@@ -566,24 +761,33 @@ export class Taobao extends AutoShop {
       },
       { itemNumId: itemId }
     );
-    var {
-      data: {
-        skuBase: { props, skus }
-      }
-    } = getJsonpData(text);
-    var skuId = skus[0].skuId;
-    // var xUid = getCookie("unb", this.cookie);
-    await this.submitOrderFromMobile({
+    return getMobileGoodsInfo(text, skus);
+  }
+
+  getNextDataByGoodsInfo({ delivery, skuId, itemId }, quantity: number) {
+    return {
       buyNow: true,
       exParams: JSON.stringify({
-        addressId: "9607477385",
+        addressId:
+          delivery.areaSell === "true" ? delivery.addressId : undefined,
         buyFrom: "tmall_h5_detail"
       }),
       itemId,
       quantity,
       serviceId: null,
-      skuId: skuId
-    });
+      skuId
+    };
+  }
+
+  async buyDirectFromMobile(args) {
+    var data = await this.getGoodsInfo(args.url, args.skus);
+    if (!data.buyEnable) {
+      throw new Error(data.msg);
+    }
+    return this.submitOrderFromMobile(
+      this.getNextDataByGoodsInfo(data, args.quantity),
+      args.other
+    );
   }
 
   appKey = "12574478";
@@ -684,5 +888,13 @@ export class Taobao extends AutoShop {
     //   await page.setOfflineMode(true);
     // }
     // await page.click(".go-btn");
+  }
+
+  onBeforeLogin(page: Page) {
+    return page.evaluate(() => {
+      document
+        .querySelector<HTMLImageElement>("#J_QRCodeImg")!
+        .scrollIntoView();
+    });
   }
 }

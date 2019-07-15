@@ -12,6 +12,7 @@ import taobaoHandlers from "./handlers";
 import taobaoCouponHandlers from "./coupon-handlers";
 import { resolveTaokouling, resolveUrl } from "./tools";
 import { isSubmitOrder } from "../../common/config";
+import moment = require("moment");
 
 const getItemId = (url: string) => /id=(\d+)/.exec(url)![1];
 var request_tags = {
@@ -809,6 +810,217 @@ export class Taobao extends AutoShop {
     );
   }
 
+  async requestOnMobileShort(api: string, data) {
+    var text: string = await this.requestOnMobile(
+      `https://h5api.m.tmall.com/h5/${api}/1.0`,
+      "get",
+      {
+        jsv: "2.4.16",
+        appKey: "12574478",
+        api,
+        v: "1.0",
+        timeout: "3000",
+        type: "json",
+        dataType: "json"
+      },
+      data
+    );
+    return JSON.parse(text);
+  }
+
+  async seckillList(name: string) {
+    if (name === "chaoshi") {
+      let {
+        data: {
+          resultValue: { data }
+        }
+      } = await this.requestOnMobileShort(
+        "mtop.tmall.kangaroo.core.service.route.PageRecommendService",
+        {
+          url:
+            "https://pages.tmall.com/wow/chaoshi/act/wupr?ut_sk=1.WkOnn8QgYxYDAC42U2ubIAfi_21380790_1563192248243.Copy.chaoshi_act_page_tb&__share__id__=1&share_crt_v=1&disableNav=YES&wh_pid=act%2Fxsj23874&tkFlag=1&disableAB=true&suid=1031708C-2844-47E2-B140-3CF358C1BD43&type=2&sp_tk=77%2BlelYxOVlob1FlTkrvv6U%3D&sourceType=other&tk_cps_param=127911237&un=04ec1ab5583d2c369eedd86203cf18d8&utparam=%7B%22ranger_buckets%22%3A%223042%22%7D&e=PlboetXBlJK4bXDJ8jCpJrfVFcC6KYAblz9f5x7nqEUPJTSplvxzY6R06N4nt-6t_nNM24L0rnGF2sp581q3i4RqxKSGsgCT8sviUM61dt2gxEj7ajbEb4gLMZYNRhg2HXKHH0u77i-I6M_vqqSeLITsM14S2xgDx9iN37b51zJw2qH-L52L1aTWVSTo88aBYOGm2rjvgGhaQJhxUPUeEtKYMBXg69krrlYyo_QbwE_DG_1N5hlzNg&ttid=201200%40taobao_iphone_8.8.0&cpp=1&shareurl=true&spm=a313p.22.kp.1050196516672&short_name=h.eS0ZZuy&sm=933952&app=chrome",
+          cookie: "sm4=320506;hng=CN|zh-CN|CNY|156",
+          device: "phone",
+          backupParams: "device"
+        }
+      );
+      let key = Object.keys(data).find(key => data[key].secKillItems);
+      if (key) {
+        let secKillItems = data[key].secKillItems;
+        let mapping = {};
+        for (let item of secKillItems) {
+          let { secKillTime } = item;
+          let secKillTimeArr = secKillTime.split(",");
+          secKillTimeArr.forEach(t => {
+            var data = {
+              id: item.itemId,
+              quantity: item.itemNum,
+              title: item.itemTitle,
+              itemSecKillPrice: item.itemSecKillPrice,
+              price: item.itemTagPrice
+            };
+            if (!mapping[t]) {
+              mapping[t] = [data];
+            } else {
+              mapping[t].push(data);
+            }
+          });
+        }
+        return Object.keys(mapping)
+          .sort()
+          .map(time => ({
+            time,
+            items: mapping[time]
+          }));
+      }
+    }
+    return [];
+  }
+  async sixtyCourseList() {
+    var html: string = await this.req.get(
+      "https://pages.tmall.com/wow/fsp/act/60sclass?q=%E5%A4%A9%E7%8C%AB60%E7%A7%92%E8%AF%BE%E5%A0%82&isFull=true&pre_rn=c21dff5a538d1c77a9e5c29674eefe94&scm=20140655.sc_c21dff5a538d1c77a9e5c29674eefe94"
+    );
+    var r = /<textarea style="display: none" class="vue-comp-data">(.*)<\/textarea>/g;
+    r.test(html);
+    var text = r.exec(html)![1];
+    var {
+      $root: {
+        moqieDataWl: { jsonStr }
+      }
+    } = JSON.parse(text.replace(/&quot;/g, '"'));
+    var {
+      content: { areas }
+    } = JSON.parse(jsonStr);
+    var actIds = Object.keys(areas).map(
+      key => /actId=(\w+)/.exec(areas[key].data.href)![1]
+    );
+    return Promise.all(
+      actIds.map(async actId => {
+        var {
+          data: { answerDate, answered, courseVOList, sellerId, lotteryCount }
+        }: {
+          data: {
+            answerDate?: string[];
+            answered: ("true" | "false")[];
+            sellerId: string;
+            lotteryCount: string;
+            courseVOList: {
+              id: string;
+              desc: string;
+              options: Record<string, string>;
+            }[];
+          };
+        } = await this.requestOnMobileShort(
+          "mtop.tmall.fansparty.sixty.getAct",
+          {
+            actId
+          }
+        );
+        var finished = !answered.includes("false");
+        var todayAnswered = false;
+        var options = {};
+        var title = "";
+        var courseId = "";
+        if (!finished) {
+          var i = 0;
+          moment.duration(1, "d");
+          if (answerDate) {
+            todayAnswered =
+              moment().diff(
+                moment(
+                  answerDate[answerDate.length - 1].split(" ")[0],
+                  "yyyy-MM-DD"
+                )
+              ) <= moment.duration(1, "days").asMilliseconds();
+
+            if (todayAnswered) {
+              i = answerDate.length - 1;
+            } else {
+              i = answerDate.length;
+            }
+          }
+          title = courseVOList[i].desc;
+          courseId = courseVOList[i].id;
+          options = courseVOList[i].options;
+        }
+        return {
+          actId,
+          finished,
+          todayAnswered,
+          title,
+          options,
+          courseId,
+          sellerId,
+          lotteryCount: Number(lotteryCount)
+        };
+      })
+    );
+  }
+  async sixtyCourseReply({
+    actId,
+    courseId,
+    option,
+    sellerId,
+    todayAnswered,
+    finished
+  }: {
+    actId: string;
+    courseId: string;
+    option: string;
+    sellerId: string;
+    todayAnswered: boolean;
+    finished: boolean;
+  }) {
+    if (!finished && !todayAnswered) {
+      let { data, ret } = await this.requestOnMobileShort(
+        "mtop.tmall.fansparty.sixty.answer",
+        {
+          actId,
+          courseId,
+          option
+        }
+      );
+
+      if (data.result !== "true") {
+        throw new Error(ret[0]);
+      }
+    }
+    var { data } = await this.requestOnMobileShort(
+      "mtop.tmall.fansparty.sixty.getlotterytoken",
+      { actId, lotteryType: "shareLottery" }
+    );
+    var token = data.result;
+    var res1 = await this.requestOnMobileShort(
+      "mtop.tmall.fansparty.fansday.superfansinvation.getinvitation",
+      {
+        sellerId,
+        actId,
+        token
+      }
+    );
+    var res2 = await this.requestOnMobileShort(
+      "mtop.tmall.caitlin.relation.common.follow",
+      {
+        targetId: sellerId,
+        followTag: "fans-lucky-draw",
+        source: "fans-lucky-draw",
+        bizName: "fansparty"
+      }
+    );
+    var res3 = await this.requestOnMobileShort(
+      "mtop.tmall.fansparty.fansday.superfansinvation.openinvitation",
+      {
+        sellerId,
+        actId,
+        token
+      }
+    );
+    var {
+      data: { awards }
+    } = res3;
+    return awards;
+  }
+
   appKey = "12574478";
   getSign(data: string, t: number) {
     var token = getCookie("_m_h5_tk", this.cookie);
@@ -917,7 +1129,7 @@ export class Taobao extends AutoShop {
     });
     let img = await page.$("#J_QRCodeImg");
     await img!.screenshot({
-      path: "./qrcode.png",
+      path: ".data/qrcode.png",
       omitBackground: true
     });
   }

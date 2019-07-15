@@ -134,4 +134,21 @@ export default class ShopController extends Controller {
     var { data } = ctx.request.body;
     ctx.body = await handle(app[platform].resolveUrls(data));
   }
+  /**
+   * 超市秒杀
+   */
+  public async seckillList() {
+    const { ctx, app } = this;
+    var { platform, name } = ctx.query;
+    ctx.body = await handle(app[platform].seckillList(name));
+  }
+
+  public async sixtyCourseList() {
+    const { ctx, app } = this;
+    ctx.body = await handle(app.taobao.sixtyCourseList());
+  }
+  public async sixtyCourseReply() {
+    const { ctx, app } = this;
+    ctx.body = await handle(app.taobao.sixtyCourseReply(ctx.query));
+  }
 }

@@ -52,7 +52,9 @@ export async function login(page: Page) {
   await page.type("#loginname", user.username);
   await page.type("#nloginpwd", user.password);
   await page.click("#loginsubmit");
-  await page.waitForNavigation();
+  await page.waitForNavigation({
+    timeout: 0
+  });
 }
 
 export async function loginMobile(page: Page) {
@@ -182,11 +184,10 @@ export class Jindong extends AutoShop {
     if (!isSubmitOrder) {
       await page.setOfflineMode(true);
     }
-    await page.evaluate(() => {
-      document.querySelector<HTMLInputElement>("#shortPassInput")!.value =
-        user.paypass;
+    await page.evaluate(pass => {
+      document.querySelector<HTMLInputElement>("#shortPassInput")!.value = pass;
       document.querySelector<HTMLElement>("#btnPayOnLine")!.click();
-    });
+    }, user.paypass);
     var res = await page.waitForResponse(res =>
       res.url().startsWith("https://wqdeal.jd.com/deal/msubmit/confirm?")
     );

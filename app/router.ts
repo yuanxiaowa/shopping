@@ -18,6 +18,10 @@ export default (app: Application) => {
   router.post("/comment/add", controller.shop.comment);
   router.post("/resolve/url", controller.shop.resolveUrl);
   router.post("/resolve/urls", controller.shop.resolveUrls);
+  router.get("/seckill/list", controller.shop.seckillList);
+
+  router.get("/sixty-course/list", controller.shop.sixtyCourseList);
+  router.get("/sixty-course/reply", controller.shop.sixtyCourseReply);
 
   router.get("/qrcode/generate", controller.common.qrcode);
 };

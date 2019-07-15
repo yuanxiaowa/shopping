@@ -1,4 +1,5 @@
 import request = require("request-promise-native");
+import { newPage } from "../../../utils/page";
 
 export async function resolveTaokouling(text: string) {
   var data: string = await request.post(
@@ -14,4 +15,14 @@ export async function resolveTaokouling(text: string) {
     }
   );
   return <string>JSON.parse(data).data.url;
+}
+
+export async function resolveUrl(url: string) {
+  if (/^https?:\/\/s.click.taobao.com\/t/.test(url)) {
+    var page = await newPage();
+    await page.goto(url);
+    url = page.url();
+    page.close();
+  }
+  return url;
 }

@@ -1,1 +1,1 @@
-export const isSubmitOrder = false;
+export const isSubmitOrder = true;

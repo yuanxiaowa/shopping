@@ -23,6 +23,8 @@ import {
   logReq,
   delay
 } from "../../../utils/tools";
+import { Page } from "puppeteer";
+const user = require("../../../.data/user.json");
 
 export async function doWelfareActions() {
   log("检查参加活动领金豆");
@@ -50,7 +52,7 @@ export async function doSign() {
 
 export const doAdJindou = () =>
   timerCondition(3000, (data: any) => {
-    console.log(data);
+    // console.log(data);
     return data.canGetGb;
   })(getGoodsJindou);
 
@@ -139,4 +141,23 @@ export async function doAll() {
     doHealthInsured(),
     doAdJindou()
   ]);
+}
+
+export async function check() {
+  try {
+    await getSignInfo();
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+export async function login(page: Page) {
+  await page.goto(
+    "https://plogin.m.jd.com/user/login.action?appid=100&kpkey=&returnurl=https%3A%2F%2Fuuj.jr.jd.com%2Fwxgrowing%2Fmoneytree7%2Findex.html%3Fchannellv%3Dsy%26sid%3Dab609165f5b75d4f3516e331b1fa3ddw%26utm_term%3Dwxfriends%26utm_source%3DiOS*url*1563119411045%26utm_medium%3Djrappshare"
+  );
+  await page.type("#username", user.username);
+  await page.type("#password", user.password);
+  await page.click("#loginBtn");
+  await page.waitForNavigation();
 }

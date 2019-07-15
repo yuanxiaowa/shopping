@@ -1,5 +1,5 @@
-import request from "request-promise-native";
-import iconv from "iconv-lite";
+import request = require("request-promise-native");
+import iconv = require("iconv-lite");
 import { writeFile } from "fs-extra";
 
 const req = request.defaults({

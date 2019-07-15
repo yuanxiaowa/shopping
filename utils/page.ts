@@ -10,7 +10,7 @@ export async function bootstrapBrowser() {
   var revisionInfo = await resolver();
   browser = await puppeteer.launch({
     headless: false,
-    userDataDir: "./data-dir",
+    userDataDir: ".data/data-dir",
     devtools: false,
     executablePath: revisionInfo.executablePath
   });
@@ -68,4 +68,8 @@ export async function newPage() {
   //   }
   // });
   return page;
+}
+
+export function destroyBrowser() {
+  return browser.close();
 }

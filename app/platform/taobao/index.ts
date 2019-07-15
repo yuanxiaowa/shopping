@@ -10,9 +10,19 @@ import { getPcCartInfo } from "./pc";
 import { Page } from "puppeteer";
 import taobaoHandlers from "./handlers";
 import taobaoCouponHandlers from "./coupon-handlers";
-import { resolveTaokouling } from "./tools";
+import { resolveTaokouling, resolveUrl } from "./tools";
+import { isSubmitOrder } from "../../common/config";
 
 const getItemId = (url: string) => /id=(\d+)/.exec(url)![1];
+var request_tags = {
+  agencyPay: true,
+  coupon: true,
+  deliveryMethod: true,
+  promotion: true,
+  service: true,
+  address: true,
+  voucher: true
+};
 
 export class Taobao extends AutoShop {
   mobile = true;
@@ -41,9 +51,7 @@ export class Taobao extends AutoShop {
     var text: string = await res.text();
     return !text.includes("FAIL_SYS_SESSION_EXPIRED::SESSION失效");
   }
-  async resolveUrl(url: string) {
-    return url;
-  }
+  resolveUrl = resolveUrl;
   async resolveUrls(text: string): Promise<string[]> {
     var urls: string[] = [];
     if (!/https?:/.test(text)) {
@@ -53,20 +61,7 @@ export class Taobao extends AutoShop {
     } else {
       urls = text.match(/https?:\/\/\w+(?:\.\w+){2,}[^ ]*/)!;
     }
-    return Promise.all(
-      urls.map(url => {
-        if (url.startsWith("https://s.click.taobao.com/t")) {
-          return (async () => {
-            var text = await this.req.get(url);
-            url = /URL=([^"]*)/.exec(text)![1].replace(/&amp;/g, "&");
-            var p = this.req.get(url);
-            await p;
-            return p.response!.request.href as string;
-          })();
-        }
-        return url;
-      })
-    );
+    return Promise.all(urls.map(resolveUrl));
   }
 
   async cartList() {
@@ -528,7 +523,59 @@ export class Taobao extends AutoShop {
       this.logFile(text, "提交失败，不能提交");
       throw new Error("有失效宝贝");
     }
+    var orderData = Object.keys(data).reduce(
+      (state, name) => {
+        var item = data[name];
+        item._request = request_tags[item.tag];
+        if (item.submit) {
+          item.fields.value = other[item.tag];
+          state[name] = item;
+        }
+        return state;
+      },
+      <any>{}
+    );
+    var submitOrder = data.submitOrder_1;
+    var realPay = data.realPay_1;
+    var address = data.address_1;
+    realPay.fields.currencySymbol = "￥";
+    submitOrder._realPay = realPay;
+    if (address) {
+      let { fields } = address;
+      fields.info = {
+        value: fields.options[0].deliveryAddressId
+      };
+      fields.url =
+        "//buy.m.tmall.com/order/addressList.htm?enableStation=true&requestStationUrl=%2F%2Fstationpicker-i56.m.taobao.com%2Finland%2FshowStationInPhone.htm&_input_charset=utf8&hidetoolbar=true&bridgeMessage=true";
+      fields.title = "管理收货地址";
+      submitOrder._address = address;
+    }
+    var coupon = data.coupon_3;
+    if (coupon && coupon.fields.totalValue) {
+      coupon.fields.value = "-" + /￥(.*)/.exec(coupon.fields.totalValue)![1];
+    }
     var ua = "";
+    var postdata = {
+      params: JSON.stringify({
+        data: JSON.stringify(orderData),
+        hierarchy: JSON.stringify({
+          structure
+        }),
+        linkage: JSON.stringify({
+          common: {
+            compress: linkage.common.compress,
+            submitParams: linkage.common.submitParams,
+            validateParams: linkage.common.validateParams
+          },
+          signature: linkage.signature
+        })
+      }),
+      ua
+    };
+    this.logFile(JSON.stringify(postdata), "订单结算页提交的数据");
+    if (!isSubmitOrder) {
+      return;
+    }
     var ret = await this.requestOnMobile(
       "https://h5api.m.taobao.com/h5/mtop.trade.createorder.h5/3.0/",
       "post",
@@ -548,35 +595,7 @@ export class Taobao extends AutoShop {
         H5Request: "true",
         submitref: "0a67f6"
       },
-      {
-        params: JSON.stringify({
-          data: JSON.stringify(
-            Object.keys(data).reduce(
-              (state, name) => {
-                var item = data[name];
-                if (item.submit) {
-                  item.fields.value = other[item.tag];
-                  state[name] = item;
-                }
-                return state;
-              },
-              <any>{}
-            )
-          ),
-          hierarchy: JSON.stringify({
-            structure
-          }),
-          linkage: JSON.stringify({
-            common: {
-              compress: linkage.common.compress,
-              submitParams: linkage.common.submitParams,
-              validateParams: linkage.common.validateParams
-            },
-            signature: linkage.signature
-          })
-        }),
-        ua
-      },
+      postdata,
       ua
     );
     this.logFile(ret, "手机订单提交成功");
@@ -890,11 +909,16 @@ export class Taobao extends AutoShop {
     // await page.click(".go-btn");
   }
 
-  onBeforeLogin(page: Page) {
-    return page.evaluate(() => {
+  async onBeforeLogin(page: Page) {
+    await page.evaluate(() => {
       document
         .querySelector<HTMLImageElement>("#J_QRCodeImg")!
         .scrollIntoView();
+    });
+    let img = await page.$("#J_QRCodeImg");
+    await img!.screenshot({
+      path: "./qrcode.png",
+      omitBackground: true
     });
   }
 }

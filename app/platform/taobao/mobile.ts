@@ -145,15 +145,23 @@ export function getMobileGoodsInfo(resData: string, skus?: number[]) {
   }
   let skuId = 0;
   if (skuBase && skuBase.props) {
-    let choosedSkus = skus || [];
-    let propPath = skuBase.props
-      .map(({ pid, values }, i) => `${pid}:${values[choosedSkus[i] || 0].vid}`)
-      .join(";");
-    let skuItem = skuBase.skus.find(item => item.propPath === propPath);
-    if (!skuItem) {
-      msg = "指定商品型号不存在";
+    if (skus) {
+      let propPath = skuBase.props
+        .map(
+          ({ pid, values }, i) =>
+            `${pid}:${
+              values[((skus[i] || 0) + values.length) % values.length].vid
+            }`
+        )
+        .join(";");
+      let skuItem = skuBase.skus.find(item => item.propPath === propPath);
+      if (!skuItem) {
+        msg = "指定商品型号不存在";
+      } else {
+        skuId = skuItem.skuId;
+      }
     } else {
-      skuId = skuItem.skuId;
+      skuId = skuBase.skus[0].skuId;
     }
   }
   if (skuCore) {

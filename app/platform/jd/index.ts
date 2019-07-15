@@ -23,7 +23,7 @@ import qs = require("querystring");
 const getSkuId = (url: string) => {
   return /(\d+)\.html/.exec(url)![1];
 };
-const user = require("./user.json");
+const user = require("../../../.data/user.json");
 
 export async function buy(page: Page) {
   if (page.url().startsWith("https://item.m.jd.com/")) {
@@ -184,7 +184,7 @@ export class Jindong extends AutoShop {
     }
     await page.evaluate(() => {
       document.querySelector<HTMLInputElement>("#shortPassInput")!.value =
-        "870092";
+        user.paypass;
       document.querySelector<HTMLElement>("#btnPayOnLine")!.click();
     });
     var res = await page.waitForResponse(res =>

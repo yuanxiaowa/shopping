@@ -1,7 +1,6 @@
 import { Application, IBoot } from "egg";
-import { bootstrapBrowser } from "./utils/page";
-import { taobao, jingdong } from "./app/platform";
 import bootstrap from "./app/bootstrap";
+import { destroyBrowser } from "./utils/page";
 
 export default class AppBootHook implements IBoot {
   constructor(public app: Application) {}
@@ -53,5 +52,9 @@ export default class AppBootHook implements IBoot {
     //   // handle socket timeout
     // });
     bootstrap();
+  }
+
+  beforeClose() {
+    return destroyBrowser();
   }
 }

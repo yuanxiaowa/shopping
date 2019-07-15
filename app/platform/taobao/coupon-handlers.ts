@@ -1,5 +1,6 @@
 import { startsWith } from "ramda";
 import { newPage } from "../../../utils/page";
+import { resolveUrl } from "./tools";
 
 async function handler(
   url: string,
@@ -11,7 +12,7 @@ async function handler(
   var page = await newPage();
   await page.goto(url);
   var data: any = await page.evaluate(handler);
-  if (data.success) {
+  if (data.success && !data.forceDirect) {
     let res = await page.waitForResponse(res =>
       res
         .url()
@@ -38,6 +39,7 @@ async function handler(
     }
   }
   page.close();
+  data.url = await resolveUrl(data.url);
   return data;
 }
 
@@ -75,11 +77,16 @@ const taobaoCouponHandlers = {
             url
           };
         }
-        var ele = document.querySelector<HTMLDivElement>(".use-btn")!;
+        var ele = document.querySelector<HTMLDivElement>(".btn-text")!;
+        var forceDirect = false;
         ele.click();
+        if (ele.parentElement!.classList.contains("use-btn-disabled")) {
+          forceDirect = true;
+        }
         return {
           success: true,
-          url
+          url,
+          forceDirect
         };
       });
     }

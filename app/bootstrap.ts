@@ -1,16 +1,15 @@
-import { bootstrapBrowser } from "../utils/page";
 import { taobao, jingdong } from "./platform";
-import { ensureFile } from "fs-extra";
-import { getCookieFilename } from "../utils/tools";
-import bootstrapJingdongTaskds from "./platform/jd/tasks";
+import bootstrapJingdongTasks from "./platform/jd/tasks";
+import { onInitCookieManager } from "./common/cookie-manager";
+import { onInitJingdong } from "./platform/jd/jindong";
+import { onInitJingrong } from "./platform/jd/jinrong";
+import { bootstrapBrowser } from "../utils/page";
 
 export default async function bootstrap() {
-  bootstrapJingdongTaskds();
-  await Promise.all([
-    bootstrapBrowser(),
-    ensureFile(getCookieFilename("jd")),
-    ensureFile(getCookieFilename("jd-goods")),
-    ensureFile(getCookieFilename("taobao"))
-  ]);
+  onInitCookieManager().then(async () => {
+    await Promise.all([onInitJingdong(), onInitJingrong()]);
+    bootstrapJingdongTasks();
+  });
+  await bootstrapBrowser();
   await Promise.all([taobao.start(), jingdong.start()]);
 }

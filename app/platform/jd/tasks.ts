@@ -2,7 +2,7 @@ import { doAll as doJdAll } from "./jd-util";
 import { doAll as doJrAll } from "./jr-util";
 import { getSignJRInfo, getSignAwardJR } from "./jinrong";
 
-export default function bootstrapJingdongTaskds() {
+export default function bootstrapJingdongTasks() {
   return Promise.all([doJdAll(), doJrAll()])
     .then(() => getSignJRInfo())
     .then(({ isGet }) => {

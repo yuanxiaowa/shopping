@@ -5,6 +5,7 @@ import { writeFile, ensureDir } from "fs-extra";
 import { Page } from "puppeteer";
 import { newPage } from "../../utils/page";
 import iconv = require("iconv-lite");
+import cookieManager from "../common/cookie-manager";
 
 interface AutoShopOptions {
   name: string;
@@ -104,7 +105,7 @@ export default abstract class AutoShop implements AutoShopOptions {
       jar: request.jar()
     };
     this.req = request.defaults(opts);
-    writeFile(this.cookie_filename, cookie);
+    cookieManager[this.name].set(cookie);
     this.onAfterLogin();
   }
   abstract resolveUrl(url: string): Promise<string>;
@@ -168,6 +169,6 @@ export default abstract class AutoShop implements AutoShopOptions {
     await page.close();
   }
   init() {
-    ensureDir(".data/" + this.name);
+    return ensureDir(".data/" + this.name);
   }
 }

@@ -1,4 +1,3 @@
-import { doAdJindou } from "./jd/jr-util";
 import request = require("request-promise-native");
 import { readFileSync } from "fs";
 

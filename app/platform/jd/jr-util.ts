@@ -12,9 +12,7 @@ import {
   getLotteryInfo,
   getLottery,
   getHealthInsuredInfo,
-  getHealthInsured,
-  getGiftInfo,
-  getGift
+  getHealthInsured
 } from "./jinrong";
 import {
   timer,
@@ -28,9 +26,7 @@ const user = require("../../../.data/user.json");
 
 export async function doWelfareActions() {
   log("检查参加活动领金豆");
-  var {
-    data: { welActList }
-  } = await getWelfareList();
+  var welActList = await getWelfareList();
   welActList.forEach(item => {
     let count = item.rewardTimesDayLimit - item.alreadyRewardTimesDay;
     if (count > 0) {
@@ -113,23 +109,19 @@ export async function doLottery() {
 
 export async function doHealthInsured() {
   log("检查健康金");
-  var { success, resultData, resultMsg } = await getHealthInsuredInfo();
-  if (success) {
-    if (Number(resultData.unSumInsured) > 0) {
-      return logReq("领取健康金", getHealthInsured);
-    }
+  var { unSumInsured } = await getHealthInsuredInfo();
+  if (Number(unSumInsured) > 0) {
+    return logReq("领取健康金", getHealthInsured);
   }
 }
 
-export async function doGift() {
+/* export async function doGift() {
   log("检查金融会员开礼盒");
-  var { success, data } = await getGiftInfo();
-  if (success) {
-    for (let i = 0; i < data.freeTimes; i++) {
-      return logReq("领取金融会员礼盒", getGift);
-    }
+  var { freeTimes } = await getGiftInfo();
+  for (let i = 0; i < freeTimes; i++) {
+    return logReq("领取金融会员礼盒", getGift);
   }
-}
+} */
 
 export async function doAll() {
   return Promise.all([

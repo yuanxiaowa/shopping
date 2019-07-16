@@ -1,61 +1,88 @@
-import { RequestPromise } from "request-promise-native";
 import request = require("request-promise-native");
 import * as R from "ramda";
-import { readFileSync } from "fs";
 import { getJsonpData } from "../../../utils/tools";
+import cookieManager from "../../common/cookie-manager";
 
-var req = request.defaults({
-  headers: {
-    "Accept-Encoding": "br, gzip, deflate",
-    Cookie: readFileSync(__dirname + "/cookie-jr.txt", "utf8"),
-    // Accept: '*/*',
-    "User-Agent":
-      "Mozilla/5.0 (iPhone; CPU iPhone OS 12_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148/application=JDJR-App&deviceId=7B4C588C-8371-4F85-B91D-F015D8C88E90&clientType=ios&iosType=iphone&clientVersion=5.2.32&HiClVersion=5.2.32&isUpdate=0&osVersion=12.3.1&osName=iOS&platform=iPhone 7 Plus (A1661/A1785/A1786)&screen=736*414&src=App Store&ip=2408:84ec:a012:4fe0:8e8:d4c0:79ca:649e&mac=02:00:00:00:00:00&netWork=1&netWorkType=1&stockSDK=stocksdk-iphone_3.0.0&sPoint=MTAwMDUjSlJMaWZlQ2hhbm5lbFZpZXdDb250cm9sbGVyI3RhbmNodWFuZzQwMDFfSlJMaWZlQ2hhbm5lbFZpZXdDb250cm9sbGVyKihudWxsKSrkvJfnrbnmibbotKvlpKfotZst5YWo6YeP&jdPay=(*#@jdPaySDK*#@jdPayChannel=jdfinance&jdPayChannelVersion=5.2.32&jdPaySdkVersion=2.23.3.0&jdPayClientName=iOS*#@jdPaySDK*#@)"
-    // Referer: 'https://m.jr.jd.com/btyingxiao/advertMoney/html/collar.html?iframeSrc=https%3A%2F%2Fccc-x.jd.com%2Fdsp%2Fnc%3Fext%3DaHR0cDovL3JlLm0uamQuY29tL2xpc3QvaXRlbS85NzU2LTMyODU5MTQ0NTEzLmh0bWw_cmVfZGNwPTQ0Z2Ntd3hGVm9rdWhQMFBDc1dBQ0VLZUFiVGFXYTNpanhYNnM0RW1USlY1RjJjWC1mMjNiMkJSMjduT1FWYWkyUlg5NDJvSWRKM0hYZ0pBaFFWYXBscklCQ0c3V29oQkgxamJFd3B4YXM4dCZ3aXRoX2twbD0w%26log%3DyJLB6LIpm9Fe_DYp8oLfiVanGvdXr1CfkU5Ikyj0aKL6d73M6kDEcVTFe4WOBnwC7dPK6vT9y2r_QQGNybqxVFg_8uIauPBm2Z5XRUyLXOdaNrwv6wIKAchuLsy9HRNOmJNs2Oo7Jm0hiq-Pb99EcHX60vNjPyLK9FPZ3e1qXLLlPI71wTijyrYDdVlHcg6lBX7gJ1iZXsY5NN2LDF4c2tXuCazR3sGiChZNxeUTJ6SD2DWc7_uic19ZqHK-gwNL6FesLoTdiX2b0-OBz_F_FAG9c0U3zojLJtlgG_GOwzr6boMfas-od2IcuvG4p9EXzcX5XbgGX5dYtMZcijsNhYG4GOHeRVAzOhgHF-1v9E5NU0RVHDTPueTTkE0HjagEwnGtpxz-2ojaowC6NgKzLbRus02yanoIbKhk3hXtlNCk9MDirVWKwJ_wSaABvsQ-P09G-tr6u8o_N6lEKsI8Kg%26v%3D404%26with_kpl%3D0&adId=764868357&bussource=',
-    // 'Accept-Language': 'en-us'
-  },
-  transform(body) {
-    if (typeof body === "string") {
-      body = JSON.parse(body);
+var req: request.RequestPromiseAPI;
+
+export function onInitJingrong() {
+  setReq();
+}
+
+export function setReq() {
+  req = request.defaults({
+    jar: true,
+    headers: {
+      "Accept-Encoding": "br, gzip, deflate",
+      cookie: cookieManager.jinrong.get(),
+      // Accept: '*/*',
+      "User-Agent":
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 12_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148/application=JDJR-App&deviceId=7B4C588C-8371-4F85-B91D-F015D8C88E90&clientType=ios&iosType=iphone&clientVersion=5.2.32&HiClVersion=5.2.32&isUpdate=0&osVersion=12.3.1&osName=iOS&platform=iPhone 7 Plus (A1661/A1785/A1786)&screen=736*414&src=App Store&ip=2408:84ec:a012:4fe0:8e8:d4c0:79ca:649e&mac=02:00:00:00:00:00&netWork=1&netWorkType=1&stockSDK=stocksdk-iphone_3.0.0&sPoint=MTAwMDUjSlJMaWZlQ2hhbm5lbFZpZXdDb250cm9sbGVyI3RhbmNodWFuZzQwMDFfSlJMaWZlQ2hhbm5lbFZpZXdDb250cm9sbGVyKihudWxsKSrkvJfnrbnmibbotKvlpKfotZst5YWo6YeP&jdPay=(*#@jdPaySDK*#@jdPayChannel=jdfinance&jdPayChannelVersion=5.2.32&jdPaySdkVersion=2.23.3.0&jdPayClientName=iOS*#@jdPaySDK*#@)"
+      // Referer: 'https://m.jr.jd.com/btyingxiao/advertMoney/html/collar.html?iframeSrc=https%3A%2F%2Fccc-x.jd.com%2Fdsp%2Fnc%3Fext%3DaHR0cDovL3JlLm0uamQuY29tL2xpc3QvaXRlbS85NzU2LTMyODU5MTQ0NTEzLmh0bWw_cmVfZGNwPTQ0Z2Ntd3hGVm9rdWhQMFBDc1dBQ0VLZUFiVGFXYTNpanhYNnM0RW1USlY1RjJjWC1mMjNiMkJSMjduT1FWYWkyUlg5NDJvSWRKM0hYZ0pBaFFWYXBscklCQ0c3V29oQkgxamJFd3B4YXM4dCZ3aXRoX2twbD0w%26log%3DyJLB6LIpm9Fe_DYp8oLfiVanGvdXr1CfkU5Ikyj0aKL6d73M6kDEcVTFe4WOBnwC7dPK6vT9y2r_QQGNybqxVFg_8uIauPBm2Z5XRUyLXOdaNrwv6wIKAchuLsy9HRNOmJNs2Oo7Jm0hiq-Pb99EcHX60vNjPyLK9FPZ3e1qXLLlPI71wTijyrYDdVlHcg6lBX7gJ1iZXsY5NN2LDF4c2tXuCazR3sGiChZNxeUTJ6SD2DWc7_uic19ZqHK-gwNL6FesLoTdiX2b0-OBz_F_FAG9c0U3zojLJtlgG_GOwzr6boMfas-od2IcuvG4p9EXzcX5XbgGX5dYtMZcijsNhYG4GOHeRVAzOhgHF-1v9E5NU0RVHDTPueTTkE0HjagEwnGtpxz-2ojaowC6NgKzLbRus02yanoIbKhk3hXtlNCk9MDirVWKwJ_wSaABvsQ-P09G-tr6u8o_N6lEKsI8Kg%26v%3D404%26with_kpl%3D0&adId=764868357&bussource=',
+      // 'Accept-Language': 'en-us'
+    },
+    json: true,
+    gzip: true,
+    transform({ resultCode, resultMsg, resultData }) {
+      if (resultCode !== 0) {
+        throw new Error(resultMsg);
+      }
+      if (resultData && resultData.code === "500") {
+        throw new Error(resultData.msg);
+      }
+      return resultData;
     }
-    var { resultCode, resultMsg, resultData } = body;
-    if (resultCode !== 0) {
-      throw new Error(resultMsg);
+  });
+}
+
+async function requestData<T>(
+  url: string,
+  data: any,
+  inner = false
+): Promise<T> {
+  var res = await req.post(url, {
+    qs: {
+      _: Date.now()
+    },
+    form: {
+      reqData: JSON.stringify(data)
+    },
+    headers: {
+      Referer: "https://m.jr.jd.com/"
     }
-    return resultData;
+  });
+  if (inner) {
+    if (!["0000", "200"].includes(res.code)) {
+      console.error(res);
+      throw new Error(res.msg);
+    }
+    return res.data;
   }
-});
-
-function getFormData(data: any) {
-  return {
-    reqData: JSON.stringify(data)
-  };
+  return res;
 }
 
 /**
  * 查询汇总信息
  */
-export function querySignBusiness(): RequestPromise<{
-  resBusiData: {
-    prizesNumber: number;
-    // 除第一项以外都有用
-    prizes: {
-      configId: string;
-      isPrizes: string;
-      value: string;
-    }[];
-  };
-  // 0：操作成功
-  resBusiCode: number;
-  resBusiMsg: string;
-}> {
-  return req.post(
+export function querySignBusiness() {
+  interface T {
+    resBusiData: {
+      prizesNumber: number;
+      // 除第一项以外都有用
+      prizes: {
+        configId: string;
+        isPrizes: string;
+        value: string;
+      }[];
+    };
+    // 0：操作成功
+    resBusiCode: number;
+    resBusiMsg: string;
+  }
+  return requestData<T>(
     "https://ms.jr.jd.com/gw/generic/hy/h5/m/querySignBusinessH5",
     {
-      qs: {
-        _: Date.now()
-      },
-      form: getFormData({ channelSource: "JRAPP" })
+      channelSource: "JRAPP"
     }
   );
 }
@@ -63,157 +90,150 @@ export function querySignBusiness(): RequestPromise<{
 /**
  * 获取签到信息
  */
-export function getSignInfo(): RequestPromise<{
-  // 0:操作成功
-  resBusiCode: number;
-  resBusiData: {
-    currentTime: number;
-    // 是否已签到
-    isFlag: boolean;
-    rewardTotal: string;
-    historyList: string[];
-    // 连签次数
-    signContinuity: string;
-    // 总签到次数
-    signCount: string;
-    // 3：钢镚
-    rewardType: number;
-    accountBalance: string;
-  };
-  resBusiMsg: string;
-}> {
-  return req.post("https://ms.jr.jd.com/gw/generic/hy/h5/m/querySignHistory", {
-    qs: {
-      _: Date.now()
-    },
-    form: getFormData({ channelSource: "JRAPP" })
-  });
+export function getSignInfo() {
+  interface T {
+    // 0:操作成功
+    resBusiCode: number;
+    resBusiData: {
+      currentTime: number;
+      // 是否已签到
+      isFlag: boolean;
+      rewardTotal: string;
+      historyList: string[];
+      // 连签次数
+      signContinuity: string;
+      // 总签到次数
+      signCount: string;
+      // 3：钢镚
+      rewardType: number;
+      accountBalance: string;
+    };
+    resBusiMsg: string;
+  }
+  return requestData<T>(
+    "https://ms.jr.jd.com/gw/generic/hy/h5/m/querySignHistory",
+    { channelSource: "JRAPP" }
+  );
 }
 
 /**
  * 签到
  */
-export function signIn(): RequestPromise<{
-  // 0: 操作成功 15：已经领取过
-  resBusiCode: number;
-  resBusiMsg: string;
-  resBusiData?: {
-    totalNumber: number;
-    // 连签天数
-    continuityDays: string;
-    rewardType: number;
-    isContinuity: boolean;
-    // 钢镚余额
-    accountBalance: string;
-    continuityAmount: number;
-    thisAmount: number;
-    isSuccess: boolean;
-    isDouble: boolean;
-  };
-}> {
-  return req.post(`https://ms.jr.jd.com/gw/generic/hy/h5/m/signIn`, {
-    qs: {
-      _: Date.now()
-    },
-    form: getFormData({ channelSource: "JRAPP" })
+export function signIn() {
+  interface T {
+    // 0: 操作成功 15：已经领取过
+    resBusiCode: number;
+    resBusiMsg: string;
+    resBusiData?: {
+      totalNumber: number;
+      // 连签天数
+      continuityDays: string;
+      rewardType: number;
+      isContinuity: boolean;
+      // 钢镚余额
+      accountBalance: string;
+      continuityAmount: number;
+      thisAmount: number;
+      isSuccess: boolean;
+      isDouble: boolean;
+    };
+  }
+  return requestData<T>(`https://ms.jr.jd.com/gw/generic/hy/h5/m/signIn`, {
+    channelSource: "JRAPP"
   });
 }
 
 /**
  * 点击商品领取金豆
  */
-export function getGoodsJindou(): RequestPromise<{
-  msg: string;
-  // 176696
-  actKey: string;
-  // 0000:成功 2000:今天的京豆已经发完
-  code: string;
-  // 1
-  issuccess: string;
-  data: {
-    // 获取的金豆数量
-    volumn: string;
-    // 总共获得的金豆数量
-    gbAmount: string;
-  };
-  canGetGb: boolean;
-}> {
-  return req.post("https://ms.jr.jd.com/gw/generic/jrm/h5/m/sendAdGb", {
-    form: getFormData({
-      clientType: "ios",
-      actKey: "176696",
-      userDeviceInfo: { adId: 764868357 + ((Math.random() * 1000) >> 0) },
-      deviceInfoParam: {
-        macAddress: "02:00:00:00:00:00",
-        channelInfo: "appstore",
-        IPAddress1: "2408:84ec:a012:4fe0:8e8:d4c0:79ca:649e",
-        OpenUDID: "9d6039ba9a88469d7733658d45e3dae4df03af46",
-        clientVersion: "5.2.32",
-        terminalType: "02",
-        osVersion: "12.3.1",
-        appId: "com.jd.jinrong",
-        deviceType: "iPhone9,2",
-        networkType: "WIFI",
-        startNo: 100,
-        UUID: "",
-        IPAddress: "",
-        deviceId: "7B4C588C-8371-4F85-B91D-F015D8C88E90",
-        IDFA: "3D52573B-D546-4427-BC41-19BE6C9CE864",
-        resolution: "1242*2208",
-        osPlatform: "iOS"
-      },
-      bussource: ""
-    })
+export function getGoodsJindou() {
+  interface T {
+    msg: string;
+    // 176696
+    actKey: string;
+    // 0000:成功 2000:今天的京豆已经发完
+    code: string;
+    // 1
+    issuccess: string;
+    data: {
+      // 获取的金豆数量
+      volumn: string;
+      // 总共获得的金豆数量
+      gbAmount: string;
+    };
+    canGetGb: boolean;
+  }
+  return requestData<T>("https://ms.jr.jd.com/gw/generic/jrm/h5/m/sendAdGb", {
+    clientType: "ios",
+    actKey: "176696",
+    userDeviceInfo: { adId: 764868357 + ((Math.random() * 1000) >> 0) },
+    deviceInfoParam: {
+      macAddress: "02:00:00:00:00:00",
+      channelInfo: "appstore",
+      IPAddress1: "2408:84ec:a012:4fe0:8e8:d4c0:79ca:649e",
+      OpenUDID: "9d6039ba9a88469d7733658d45e3dae4df03af46",
+      clientVersion: "5.2.32",
+      terminalType: "02",
+      osVersion: "12.3.1",
+      appId: "com.jd.jinrong",
+      deviceType: "iPhone9,2",
+      networkType: "WIFI",
+      startNo: 100,
+      UUID: "",
+      IPAddress: "",
+      deviceId: "7B4C588C-8371-4F85-B91D-F015D8C88E90",
+      IDFA: "3D52573B-D546-4427-BC41-19BE6C9CE864",
+      resolution: "1242*2208",
+      osPlatform: "iOS"
+    },
+    bussource: ""
   });
 }
 
-export function getSignJRInfo(): RequestPromise<{
-  // 是否已经获得
-  isGet: boolean;
-  isSignInJr: boolean;
-  isSignInJd: boolean;
-  // 200:响应成功
-  resultCode: number;
-  isNewUser: {
+export function getSignJRInfo() {
+  interface T {
+    // 是否已经获得
+    isGet: boolean;
+    isSignInJr: boolean;
+    isSignInJd: boolean;
+    // 200:响应成功
     resultCode: number;
-    amount: number;
-    // no
-    isNewUser: string;
+    isNewUser: {
+      resultCode: number;
+      amount: number;
+      // no
+      isNewUser: string;
+      resultMsg: string;
+    };
     resultMsg: string;
-  };
-  resultMsg: string;
-  longDaySign: boolean;
-}> {
-  return req.post("https://ms.jr.jd.com/gw/generic/jrm/h5/m/signInit", {
-    qs: {
-      _: Date.now()
-    },
-    form: getFormData({ source: "JR" })
+    longDaySign: boolean;
+  }
+  return requestData<T>("https://ms.jr.jd.com/gw/generic/jrm/h5/m/signInit", {
+    source: "JR"
   });
 }
 
 /**
  * 领取双签奖励
  */
-export function getSignAwardJR(): RequestPromise<{
-  // 200
-  resultCode: number;
-  // 响应成功
-  resultMsg: string;
-  // 0
-  status: number;
-  awardList: {
-    count: number;
-    name: string;
-    // 1：京豆
-    type: number;
-  }[];
-}> {
-  return req.post(`https://ms.jr.jd.com/gw/generic/jrm/h5/m/getSignAwardJR`, {
-    qs: {
-      _: Date.now()
-    },
-    form: getFormData({
+export function getSignAwardJR() {
+  interface T {
+    // 200
+    resultCode: number;
+    // 响应成功
+    resultMsg: string;
+    // 0
+    status: number;
+    awardList: {
+      count: number;
+      name: string;
+      // 1：京豆
+      type: number;
+    }[];
+  }
+  return requestData<T>(
+    `https://ms.jr.jd.com/gw/generic/jrm/h5/m/getSignAwardJR`,
+    {
       riskDeviceParam: JSON.stringify({
         deviceType: "iPhone+7+Plus+(A1661/A1785/A1786)",
         traceIp: "",
@@ -253,8 +273,8 @@ export function getSignAwardJR(): RequestPromise<{
         wifiIpAddress: "",
         sdkToken: ""
       })
-    })
-  });
+    }
+  );
 }
 
 // ----------------金果----------------
@@ -279,84 +299,80 @@ interface TreeInfo {
 /**
  * 获取金果详情
  */
-export function getJinguoInfo(): Promise<{
-  // 昵称
-  nick: string;
-  treeInfo: TreeInfo & {
-    coin: number;
-  };
-  sharePin: string;
-  workerList: any[];
-  avatar: string;
-  firstLogin: boolean;
-}> {
-  return req
-    .post(`https://ms.jr.jd.com/gw/generic/uc/h5/m/login`, {
-      qs: {
-        _: Date.now()
-      },
-      form: getFormData({
-        shareType: 1,
-        source: 2,
-        riskDeviceParam: JSON.stringify({
-          deviceType: "iPhone+7+Plus+(A1661/A1785/A1786)",
-          traceIp: "",
-          macAddress: "02:00:00:00:00:00",
-          imei: "7B4C588C-8371-4F85-B91D-F015D8C88E90",
-          os: "iOS",
-          osVersion: "12.3.1",
-          fp: "9d13e4394c1ec6f2c3456e5c5de3dc76",
-          ip: "2408:84ec:a012:4fe0:8e8:d4c0:79ca:649e",
-          eid:
-            "ZXHJWSWBJENX73DQAH7BW3RFGBNXZFMPJG6FFUDG3F26WRTNTZLAEVZEAERLMWPHRZGFKKG5YCL5XRQYJ7WB6F3NKE",
-          appId: "com.jd.jinrong",
-          openUUID: "9d6039ba9a88469d7733658d45e3dae4df03af46",
-          uuid: "",
-          clientVersion: "5.2.32",
-          resolution: "736*414",
-          channelInfo: "appstore",
-          networkType: "WIFI",
-          startNo: 100,
-          openid: "",
-          token: "",
-          sid: "",
-          terminalType: "02",
-          longtitude: "",
-          latitude: "",
-          securityData: "",
-          jscContent: "",
-          fnHttpHead: "",
-          receiveRequestTime: "",
-          port: "",
-          appType: 1,
-          optType: "",
-          idfv: "",
-          wifiSSID: "",
-          wifiMacAddress: "",
-          cellIpAddress: "",
-          wifiIpAddress: "",
-          sdkToken: ""
-        })
+export function getJinguoInfo() {
+  interface T {
+    // 昵称
+    nick: string;
+    treeInfo: TreeInfo & {
+      coin: number;
+    };
+    sharePin: string;
+    workerList: any[];
+    avatar: string;
+    firstLogin: boolean;
+  }
+  return requestData<T>(
+    `https://ms.jr.jd.com/gw/generic/uc/h5/m/login`,
+    {
+      shareType: 1,
+      source: 2,
+      riskDeviceParam: JSON.stringify({
+        deviceType: "iPhone+7+Plus+(A1661/A1785/A1786)",
+        traceIp: "",
+        macAddress: "02:00:00:00:00:00",
+        imei: "7B4C588C-8371-4F85-B91D-F015D8C88E90",
+        os: "iOS",
+        osVersion: "12.3.1",
+        fp: "9d13e4394c1ec6f2c3456e5c5de3dc76",
+        ip: "2408:84ec:a012:4fe0:8e8:d4c0:79ca:649e",
+        eid:
+          "ZXHJWSWBJENX73DQAH7BW3RFGBNXZFMPJG6FFUDG3F26WRTNTZLAEVZEAERLMWPHRZGFKKG5YCL5XRQYJ7WB6F3NKE",
+        appId: "com.jd.jinrong",
+        openUUID: "9d6039ba9a88469d7733658d45e3dae4df03af46",
+        uuid: "",
+        clientVersion: "5.2.32",
+        resolution: "736*414",
+        channelInfo: "appstore",
+        networkType: "WIFI",
+        startNo: 100,
+        openid: "",
+        token: "",
+        sid: "",
+        terminalType: "02",
+        longtitude: "",
+        latitude: "",
+        securityData: "",
+        jscContent: "",
+        fnHttpHead: "",
+        receiveRequestTime: "",
+        port: "",
+        appType: 1,
+        optType: "",
+        idfv: "",
+        wifiSSID: "",
+        wifiMacAddress: "",
+        cellIpAddress: "",
+        wifiIpAddress: "",
+        sdkToken: ""
       })
-    })
-    .then(({ data }) => data);
+    },
+    true
+  );
 }
 
 /**
  * 收获金果
  */
-export function harvestJinguo(): Promise<{
-  upgrade: boolean;
-  treeInfo: TreeInfo;
-}> {
-  return req
-    .post(`https://ms.jr.jd.com/gw/generic/uc/h5/m/harvest`, {
-      qs: {
-        _: Date.now()
-      },
-      form: getFormData({ source: 2, sharePin: null })
-    })
-    .then(({ data }) => data);
+export function harvestJinguo() {
+  interface T {
+    upgrade: boolean;
+    treeInfo: TreeInfo;
+  }
+  return requestData<T>(
+    `https://ms.jr.jd.com/gw/generic/uc/h5/m/harvest`,
+    { source: 2, sharePin: null },
+    true
+  );
 }
 
 /**
@@ -365,26 +381,24 @@ export function harvestJinguo(): Promise<{
  * @param opType 1:执行前置操作 2:领取奖励
  */
 export function signJinguo(workType: number, opType: number) {
-  return (): Promise<{
-    opMsg: string;
-    // 0：成功 1：失败
-    opResult: number;
-    // 获得金果数量
-    prizeAmount: number;
-  }> => {
-    return req
-      .post(`https://ms.jr.jd.com/gw/generic/uc/h5/m/doWork`, {
-        qs: {
-          _: Date.now()
-        },
-        form: getFormData({ source: 2, workType, opType })
-      })
-      .then(({ data }) => data);
+  return () => {
+    interface T {
+      opMsg: string;
+      // 0：成功 1：失败
+      opResult: number;
+      // 获得金果数量
+      prizeAmount: number;
+    }
+    return requestData<T>(
+      `https://ms.jr.jd.com/gw/generic/uc/h5/m/doWork`,
+      { source: 2, workType, opType },
+      true
+    );
   };
 }
 
-export function getJinguoDayWork(): Promise<
-  {
+export function getJinguoDayWork() {
+  type T = {
     // 奖励数量
     prizeAmount: number;
     prizeType: number;
@@ -393,15 +407,25 @@ export function getJinguoDayWork(): Promise<
     // -1:不可操作 0:可操作 1:可领取 2:已完成
     workStatus: -1 | 0 | 1 | 2;
     workType: number;
-  }[]
-> {
-  return req
-    .post(`https://ms.jr.jd.com/gw/generic/uc/h5/m/dayWork`, {
-      qs: {
-        _: Date.now()
-      }
-    })
-    .then(({ data }) => data);
+  }[];
+  return requestData<T>(
+    `https://ms.jr.jd.com/gw/generic/uc/h5/m/dayWork`,
+    { source: 2 },
+    true
+  );
+}
+
+async function requestJsonp<T>(url: string, qs: any, form?: any) {
+  var text = await req.post(url, {
+    qs: Object.assign({ _: Date.now(), callback: "cb" }, qs),
+    transform: R.identity,
+    form
+  });
+  var data = getJsonpData(text);
+  if (Array.isArray(data)) {
+    return <T>data[0];
+  }
+  return <T>data;
 }
 
 // ----------------翻牌----------------
@@ -422,51 +446,37 @@ interface FanpaiRes<T> {
   usIsTrade: boolean;
 }
 
-export async function getFanpaiInfo(): Promise<
-  FanpaiRes<{
-    // 是否允许翻牌 0:不允许
-    isAllowSignin: number;
-    // 今天拥有翻牌次数
-    todayCount: number;
-    // 总翻牌次数
-    totalCount: number;
-    rewardList: {
-      // 1:代表当前为翻的牌
-      checked: number;
-      // 1:金豆 2:钢镚 3:小金库还信用卡券
-      type: number;
-      rewardContent: any;
-      // 金豆数
-      jingdou: number;
-    }[];
-  }>
-> {
-  var body: string = await req.post("https://gpm.jd.com/signin_new/home", {
-    qs: {
-      sid: "47a4f6f4335b498f4a462e2d5e5d9f8w",
-      uaType: "2",
-      _: Date.now(),
-      callback: "Zepto1561530641091"
-    },
-    gzip: true,
-    transform: R.identity
+export async function getFanpaiInfo() {
+  return requestJsonp<
+    FanpaiRes<{
+      // 是否允许翻牌 0:不允许
+      isAllowSignin: number;
+      // 今天拥有翻牌次数
+      todayCount: number;
+      // 总翻牌次数
+      totalCount: number;
+      rewardList: {
+        // 1:代表当前为翻的牌
+        checked: number;
+        // 1:金豆 2:钢镚 3:小金库还信用卡券
+        type: number;
+        rewardContent: any;
+        // 金豆数
+        jingdou: number;
+      }[];
+    }>
+  >("https://gpm.jd.com/signin_new/home", {
+    sid: "47a4f6f4335b498f4a462e2d5e5d9f8w",
+    uaType: "2"
   });
-  return getJsonpData(body);
 }
 
-export async function fanpai(): Promise<FanpaiRes<{}>> {
-  var body: string = await req.get("https://gpm.jd.com/signin_new/choice", {
-    qs: {
-      sid: "47a4f6f4335b498f4a462e2d5e5d9f8w",
-      uaType: "2",
-      position: "1",
-      _: Date.now(),
-      callback: "Zepto1561531571875"
-    },
-    transform: R.identity,
-    gzip: true
+export async function fanpai() {
+  return requestJsonp<FanpaiRes<{}>>("https://gpm.jd.com/signin_new/choice", {
+    sid: "47a4f6f4335b498f4a462e2d5e5d9f8w",
+    uaType: "2",
+    position: "1"
   });
-  return getJsonpData(body);
 }
 
 // --------------------免费领金豆-----------
@@ -480,8 +490,16 @@ interface WelfareRes<T> {
   data: T;
 }
 
-export async function getWelfareList(): Promise<
-  WelfareRes<{
+async function requestWelfare<T>(url: string, qs: any, form?: any) {
+  var { data, code, msg } = await requestJsonp<WelfareRes<T>>(url, qs, form);
+  if (code === "00000") {
+    return data;
+  }
+  throw new Error(msg);
+}
+
+export async function getWelfareList() {
+  interface T {
     welActList: {
       // 1 2 3 14
       id: number;
@@ -503,58 +521,29 @@ export async function getWelfareList(): Promise<
       // 4
       rewardType: number;
     }[];
-  }>
-> {
-  var body: string = await req.post(
+  }
+  return requestWelfare<T>(
     `https://v-z.jd.com/welfare/act/getActList.action`,
+    { bizLine: 2, rewardType: 4 },
     {
-      qs: { bizLine: 2, rewardType: 4 },
-      form: {
-        callback: "$"
-      },
-      gzip: true,
-      transform: R.identity
+      callback: "$"
     }
-  );
-  return getJsonpData(body);
+  ).then(({ welActList }) => welActList);
 }
 
 export function doWelfareAction(actType: number) {
-  return async (): Promise<
-    WelfareRes<{
-      amount: number;
-      // 4
-      rewardType: number;
-    }>
-  > => {
-    var body = await req.get("https://v-z.jd.com/welfare/reward.action", {
-      qs: {
-        actType,
-        bizLine: "2",
-        extRule: 121612 + ((Math.random() * 1000) >>> 0),
-        callback: "callbackName1561533551104"
-      },
-      gzip: true,
-      transform: R.identity
+  return () =>
+    requestWelfare("https://v-z.jd.com/welfare/reward.action", {
+      actType,
+      bizLine: "2",
+      extRule: 121612 + ((Math.random() * 1000) >>> 0)
     });
-    return getJsonpData(body);
-  };
 }
 
 // ---------------金币抽奖-------------------
 
-interface LotteryRes<T> {
-  remainTimes: number;
-  msg: string;
-  actKey: string;
-  // 0000
-  code: string;
-  lotteryCoins: number;
-  data: T;
-}
-
-export function getLotteryInfo(): RequestPromise<
-  LotteryRes<{
+export function getLotteryInfo() {
+  return requestData<{
     remainTimes: number;
     actKey: string;
     memberLevelDesc: string;
@@ -565,15 +554,17 @@ export function getLotteryInfo(): RequestPromise<
     levelRemainTimes: number;
     isPlatinumExp: boolean;
     actName: string;
-  }>
-> {
-  return req.get(`https://ms.jr.jd.com/gw/generic/hy/h5/m/lotteryInfo`, {
-    qs: getFormData({ actKey: "AbeQry", t: Date.now() })
-  });
+  }>(
+    `https://ms.jr.jd.com/gw/generic/hy/h5/m/lotteryInfo`,
+    {
+      actKey: "AbeQry"
+    },
+    true
+  );
 }
 
-export function getLottery(): RequestPromise<
-  LotteryRes<{
+export function getLottery() {
+  return requestData<{
     awardId: number;
     awardLink: string;
     orderNo: string;
@@ -581,14 +572,8 @@ export function getLottery(): RequestPromise<
     awardTitle: string;
     awardName: string;
     awardType: string;
-  }>
-> {
-  return req.get(`https://ms.jr.jd.com/gw/generic/hy/h5/m/lottery`, {
-    qs: getFormData({ actKey: "AbeQry", t: Date.now() }),
-    headers: {
-      Referer:
-        "https://m.jr.jd.com/member/coinlottery/index.html?channel=01-gcmall-190306"
-    }
+  }>(`https://ms.jr.jd.com/gw/generic/hy/h5/m/lottery`, {
+    actKey: "AbeQry"
   });
 }
 
@@ -601,8 +586,23 @@ interface HealthInsuredRes<T> {
   resultMsg: string;
 }
 
-export function getHealthInsuredInfo(): RequestPromise<
-  HealthInsuredRes<{
+async function requestHealthInsured<T>() {
+  var { success, resultData, resultMsg } = await requestData<
+    HealthInsuredRes<T>
+  >("https://ms.jr.jd.com/gw/generic/bx/h5/m/queryHealthOrder", {
+    channel: "JRAPP",
+    resourcePlace: "teqiandao",
+    systemId: "h5.baoxian.health.front",
+    productCode: ""
+  });
+  if (!success) {
+    throw new Error(resultMsg);
+  }
+  return resultData;
+}
+
+export function getHealthInsuredInfo() {
+  interface T {
     existOrder: boolean;
     totalInsured: string;
     specialRight: string;
@@ -617,19 +617,11 @@ export function getHealthInsuredInfo(): RequestPromise<
     maxAge: string;
     needWindows: string;
     minAge: string;
-  }>
-> {
-  return req.post("https://ms.jr.jd.com/gw/generic/bx/h5/m/queryHealthOrder", {
-    form: getFormData({
-      channel: "JRAPP",
-      resourcePlace: "teqiandao",
-      systemId: "h5.baoxian.health.front",
-      productCode: ""
-    })
-  });
+  }
+  return requestHealthInsured<T>();
 }
-export function getHealthInsured(): RequestPromise<
-  HealthInsuredRes<{
+export function getHealthInsured() {
+  interface T {
     totalInsured: string;
     sumInsured: string;
     productCode: string;
@@ -639,28 +631,13 @@ export function getHealthInsured(): RequestPromise<
     unsumInsured: string;
     receiveStatus: string;
     newUserStatus: string;
-  }>
-> {
-  return req.post(
-    `https://ms.jr.jd.com/gw/generic/bx/h5/m/receiveHealthInsured`,
-    {
-      form: getFormData({
-        insuredStatus: "2",
-        realName: true,
-        channel: "JRAPP",
-        resourcePlace: "teqiandao",
-        systemId: "h5.baoxian.health.front",
-        productCode: "21000023"
-      })
-    }
-  );
+  }
+  return requestHealthInsured<T>();
 }
 
 // ---------------金融会员开礼盒----------------
-export function getGiftInfo(): RequestPromise<{
-  msg: string;
-  code: string;
-  data: {
+export function getGiftInfo() {
+  interface T {
     actCoins: number;
     assistedTimes: number;
     shareId: string;
@@ -671,32 +648,18 @@ export function getGiftInfo(): RequestPromise<{
     coinTimes: number;
     userCoins: number;
     assistAddFreeTimes: number;
-  };
-  success: boolean;
-}> {
-  return req.get("https://ms.jr.jd.com/gw/generic/hy/h5/m/queryGiftInfo", {
-    qs: Object.assign(
-      {
-        timestamp: Date.now()
-      },
-      getFormData({ shareId: "" })
-    )
-  });
+  }
+  return requestData<T>(
+    "https://ms.jr.jd.com/gw/generic/hy/h5/m/queryGiftInfo",
+    { shareId: "" },
+    true
+  );
 }
 
-export function getGift(): RequestPromise<{
-  success: boolean;
-  // 奖品提示
-  msg: string;
-  // A1002
-  code: string;
-}> {
-  return req.get("https://ms.jr.jd.com/gw/generic/hy/h5/m/openGift", {
-    qs: Object.assign(
-      {
-        timestamp: Date.now()
-      },
-      getFormData({ shareId: "" })
-    )
-  });
+export function getGift() {
+  return requestData(
+    "https://ms.jr.jd.com/gw/generic/hy/h5/m/openGift",
+    { shareId: "" },
+    true
+  );
 }

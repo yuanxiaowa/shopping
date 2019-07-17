@@ -226,6 +226,9 @@ export class Jindong extends AutoShop {
   }
 
   async loginAction(page: Page) {
+    await page.waitForNavigation({
+      timeout: 0
+    });
     await page.type("#username", user.username);
     await page.type("#password", user.password);
     await page.click("#loginBtn");

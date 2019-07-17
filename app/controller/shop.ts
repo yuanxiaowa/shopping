@@ -122,6 +122,11 @@ export default class ShopController extends Controller {
     var data = ctx.request.body;
     ctx.body = await handle(app[platform].comment(data), "评论成功");
   }
+  public async checkStatus() {
+    const { ctx, app } = this;
+    var { platform } = ctx.query;
+    ctx.body = await handle(app[platform].checkStatus());
+  }
   public async resolveUrl() {
     const { ctx, app } = this;
     var { platform } = ctx.query;

@@ -1,7 +1,7 @@
 import { RequestAPI, RequiredUriUrl, Response } from "request";
 import request = require("request-promise-native");
 import { RequestPromise, RequestPromiseOptions } from "request-promise-native";
-import { writeFile, ensureDir } from "fs-extra";
+import { writeFile, ensureDir, readFileSync } from "fs-extra";
 import { Page } from "puppeteer";
 import { newPage } from "../../utils/page";
 import iconv = require("iconv-lite");
@@ -50,7 +50,6 @@ export default abstract class AutoShop implements AutoShopOptions {
   req!: RequestAPI<RequestPromise<any>, RequestPromiseOptions, RequiredUriUrl>;
   cookie!: string;
   interval_check = 1000 * 60 * 60;
-  async onBeforeLogin(page: Page): Promise<any> {}
   onAfterLogin() {}
   constructor(data: AutoShopOptions) {
     Object.assign(this, data);
@@ -66,19 +65,6 @@ export default abstract class AutoShop implements AutoShopOptions {
           .substring(2, 6),
       content
     );
-  }
-  async checkUrl(url: string, page: Page) {
-    /* try {
-      var p = this.req.get(url, {
-        followRedirect: false
-      });
-      await p;
-      return true;
-    } catch (e) {
-      return false;
-    } */
-    await page.goto(url);
-    return page.url() === url;
   }
   setCookie(cookie: string) {
     this.cookie = cookie;
@@ -137,7 +123,11 @@ export default abstract class AutoShop implements AutoShopOptions {
   abstract submitOrder(data: any, other?: any): Promise<any>;
   async seckillList(name: string): Promise<any> {}
 
-  async loginAction(page: Page) {}
+  async loginAction(page: Page): Promise<any> {
+    return page.waitForNavigation({
+      timeout: 0
+    });
+  }
   async getPageCookie(page: Page) {
     var cookies = await page.cookies();
     var cookie_str = cookies
@@ -145,30 +135,72 @@ export default abstract class AutoShop implements AutoShopOptions {
       .join("; ");
     return cookie_str;
   }
-  async login(page: Page) {
-    await page.goto(this.login_url);
-    await this.onBeforeLogin(page);
-    await this.loginAction(page);
-    await page.waitForNavigation({
-      timeout: 1000 * 60 * 5
-    });
-    await page.goto(this.state_url);
+  async login(page: Page, cb?: Function) {
+    page.goto(this.login_url);
+    let p = this.loginAction(page);
+    await page.waitForNavigation();
+    (async () => {
+      await page.waitForNavigation({
+        timeout: 0
+      });
+      await page.goto(this.state_url);
+      cb && cb();
+    })();
+    return p;
   }
   async start() {
     return this.preserveState();
+  }
+  async checkUrl(url: string, page: Page) {
+    /* try {
+      var p = this.req.get(url, {
+        followRedirect: false
+      });
+      await p;
+      return true;
+    } catch (e) {
+      return false;
+    } */
+    await page.goto(url);
+    return page.url() === url;
   }
   private async preserveState() {
     var page = await newPage();
     var logined = await this.checkUrl(this.state_url, page);
     setTimeout(this.preserveState.bind(this), this.interval_check);
     if (!logined) {
-      await this.login(page);
+      try {
+        await new Promise(resolve => {
+          this.login(page, resolve);
+        });
+      } catch (e) {
+        page.close();
+        return;
+      }
     }
     await page.goto(this.state_url);
     this.setCookie(await this.getPageCookie(page));
     await page.close();
   }
   init() {
+    this.setCookie(readFileSync(this.cookie_filename, "utf8"));
     return ensureDir(".data/" + this.name);
+  }
+  async checkStatus() {
+    var page = await newPage();
+    var logined = await this.checkUrl(this.state_url, page);
+    var p = !logined ? this.login(page) : null;
+    (async () => {
+      await p;
+      try {
+        await page.waitForNavigation();
+      } catch (e) {
+        await page.close();
+      }
+      await page.goto(this.state_url);
+      this.setCookie(await this.getPageCookie(page));
+      await page.close();
+    })();
+    return p;
   }
 }

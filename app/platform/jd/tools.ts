@@ -64,6 +64,9 @@ export async function getActivityCoupons(url: string) {
 
 export async function resolveUrl(url: string) {
   if (!url.startsWith("https://u.jd.com/")) {
+    /* if (url.startsWith('https://wq.jd.com/item/view')) {
+      let id = /sku=\d+/
+    } */
     return url;
   }
   let html: string = await request.get(url, {

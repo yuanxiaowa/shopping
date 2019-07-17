@@ -20,6 +20,8 @@ export default (app: Application) => {
   router.post("/resolve/urls", controller.shop.resolveUrls);
   router.get("/seckill/list", controller.shop.seckillList);
 
+  router.get("/check/status", controller.shop.checkStatus);
+
   router.get("/sixty-course/list", controller.shop.sixtyCourseList);
   router.get("/sixty-course/reply", controller.shop.sixtyCourseReply);
 

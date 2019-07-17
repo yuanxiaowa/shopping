@@ -87,13 +87,18 @@ export function getMobileCartList(resData: any) {
       return;
     }
     var items = structure[name];
-    if (!items) {
-      console.log(name);
-    }
     if (items[0].startsWith("shop")) {
       let { id, fields } = data[items[0]];
-      let groups = items.filter(item => item.startsWith("group_"));
-      let children = structure[groups[groups.length - 1]].map(mapper);
+      // let groups = items.filter(item => item.startsWith("group_"));
+      let children: any[] = [];
+      items.slice(1).forEach(key => {
+        if (!structure[key]) {
+          return;
+        }
+        structure[key].map(_item => {
+          children.push(mapper(_item));
+        });
+      });
       ret.push({
         id,
         title: fields.title,
@@ -128,11 +133,9 @@ export function getMobileCartList(resData: any) {
 
 export function getMobileGoodsInfo(resData: string, skus?: number[]) {
   let {
-    data: { apiStack }
+    data: { apiStack, item }
   } = getJsonpData(resData);
-  let { delivery, item, trade, skuBase, skuCore } = JSON.parse(
-    apiStack[0].value
-  );
+  let { delivery, trade, skuBase, skuCore } = JSON.parse(apiStack[0].value);
   let buyEnable = trade.buyEnable === "true";
   let cartEnable = trade.cartEnable === "true";
   let msg: string | undefined;
@@ -143,7 +146,7 @@ export function getMobileGoodsInfo(resData: string, skus?: number[]) {
       msg = trade.reason;
     }
   }
-  let skuId = 0;
+  let skuId = "0";
   if (skuBase && skuBase.props) {
     if (skus) {
       let propPath = skuBase.props
@@ -156,15 +159,27 @@ export function getMobileGoodsInfo(resData: string, skus?: number[]) {
         .join(";");
       let skuItem = skuBase.skus.find(item => item.propPath === propPath);
       if (!skuItem) {
-        msg = "指定商品型号不存在";
+        throw new Error("指定商品型号不存在");
       } else {
         skuId = skuItem.skuId;
       }
-    } else {
-      skuId = skuBase.skus[0].skuId;
     }
   }
   if (skuCore) {
+    if (skuId === "0") {
+      let min = Infinity;
+      for (let key of Object.keys(skuCore.sku2info)) {
+        let { price, quantity } = skuCore.sku2info[key];
+        if (price.priceText.includes("-") || !(Number(quantity) > 0)) {
+          continue;
+        }
+        let p = Number(price.priceText);
+        if (p < min) {
+          min = p;
+          skuId = key;
+        }
+      }
+    }
     let item = skuCore.sku2info[skuId];
     if (item && item.quantity === "0") {
       throw new Error("无库存了");

@@ -55,7 +55,7 @@ export class Taobao extends AutoShop {
   resolveUrl = resolveUrl;
   async resolveUrls(text: string): Promise<string[]> {
     var urls: string[] = [];
-    if (!/https?:/.test(text)) {
+    if (/复制/.test(text) || !/https?:\/\//.test(text)) {
       // let tkl_e = /(￥\w+￥)/.exec(text);
       let url = await resolveTaokouling(text);
       urls.push(url);
@@ -466,13 +466,12 @@ export class Taobao extends AutoShop {
         AntiCreep: "true",
         H5Request: "true",
         LoginRequest: "true",
-        type: "jsonp",
-        dataType: "jsonp",
-        callback: "mtopjsonp1"
+        type: "json",
+        dataType: "json"
       },
       data
     );
-    return getJsonpData(text);
+    return JSON.parse(text);
   }
   async submitOrderFromMobile(data: any, other: any = {}) {
     // other.memo other.ComplexInput
@@ -498,18 +497,17 @@ export class Taobao extends AutoShop {
       },
       data
     );
-    console.log(
-      "-------------已经进入手机订单结算页-------------",
-      typeof text
-    );
+    console.log("-------------已经进入手机订单结算页-------------");
     this.logFile(text, "手机订单结算页");
-    if (typeof text === "string") {
-      text = JSON.parse(text);
-    }
-    if (text.ret[0].includes("FAIL_SYS_TRAFFIC_LIMIT")) {
-      console.log(typeof text);
+    let data1 = JSON.parse(text);
+    let [msg1] = data1.ret;
+    let msg1_arr = msg1.split("::");
+    if (msg1_arr[0] === "FAIL_SYS_TRAFFIC_LIMIT") {
       console.log("正在重试");
       return this.submitOrderFromMobile(data, other);
+    }
+    if (msg1_arr[0] !== "SUCCESS") {
+      throw new Error(msg1_arr[1]);
     }
     console.log("-------------进入手机订单结算页，准备提交-------------");
     var {
@@ -518,7 +516,7 @@ export class Taobao extends AutoShop {
         linkage,
         hierarchy: { structure, root }
       }
-    } = text;
+    } = data1;
     var invalids = structure[root].filter(name => name.startsWith("invalid"));
     if (invalids.length > 0) {
       this.logFile(text, "提交失败，不能提交");
@@ -1121,16 +1119,10 @@ export class Taobao extends AutoShop {
     // await page.click(".go-btn");
   }
 
-  async onBeforeLogin(page: Page) {
-    await page.evaluate(() => {
-      document
-        .querySelector<HTMLImageElement>("#J_QRCodeImg")!
-        .scrollIntoView();
-    });
-    let img = await page.$("#J_QRCodeImg");
-    await img!.screenshot({
-      path: ".data/qrcode.png",
-      omitBackground: true
-    });
+  async loginAction(page: Page) {
+    var res = await page.waitForResponse(res =>
+      res.url().startsWith("https://img.alicdn.com/imgextra")
+    );
+    return res.url();
   }
 }

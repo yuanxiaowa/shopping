@@ -189,18 +189,16 @@ export default abstract class AutoShop implements AutoShopOptions {
   async checkStatus() {
     var page = await newPage();
     var logined = await this.checkUrl(this.state_url, page);
-    var p = !logined ? this.login(page) : null;
-    (async () => {
-      await p;
-      try {
-        await page.waitForNavigation();
-      } catch (e) {
+    var p: any;
+    if (!logined) {
+      p = await this.login(page);
+    } else {
+      (async () => {
+        await page.goto(this.state_url);
+        this.setCookie(await this.getPageCookie(page));
         await page.close();
-      }
-      await page.goto(this.state_url);
-      this.setCookie(await this.getPageCookie(page));
-      await page.close();
-    })();
+      })();
+    }
     return p;
   }
 }

@@ -1,7 +1,6 @@
 import puppeteer = require("puppeteer");
 import { Browser, Page } from "puppeteer";
 import resolver = require("puppeteer-chromium-resolver");
-import os = require("os");
 
 var browser: Browser;
 var defaultPage: Page;
@@ -15,7 +14,7 @@ export async function bootstrapBrowser() {
     executablePath: revisionInfo.executablePath
   });
   [defaultPage] = await browser.pages();
-  defaultPage.goto("http://localhost:8080/");
+  // defaultPage.goto("http://localhost:8080/");
   defaultPage.exposeFunction("evalFunction", async (code: string) => {
     console.log("进入函数执行");
     var f = eval(`(${code})`);

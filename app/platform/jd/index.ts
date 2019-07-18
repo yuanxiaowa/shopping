@@ -208,7 +208,7 @@ export class Jindong extends AutoShop {
 
   async start() {
     await super.start();
-    await this.preservePcState();
+    // await this.preservePcState();
     this.onFirstLogin();
   }
 

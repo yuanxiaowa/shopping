@@ -34,9 +34,7 @@ export interface CartItem extends CartItemBase {
 const pattern = /\$\{(.*)\}/;
 
 export function getMobileCartList(resData: any) {
-  var {
-    data: { hierarchy, data, controlParas }
-  } = resData;
+  var { hierarchy, data, controlParas } = resData;
 
   var structure: Record<string, string[]> = hierarchy.structure;
 
@@ -131,14 +129,14 @@ export function getMobileCartList(resData: any) {
   return ret;
 }
 
-export function getMobileGoodsInfo(resData: string, skus?: number[]) {
-  let {
-    data: { apiStack, item }
-  } = getJsonpData(resData);
-  let { delivery, trade, skuBase, skuCore } = JSON.parse(apiStack[0].value);
+export function transformMobileGoodsInfo({ apiStack, item }, skus?: number[]) {
+  let { delivery, trade, skuBase, skuCore, price } = JSON.parse(
+    apiStack[0].value
+  );
   let buyEnable = trade.buyEnable === "true";
   let cartEnable = trade.cartEnable === "true";
   let msg: string | undefined;
+  let cuxiao: any;
   if (!buyEnable) {
     if (trade.hintBanner) {
       msg = trade.hintBanner.text;
@@ -169,6 +167,9 @@ export function getMobileGoodsInfo(resData: string, skus?: number[]) {
     if (skuId === "0") {
       let min = Infinity;
       for (let key of Object.keys(skuCore.sku2info)) {
+        if (key === "0") {
+          continue;
+        }
         let { price, quantity } = skuCore.sku2info[key];
         if (price.priceText.includes("-") || !(Number(quantity) > 0)) {
           continue;
@@ -185,12 +186,39 @@ export function getMobileGoodsInfo(resData: string, skus?: number[]) {
       throw new Error("无库存了");
     }
   }
+  if (price.shopProm) {
+    cuxiao = price.shopProm.map(
+      (p: { type: number; content: string[]; title: string }) => {
+        var quota = 0;
+        var discount = 1;
+        var amount = 1;
+        if (p.type === 3) {
+          // 满多少件打折
+          let arr = /满(\d+)件,打(\d+)折/.exec(p.content[0])!;
+          amount = +arr[1];
+          discount = +arr[2] / 10;
+        } else if (p.type === 5) {
+          // 送积分
+          discount = Number(/(\d+)/.exec(p.content[0]![1]));
+        }
+        return {
+          type: p.type,
+          title: p.title,
+          quota,
+          discount,
+          amount
+        };
+      }
+    );
+  }
   return {
     itemId: item.itemId,
     buyEnable,
     cartEnable,
     msg,
     skuId,
-    delivery
+    delivery,
+    price: price.price.priceText,
+    cuxiao
   };
 }

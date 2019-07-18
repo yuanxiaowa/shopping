@@ -1,29 +1,24 @@
 import AutoShop from "../auto-shop";
-import {
-  getCookie,
-  getJsonpData,
-  getCookieFilename
-} from "../../../utils/tools";
-import signData from "./h";
-import { getMobileCartList, getMobileGoodsInfo } from "./mobile";
+import { getCookie, getCookieFilename } from "../../../utils/tools";
 import { getPcCartInfo } from "./pc";
 import { Page } from "puppeteer";
 import taobaoHandlers from "./handlers";
 import taobaoCouponHandlers from "./coupon-handlers";
 import { resolveTaokouling, resolveUrl } from "./tools";
-import { isSubmitOrder } from "../../common/config";
-import moment = require("moment");
-
-const getItemId = (url: string) => /id=(\d+)/.exec(url)![1];
-var request_tags = {
-  agencyPay: true,
-  coupon: true,
-  deliveryMethod: true,
-  promotion: true,
-  service: true,
-  address: true,
-  voucher: true
-};
+import {
+  getGoodsInfo,
+  setReq,
+  addCart,
+  getCartList,
+  updateCart,
+  cartToggle,
+  seckillList,
+  sixtyCourseList,
+  sixtyCourseReply,
+  submitOrder,
+  comment,
+  commentList
+} from "./goods";
 
 export class Taobao extends AutoShop {
   mobile = true;
@@ -68,7 +63,7 @@ export class Taobao extends AutoShop {
   async cartList() {
     var items;
     if (this.mobile) {
-      items = await this.cartListFromMobile();
+      items = await getCartList();
     } else {
       items = await this.cartListFromPc();
     }
@@ -79,156 +74,16 @@ export class Taobao extends AutoShop {
     quantity: number;
     skus?: number[];
   }): Promise<any> {
-    var itemId;
-    var skuId;
-    if (/skuId=(\d+)/.test(args.url)) {
-      skuId = RegExp.$1;
-      itemId = /id=(\d+)/.exec(args.url)![1];
-    } else {
-      var res = await this.getGoodsInfo(args.url, args.skus);
-      skuId = res.skuId;
-      itemId = res.itemId;
-    }
-    var text = await this.requestOnMobile(
-      "https://h5api.m.tmall.com/h5/mtop.trade.addbag/3.1/",
-      "post",
-      {
-        jsv: "2.4.8",
-        appKey: this.appKey,
-        api: "mtop.trade.addBag",
-        v: "3.1",
-        ecode: "1",
-        type: "originaljson",
-        ttid: "tmalldetail",
-        dataType: "jsonp"
-      },
-      {
-        itemId,
-        quantity: args.quantity,
-        exParams: JSON.stringify({
-          addressId: "9607477385",
-          etm: "",
-          buyNow: "true",
-          _input_charset: "utf-8",
-          areaId: "320583",
-          divisionId: "320583"
-        }),
-        skuId
-      }
-    );
-    let { data, ret } = JSON.parse(text);
-    if (ret[0].startsWith("SUCCESS")) {
-      return data.cartId;
-    }
-    throw new Error(data.msg);
+    return addCart(args);
   }
   cartDel(data: any): Promise<any> {
-    return this.cartUpdate(data, "deleteSome");
+    return updateCart(data, "deleteSome");
   }
-  async cartUpdateQuantity(data) {
-    this.cartUpdate(data, "update");
+  cartUpdateQuantity(data) {
+    return updateCart(data, "update");
   }
-  async cartUpdate({ items }: any, action: string): Promise<any> {
-    var { cartId, quantity } = items[0];
-    var {
-      data: { hierarchy, data }
-    }: any = await this.cartListRawFromMobile();
-    var updateKey = Object.keys(data).find(
-      key => data[key].fields.cartId === cartId
-    )!;
-    var key = Object.keys(hierarchy.structure).find(key =>
-      hierarchy.structure[key].includes(updateKey)
-    )!;
-    var cdata = hierarchy.structure[key].reduce((state, key) => {
-      var { fields } = data[key];
-      state[key] = {
-        fields: {
-          bundleId: fields.bundleId,
-          cartId: fields.cartId,
-          checked: fields.checked,
-          itemId: fields.itemId,
-          quantity: fields.quantity.quantity,
-          shopId: fields.shopId,
-          valid: fields.valid
-        }
-      };
-      return state;
-    }, {});
-    cdata[updateKey].fields.quantity = quantity;
-    var text = await this.requestOnMobile(
-      "https://acs.m.taobao.com/h5/mtop.trade.updatebag/4.0/",
-      "post",
-      {
-        jsv: "2.3.26",
-        appKey: "12574478",
-        api: "mtop.trade.updateBag",
-        v: "4.0",
-        type: "originaljson",
-        dataType: "json",
-        isSec: "0",
-        ecode: "1",
-        AntiFlood: "true",
-        AntiCreep: "true",
-        H5Request: "true",
-        LoginRequest: "true"
-      },
-      {
-        p: JSON.stringify({
-          data: cdata,
-          operate: { [action]: [updateKey] },
-          hierarchy
-        }),
-        extStatus: "0",
-        feature: '{"gzip":false}',
-        exParams: JSON.stringify({
-          mergeCombo: "true",
-          version: "1.0.0",
-          globalSell: "1",
-          spm: this.spm,
-          cartfrom: "detail"
-        }),
-        spm: this.spm,
-        cartfrom: "detail"
-      }
-    );
-    var { data, ret } = JSON.parse(text);
-    if (ret[0].startsWith("SUCCESS")) {
-      return data.cartId;
-    }
-    throw new Error(data.msg);
-  }
-  comment(data: any): Promise<any> {
-    /* this.req.post("", {
-      form: {
-        callback: "RateWriteCallback548",
-        _tb_token_: "edeb7b783ff65",
-        um_token: "T0eb928a011b00316c98a9fed9edb4b2b",
-        action: "new_rate_write_action",
-        event_submit_do_write: "any",
-        sellerId: "2200811872345",
-        bizOrderIdList: "492409251844405857",
-        itemId492409251844405857: "591795307112",
-        eventId492409251844405857: "",
-        parentOrderId: "492409251844405857",
-        qualityContent492409251844405857: "fdsfdsafdsaf",
-        serviceContent492409251844405857: "fdsaf",
-        Filedata: "",
-        urls: "",
-        merDsr492409251844405857: "5",
-        serviceQualityScore: "5",
-        saleConsignmentScore: "5",
-        anony: "1",
-        ishares: "",
-        ua:
-          "118#ZVWZz7teaQVZ0e/LdH2mpZZTZsHhce/ezeVnvsqTzHRzZRbZXoTXOrezpgqTVHR4Zg2ZOzqTze0cZgYUHDqVze2zZCFhXHvnzhtZZzu7zeRZZgZZ2Yq4zH2zgeu1THWVZZ2ZZ2HhzHRzVgzYcoqVze2ZZVbhXHJmgiguZaq2zeRZZgZZfDqVzOqZzeZ4yH1JZBD1c78nByRuZZYCXfqYZH2zZZCTcHCVx20rEfqhzHWxzZZZV5q44aPiueZhXTVHZg2ZumqTzeRzZZZuVfq4zH2ZZZFhVHW4ZZ2uZ0bTzeRzZZZZ23Z4ze2zZZuXTiXejg2ZjUi5zPErwZubQozqF00nMWTKzLQvxN9m3LIVTHjaVcjjc2L3sKqSh8gTP5S8FDpKyTHCugZCmrDtKHZzhaquuI0DRgZTlItysC/ATH+z8N2Crbz04R4GIE3fdf3gV2gbTR2B7+zF3qqMmOW3N4mlfO6N1SuNkGAumAnxsKbe43gCE87ooXXoLBK3lPdtfJk4fgNaaid3jZa5RF8Y2HhI1WMgXAaXoZuDzJi8DMJT31BZjQHGH2432fvCzMLqB2yvwTQni66GyfOOVCFmOWAV0r+PqIDp5hZ1eB5Bn+p7OMJZSthhoMbH6k0vVh9Quf4xEHzfWFoHsYEPPDKiX23KElhfshnArhpIViJU4HlG5zsJuLxlGC7bW5Oltr5xn91jM4b4w44HlbDpVR9JXL2IQRJRJDV7xegJS2PZd/mtYaf0yA7dr8hb8PGj6N4Snl9fzfvVBqKY7XK/R41in/X1d+tazXEIugNPh4B8nxoRAYgk09rbCXRmoc+ffVjbrkh9hwIywk0m/xX4aP4z0jkihzBTyLDdz3xOp7FdrIbfBA0xlcfAftRigVieQTOVzg==",
-        "492409251844405857_srNameList": ""
-      }
-    }); */
-    throw new Error("Method not implemented.");
-  }
-  commentList(): Promise<any> {
-    throw new Error("Method not implemented.");
-  }
+  comment = comment;
+  commentList = commentList;
   buyDirect(data: {
     url: string;
     quantity: number;
@@ -435,186 +290,9 @@ export class Taobao extends AutoShop {
   }
 
   spm = "a222m.7628550.0.0";
-  async cartListFromMobile() {
-    return getMobileCartList(await this.cartListRawFromMobile());
-  }
-  async cartListRawFromMobile() {
-    var data = {
-      exParams: JSON.stringify({
-        mergeCombo: "true",
-        version: "1.0.0",
-        globalSell: "1",
-        spm: this.spm,
-        cartfrom: "detail"
-      }),
-      isPage: "false",
-      extStatus: "0",
-      spm: this.spm,
-      cartfrom: "detail"
-    };
-    var text: string = await this.requestOnMobile(
-      "https://acs.m.taobao.com/h5/mtop.trade.querybag/5.0/",
-      "get",
-      {
-        jsv: "2.3.26",
-        appKey: "12574478",
-        api: "mtop.trade.queryBag",
-        v: "5.0",
-        isSec: "0",
-        ecode: "1",
-        AntiFlood: "true",
-        AntiCreep: "true",
-        H5Request: "true",
-        LoginRequest: "true",
-        type: "json",
-        dataType: "json"
-      },
-      data
-    );
-    return JSON.parse(text);
-  }
-  async submitOrderFromMobile(data: any, other: any = {}) {
-    // other.memo other.ComplexInput
-    // this.logFile(JSON.stringify(items), '手机准备进入订单结算页')
-    console.log("-------------开始进入手机订单结算页-------------");
-    var text: any = await this.requestOnMobile(
-      "https://h5api.m.taobao.com/h5/mtop.trade.buildorder.h5/3.0/",
-      "post",
-      {
-        jsv: "2.4.7",
-        appKey: this.appKey,
-        api: "mtop.trade.buildOrder.h5",
-        v: "3.0",
-        type: "originaljson",
-        timeout: "20000",
-        isSec: "1",
-        dataType: "json",
-        ecode: "1",
-        ttid: "#t#ip##_h5_2014",
-        AntiFlood: "true",
-        LoginRequest: "true",
-        H5Request: "true"
-      },
-      data
-    );
-    console.log("-------------已经进入手机订单结算页-------------");
-    this.logFile(text, "手机订单结算页");
-    let data1 = JSON.parse(text);
-    let [msg1] = data1.ret;
-    let msg1_arr = msg1.split("::");
-    if (msg1_arr[0] === "FAIL_SYS_TRAFFIC_LIMIT") {
-      console.log("正在重试");
-      return this.submitOrderFromMobile(data, other);
-    }
-    if (msg1_arr[0] !== "SUCCESS") {
-      throw new Error(msg1_arr[1]);
-    }
-    console.log("-------------进入手机订单结算页，准备提交-------------");
-    var {
-      data: {
-        data,
-        linkage,
-        hierarchy: { structure, root }
-      }
-    } = data1;
-    var invalids = structure[root].filter(name => name.startsWith("invalid"));
-    if (invalids.length > 0) {
-      this.logFile(text, "提交失败，不能提交");
-      throw new Error("有失效宝贝");
-    }
-    var orderData = Object.keys(data).reduce(
-      (state, name) => {
-        var item = data[name];
-        item._request = request_tags[item.tag];
-        if (item.submit) {
-          item.fields.value = other[item.tag];
-          state[name] = item;
-        }
-        return state;
-      },
-      <any>{}
-    );
-    var submitOrder = data.submitOrder_1;
-    var realPay = data.realPay_1;
-    var address = data.address_1;
-    realPay.fields.currencySymbol = "￥";
-    submitOrder._realPay = realPay;
-    if (address) {
-      let { fields } = address;
-      fields.info = {
-        value: fields.options[0].deliveryAddressId
-      };
-      fields.url =
-        "//buy.m.tmall.com/order/addressList.htm?enableStation=true&requestStationUrl=%2F%2Fstationpicker-i56.m.taobao.com%2Finland%2FshowStationInPhone.htm&_input_charset=utf8&hidetoolbar=true&bridgeMessage=true";
-      fields.title = "管理收货地址";
-      submitOrder._address = address;
-    }
-    var coupon = data.coupon_3;
-    if (coupon && coupon.fields.totalValue) {
-      coupon.fields.value = "-" + /￥(.*)/.exec(coupon.fields.totalValue)![1];
-    }
-    var ua = "";
-    var postdata = {
-      params: JSON.stringify({
-        data: JSON.stringify(orderData),
-        hierarchy: JSON.stringify({
-          structure
-        }),
-        linkage: JSON.stringify({
-          common: {
-            compress: linkage.common.compress,
-            submitParams: linkage.common.submitParams,
-            validateParams: linkage.common.validateParams
-          },
-          signature: linkage.signature
-        })
-      }),
-      ua
-    };
-    this.logFile(JSON.stringify(postdata), "订单结算页提交的数据");
-    if (!isSubmitOrder) {
-      return;
-    }
-    var ret = await this.requestOnMobile(
-      "https://h5api.m.taobao.com/h5/mtop.trade.createorder.h5/3.0/",
-      "post",
-      {
-        jsv: "2.4.7",
-        appKey: this.appKey,
-        api: "mtop.trade.createOrder.h5",
-        v: "3.0",
-        type: "originaljson",
-        timeout: "20000",
-        dataType: "json",
-        isSec: "1",
-        ecode: "1",
-        ttid: "#t#ip##_h5_2014",
-        AntiFlood: "true",
-        LoginRequest: "true",
-        H5Request: "true",
-        submitref: "0a67f6"
-      },
-      postdata,
-      ua
-    );
-    this.logFile(ret, "手机订单提交成功");
-    var {
-      ret: [msg]
-    } = JSON.parse(ret);
-    if (msg.startsWith("SUCCESS")) {
-      console.log("----------手机订单提交成功----------");
-    } else {
-      if (msg.includes("对不起，系统繁忙，请稍候再试")) {
-        console.log(msg);
-        console.log("正在重试");
-        return this.submitOrderFromMobile(data, other);
-      }
-      console.error(msg);
-    }
-  }
 
   cartBuyFromMobile(data) {
-    return this.submitOrderFromMobile(
+    return submitOrder(
       {
         buyNow: "false",
         buyParam: data.items.map(({ settlement }) => settlement).join(","),
@@ -752,35 +430,12 @@ export class Taobao extends AutoShop {
 
   submitOrder(data, other: any = {}) {
     if (this.mobile) {
-      return this.submitOrderFromMobile(data, other);
+      return submitOrder(data, other);
     }
     return this.submitOrderFromPc(data, other);
   }
 
-  async getGoodsInfo(url: string, skus?: number[]) {
-    return this.getGoodsInfoFromMobile(url, skus);
-  }
-
-  async getGoodsInfoFromMobile(url: string, skus?: number[]) {
-    var itemId = getItemId(url);
-    var text = await this.requestOnMobile(
-      "https://h5api.m.taobao.com/h5/mtop.taobao.detail.getdetail/6.0/",
-      "get",
-      {
-        jsv: "2.4.8",
-        appKey: "12574478",
-        api: "mtop.taobao.detail.getdetail",
-        v: "6.0",
-        dataType: "jsonp",
-        ttid: "2017@taobao_h5_6.6.0",
-        AntiCreep: "true",
-        type: "jsonp",
-        callback: "mtopjsonp2"
-      },
-      { itemNumId: itemId }
-    );
-    return getMobileGoodsInfo(text, skus);
-  }
+  getGoodsInfo = getGoodsInfo;
 
   getNextDataByGoodsInfo({ delivery, skuId, itemId }, quantity: number) {
     return {
@@ -802,327 +457,26 @@ export class Taobao extends AutoShop {
     if (!data.buyEnable) {
       throw new Error(data.msg);
     }
-    return this.submitOrderFromMobile(
+    return submitOrder(
       this.getNextDataByGoodsInfo(data, args.quantity),
       args.other
     );
   }
 
-  async requestOnMobileShort(api: string, data) {
-    var text: string = await this.requestOnMobile(
-      `https://h5api.m.tmall.com/h5/${api}/1.0`,
-      "get",
-      {
-        jsv: "2.4.16",
-        appKey: "12574478",
-        api,
-        v: "1.0",
-        timeout: "3000",
-        type: "json",
-        dataType: "json"
-      },
-      data
-    );
-    return JSON.parse(text);
-  }
+  seckillList = seckillList;
+  sixtyCourseList = sixtyCourseList;
+  sixtyCourseReply = sixtyCourseReply;
 
-  async seckillList(name: string) {
-    if (name === "chaoshi") {
-      let {
-        data: {
-          resultValue: { data }
-        }
-      } = await this.requestOnMobileShort(
-        "mtop.tmall.kangaroo.core.service.route.PageRecommendService",
-        {
-          url:
-            "https://pages.tmall.com/wow/chaoshi/act/wupr?ut_sk=1.WkOnn8QgYxYDAC42U2ubIAfi_21380790_1563192248243.Copy.chaoshi_act_page_tb&__share__id__=1&share_crt_v=1&disableNav=YES&wh_pid=act%2Fxsj23874&tkFlag=1&disableAB=true&suid=1031708C-2844-47E2-B140-3CF358C1BD43&type=2&sp_tk=77%2BlelYxOVlob1FlTkrvv6U%3D&sourceType=other&tk_cps_param=127911237&un=04ec1ab5583d2c369eedd86203cf18d8&utparam=%7B%22ranger_buckets%22%3A%223042%22%7D&e=PlboetXBlJK4bXDJ8jCpJrfVFcC6KYAblz9f5x7nqEUPJTSplvxzY6R06N4nt-6t_nNM24L0rnGF2sp581q3i4RqxKSGsgCT8sviUM61dt2gxEj7ajbEb4gLMZYNRhg2HXKHH0u77i-I6M_vqqSeLITsM14S2xgDx9iN37b51zJw2qH-L52L1aTWVSTo88aBYOGm2rjvgGhaQJhxUPUeEtKYMBXg69krrlYyo_QbwE_DG_1N5hlzNg&ttid=201200%40taobao_iphone_8.8.0&cpp=1&shareurl=true&spm=a313p.22.kp.1050196516672&short_name=h.eS0ZZuy&sm=933952&app=chrome",
-          cookie: "sm4=320506;hng=CN|zh-CN|CNY|156",
-          device: "phone",
-          backupParams: "device"
-        }
-      );
-      let key = Object.keys(data).find(key => data[key].secKillItems);
-      if (key) {
-        let secKillItems = data[key].secKillItems;
-        let mapping = {};
-        for (let item of secKillItems) {
-          let { secKillTime } = item;
-          let secKillTimeArr = secKillTime.split(",");
-          secKillTimeArr.forEach(t => {
-            var data = {
-              id: item.itemId,
-              quantity: item.itemNum,
-              title: item.itemTitle,
-              itemSecKillPrice: item.itemSecKillPrice,
-              price: item.itemTagPrice
-            };
-            if (!mapping[t]) {
-              mapping[t] = [data];
-            } else {
-              mapping[t].push(data);
-            }
-          });
-        }
-        return Object.keys(mapping)
-          .sort()
-          .map(time => ({
-            time,
-            items: mapping[time]
-          }));
-      }
-    }
-    return [];
-  }
-  async sixtyCourseList() {
-    var html: string = await this.req.get(
-      "https://pages.tmall.com/wow/fsp/act/60sclass?q=%E5%A4%A9%E7%8C%AB60%E7%A7%92%E8%AF%BE%E5%A0%82&isFull=true&pre_rn=c21dff5a538d1c77a9e5c29674eefe94&scm=20140655.sc_c21dff5a538d1c77a9e5c29674eefe94"
-    );
-    var r = /<textarea style="display: none" class="vue-comp-data">(.*)<\/textarea>/g;
-    r.test(html);
-    var text = r.exec(html)![1];
-    var {
-      $root: {
-        moqieDataWl: { jsonStr }
-      }
-    } = JSON.parse(text.replace(/&quot;/g, '"'));
-    var {
-      content: { areas }
-    } = JSON.parse(jsonStr);
-    var actIds = Object.keys(areas).map(
-      key => /actId=(\w+)/.exec(areas[key].data.href)![1]
-    );
-    return Promise.all(
-      actIds.map(async actId => {
-        var {
-          data: { answerDate, answered, courseVOList, sellerId, lotteryCount }
-        }: {
-          data: {
-            answerDate?: string[];
-            answered: ("true" | "false")[];
-            sellerId: string;
-            lotteryCount: string;
-            courseVOList: {
-              id: string;
-              desc: string;
-              options: Record<string, string>;
-            }[];
-          };
-        } = await this.requestOnMobileShort(
-          "mtop.tmall.fansparty.sixty.getAct",
-          {
-            actId
-          }
-        );
-        var finished = !answered.includes("false");
-        var todayAnswered = false;
-        var options = {};
-        var title = "";
-        var courseId = "";
-        if (!finished) {
-          var i = 0;
-          moment.duration(1, "d");
-          if (answerDate) {
-            todayAnswered =
-              moment().diff(
-                moment(
-                  answerDate[answerDate.length - 1].split(" ")[0],
-                  "yyyy-MM-DD"
-                )
-              ) <= moment.duration(1, "days").asMilliseconds();
-
-            if (todayAnswered) {
-              i = answerDate.length - 1;
-            } else {
-              i = answerDate.length;
-            }
-          }
-          title = courseVOList[i].desc;
-          courseId = courseVOList[i].id;
-          options = courseVOList[i].options;
-        }
-        return {
-          actId,
-          finished,
-          todayAnswered,
-          title,
-          options,
-          courseId,
-          sellerId,
-          lotteryCount: Number(lotteryCount)
-        };
-      })
-    );
-  }
-  async sixtyCourseReply({
-    actId,
-    courseId,
-    option,
-    sellerId,
-    todayAnswered,
-    finished
-  }: {
-    actId: string;
-    courseId: string;
-    option: string;
-    sellerId: string;
-    todayAnswered: boolean;
-    finished: boolean;
-  }) {
-    if (!finished && !todayAnswered) {
-      let { data, ret } = await this.requestOnMobileShort(
-        "mtop.tmall.fansparty.sixty.answer",
-        {
-          actId,
-          courseId,
-          option
-        }
-      );
-
-      if (data.result !== "true") {
-        throw new Error(ret[0]);
-      }
-    }
-    var { data } = await this.requestOnMobileShort(
-      "mtop.tmall.fansparty.sixty.getlotterytoken",
-      { actId, lotteryType: "shareLottery" }
-    );
-    var token = data.result;
-    var res1 = await this.requestOnMobileShort(
-      "mtop.tmall.fansparty.fansday.superfansinvation.getinvitation",
-      {
-        sellerId,
-        actId,
-        token
-      }
-    );
-    var res2 = await this.requestOnMobileShort(
-      "mtop.tmall.caitlin.relation.common.follow",
-      {
-        targetId: sellerId,
-        followTag: "fans-lucky-draw",
-        source: "fans-lucky-draw",
-        bizName: "fansparty"
-      }
-    );
-    var res3 = await this.requestOnMobileShort(
-      "mtop.tmall.fansparty.fansday.superfansinvation.openinvitation",
-      {
-        sellerId,
-        actId,
-        token
-      }
-    );
-    var {
-      data: { awards }
-    } = res3;
-    return awards;
-  }
-
-  appKey = "12574478";
-  getSign(data: string, t: number) {
-    var token = getCookie("_m_h5_tk", this.cookie);
-    token = token && token.split("_")![0];
-    var sign = signData([token, t, this.appKey, data].join("&"));
-    return sign;
-  }
-  async requestOnMobile(
-    url: string,
-    method: "get" | "post",
-    qs: Record<string, any>,
-    data: Record<string, any>,
-    ua?: string
-  ): Promise<string> {
-    var t = Date.now();
-    var data_str = JSON.stringify(data);
-    var form: Record<string, string> | undefined;
-    qs.sign = this.getSign(data_str, t);
-    qs.t = t;
-    if (method === "get") {
-      qs.data = data_str;
-    } else {
-      form = {
-        data: data_str
-      };
-      if (ua) {
-        form.ua = ua;
-      }
-    }
-    return this.req(url, {
-      method,
-      form,
-      qs
-    });
-  }
-  async cartToggle(data: { items: any; checked: boolean }) {
-    // const page = await newPage();
-    // await page.goto("https://cart.taobao.com/cart.htm");
-    // // await page.waitForSelector("#J_Go");
-    // // @ts-ignore
-    // let firstData = await page.evaluate(() => window.firstData);
-    // var cartIds: string[] = [];
-    // var sellerids: string[] = [];
-    // var items: {
-    //   cartId: string;
-    //   itemId: string;
-    //   skuId: string;
-    //   quantity: number;
-    //   createTime: number;
-    //   attr: string;
-    // }[] = [];
-    // firstData.list.forEach((shop: any) => {
-    //   shop.bundles[0].items.forEach((item: any) => {
-    //     cartIds.push(item.cartId);
-    //     sellerids.push(item.sellerid);
-    //     items.push({
-    //       cartId: item.cartId,
-    //       itemId: item.itemId,
-    //       skuId: item.skuId,
-    //       quantity: item.amount.now,
-    //       createTime: item.createTime,
-    //       attr: item.attr
-    //     });
-    //   });
-    // });
-    // var data = {
-    //   hex: "n",
-    //   cartId: cartIds.reverse().join(","),
-    //   sellerid: sellerids.join(","),
-    //   cart_param: JSON.stringify({
-    //     items: items.reverse()
-    //   }),
-    //   unbalance: "",
-    //   delCartIds: cartIds.join(","),
-    //   use_cod: false,
-    //   buyer_from: "cart",
-    //   page_from: "cart",
-    //   source_time: Date.now()
-    // };
-    // await page.evaluate((data: any) => {
-    //   var form = document.createElement("form");
-    //   form.method = "post";
-    //   form.action =
-    //     "https://buy.tmall.com/order/confirm_order.htm?spm=a1z0d.6639537.0.0.undefined";
-    //   Object.keys(data).map(key => {
-    //     var input = document.createElement("input");
-    //     input.type = "hidden";
-    //     input.value = data[key];
-    //     form.appendChild(input);
-    //   });
-    //   document.body.appendChild(form);
-    //   form.submit();
-    // }, data);
-    // await page.waitForNavigation();
-    // if (!isSubmitOrder) {
-    //   await page.setOfflineMode(true);
-    // }
-    // await page.click(".go-btn");
-  }
+  cartToggle = cartToggle;
 
   async loginAction(page: Page) {
     var res = await page.waitForResponse(res =>
       res.url().startsWith("https://img.alicdn.com/imgextra")
     );
     return res.url();
+  }
+
+  onAfterLogin() {
+    setReq(this.cookie);
   }
 }

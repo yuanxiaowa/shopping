@@ -1,5 +1,7 @@
 import fs = require("fs-extra");
 import { join } from "path";
+import moment = require("moment");
+import { writeFile, writeJSON } from "fs-extra";
 
 export function remain(h: number, m = 0) {
   var now = new Date();
@@ -138,4 +140,17 @@ export function getCookieFromFile(name: string) {
     return fs.readFileSync(filename, "utf8");
   }
   return "";
+}
+
+export function logFileWrapper(name: string) {
+  return async (content: any, label: string) => {
+    var now = moment();
+    var filename = `.data/${name}/${now.format(moment.HTML5_FMT.DATE)}/${label +
+      now.format("HH_mm_ss.SSS")}`;
+    await fs.ensureFile(filename);
+    if (typeof content === "string") {
+      return writeFile(filename, content);
+    }
+    return writeJSON(filename, content);
+  };
 }

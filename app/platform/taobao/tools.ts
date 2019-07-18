@@ -23,6 +23,9 @@ export async function resolveUrl(url: string) {
     await page.goto(url);
     url = page.url();
     page.close();
+  } else if (url.startsWith("https://m.tb.cn/")) {
+    let html: string = await request.get(url);
+    return /var url = '([^']+)/.exec(html)![1];
   }
   return url;
 }

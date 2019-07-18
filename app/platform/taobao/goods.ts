@@ -687,7 +687,12 @@ export async function submitOrder(data: any, other: any = {}) {
     return;
   }
   try {
-    let ret = await requestData("mtop.trade.createorder.h5", postdata, "post");
+    let ret = await requestData(
+      "mtop.trade.createorder.h5",
+      postdata,
+      "post",
+      "3.0"
+    );
     logFile(ret, "手机订单提交成功");
     console.log("----------手机订单提交成功----------");
   } catch (e) {

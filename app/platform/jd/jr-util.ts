@@ -12,7 +12,8 @@ import {
   getLotteryInfo,
   getLottery,
   getHealthInsuredInfo,
-  getHealthInsured
+  getHealthInsured,
+  get618Hongbao
 } from "./jinrong";
 import {
   timer,
@@ -113,6 +114,13 @@ export async function doHealthInsured() {
   if (Number(unSumInsured) > 0) {
     return logReq("领取健康金", getHealthInsured);
   }
+}
+
+export async function do618Hongbao() {
+  log("获取618红包");
+  return get618Hongbao(
+    "https://m.jr.jd.com/spe/acs/hymSystem/index.html?contentParam=100001913&actCode=8D53388E36&actType=1"
+  );
 }
 
 /* export async function doGift() {

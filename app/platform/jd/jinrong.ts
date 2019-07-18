@@ -663,3 +663,103 @@ export function getGift() {
     true
   );
 }
+
+export async function getFupinList() {
+  var text: string = await req.get(
+    "https://zt.m.jd.com/povertyReliefProjectInfo.action",
+    {
+      qs: {
+        queryType: 3,
+        provinceId: "",
+        pageSize: 20,
+        pageNum: 1
+      }
+    }
+  );
+  var { code, data, info } = JSON.parse(text);
+  if (code !== 200) {
+    throw new Error(info);
+  }
+  return data;
+}
+
+export function dianzhanFupin({ projectId }: any) {
+  return req.post("https://z.m.jd.com/assistance.action", {
+    json: { projectId, assistanceNum: 5 }
+  });
+}
+
+// ---------------抽618元现金红包----------------
+// https://m.jr.jd.com/spe/acs/hymSystem/index.html?contentParam=100001913&actCode=8D53388E36&actType=1#/
+
+async function requestDataJd(
+  body: any,
+  {
+    api,
+    method = "get"
+  }: {
+    api: string;
+    method?: "get" | "post";
+  }
+) {
+  var form;
+  var qs: any = {
+    source: "jrm",
+    _: Date.now()
+  };
+  if (method === "get") {
+    qs.reqData = JSON.stringify(body);
+  } else {
+    form = {
+      reqData: JSON.stringify(body)
+    };
+  }
+  var text: string = await req(
+    `https://ms.jr.jd.com/gw/generic/jrm/h5/m/${api}`,
+    {
+      method,
+      qs,
+      form
+    }
+  );
+  var { resultCode, resultData, resultMsg } = JSON.parse(text);
+  if (resultCode !== 0) {
+    throw new Error(resultMsg);
+  }
+  return resultData;
+}
+
+export async function get618Hongbao(url: string) {
+  var { searchParams } = new URL(url);
+  var actCode = searchParams.get("actCode");
+  // var actType = searchParams.get("actType");
+  // var contentParam = searchParams.get("contentParam");
+  var res = await requestDataJd(
+    { actCode },
+    {
+      method: "post",
+      api: "taskFreeUserRewardAndLeftTimes"
+    }
+  );
+  var { success, msg, data } = res;
+  if (success) {
+    for (let i = 0; i < data.leftTimes; i++) {
+      let res1 = await requestDataJd(
+        {
+          actCode,
+          riskDeviceParam: JSON.stringify({
+            fp: "-1",
+            eid: "-1",
+            sdkToken: "",
+            sid: ""
+          })
+        },
+        {
+          api: "taskFreeLottery",
+          method: "post"
+        }
+      );
+      console.log(res1.msg);
+    }
+  }
+}

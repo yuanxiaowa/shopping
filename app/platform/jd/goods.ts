@@ -1,7 +1,14 @@
 import request = require("request-promise-native");
-import { delayRun, getJsonpData, delay } from "../../../utils/tools";
+import {
+  delayRun,
+  getJsonpData,
+  delay,
+  logFileWrapper
+} from "../../../utils/tools";
 import { RequestAPI, RequiredUriUrl } from "request";
 import { getComment } from "../comment-tpl";
+
+const logFile = logFileWrapper("jingdong");
 
 var req: RequestAPI<
   request.RequestPromise<any>,
@@ -9,7 +16,7 @@ var req: RequestAPI<
   RequiredUriUrl
 >;
 var eid = "";
-var fp = "";
+var fp = "0a2d744505998993736ee93c5880c826";
 var cookie = "";
 
 export function setReq(
@@ -22,8 +29,31 @@ export function setReq(
 ) {
   cookie = _cookie;
   eid = getCookie("3AB9D23F7A4B3C9B");
-  fp = "0a2d744505998993736ee93c5880c826";
   req = _req;
+}
+
+function time33(str: string) {
+  for (var i = 0, len = str.length, hash = 5381; i < len; ++i) {
+    hash += (hash << 5) + str.charAt(i).charCodeAt(0);
+  }
+  return hash & 0x7fffffff;
+}
+function getCookie(name: string) {
+  var reg = new RegExp("(^| )" + name + "(?:=([^;]*))?(;|$)"),
+    val = cookie.match(reg);
+  if (!val || !val[2]) {
+    return "";
+  }
+  var res = val[2];
+  try {
+    if (/(%[0-9A-F]{2}){2,}/.test(res)) {
+      return decodeURIComponent(res);
+    } else {
+      return unescape(res);
+    }
+  } catch (e) {
+    return unescape(res);
+  }
 }
 
 export async function getGoodsInfo(skuId: string) {
@@ -297,6 +327,45 @@ export async function obtainActivityCoupon(data: {
   return ret;
 }
 
+async function requestData(
+  body: any,
+  {
+    functionId,
+    isApi = true
+  }: {
+    functionId: string;
+    isApi?: boolean;
+  }
+) {
+  var text: string = await req.get(
+    "https://api.m.jd.com/" + (isApi ? "api" : ""),
+    {
+      qs: {
+        client: "wh5",
+        clientVersion: "2.0.0",
+        agent:
+          "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.90 Safari/537.36",
+        lang: "zh_CN",
+        networkType: "4g",
+        eid,
+        fp,
+        functionId,
+        body: JSON.stringify(body),
+        jsonp: "cb",
+        loginType: 2,
+        _: Date.now()
+      }
+    }
+  );
+  var res = getJsonpData(text);
+  let { data, code, msg } = res;
+  if (code !== 0) {
+    let err = new Error(msg);
+    throw err;
+  }
+  return data;
+}
+
 /**
  * 领取全品券
  * @param url
@@ -304,56 +373,127 @@ export async function obtainActivityCoupon(data: {
  * @example https://h5.m.jd.com/dev/2tvoNZVsTZ9R1aF1T4fDthhd6bm1/index.html?type=out_station&id=f128d673441d4afa9fa52b2f61818591&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=d88e8a25670040f38f3d0dfc8f9542b9
  */
 export async function getQuanpinCoupon(url: string, phone = "18605126843") {
-  await req.get("https://api.m.jd.com/", {
-    qs: {
-      client: "nc",
-      clientVersion: "1.0.0",
-      agent:
-        "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.90 Safari/537.36",
-      lang: "zh_CN",
-      networkType: "4g",
+  var { searchParams } = new URL(url);
+  var data = await requestData(
+    {
+      actId: searchParams.get("id"),
+      phone,
+      code: "",
+      country: "cn",
+      platform: "3",
+      pageClickKey: "-1",
       eid,
       fp,
+      userArea: ""
+    },
+    {
       functionId: "activityLongPage",
-      body: JSON.stringify({
-        actId: /id=(\w+)/.exec(url)![1],
-        phone,
-        code: "",
-        country: "cn",
-        platform: "3",
-        pageClickKey: "-1",
-        eid,
-        fp,
-        userArea: ""
-      }),
-      jsonp: "jQuery191006758729777738859_1561716359085",
-      _: Date.now()
+      isApi: false
     }
-  });
+  );
+  let {
+    returnStatus,
+    status: { minorTitle, activityUrl }
+  }: {
+    // 1:已抢光 3:没领到
+    returnStatus: number;
+    status: {
+      minorTitle: string;
+      activityUrl: string;
+    };
+  } = data;
+  logFile(data, "手机号领取全品券");
+  return {
+    success: returnStatus !== 1 && returnStatus !== 3,
+    url: activityUrl,
+    msg: minorTitle
+  };
 }
 
-function time33(str: string) {
-  for (var i = 0, len = str.length, hash = 5381; i < len; ++i) {
-    hash += (hash << 5) + str.charAt(i).charCodeAt(0);
-  }
-  return hash & 0x7fffffff;
-}
-function getCookie(name: string) {
-  var reg = new RegExp("(^| )" + name + "(?:=([^;]*))?(;|$)"),
-    val = cookie.match(reg);
-  if (!val || !val[2]) {
-    return "";
-  }
-  var res = val[2];
-  try {
-    if (/(%[0-9A-F]{2}){2,}/.test(res)) {
-      return decodeURIComponent(res);
-    } else {
-      return unescape(res);
+/**
+ * 领取内部优惠券
+ * @param url
+ * @example https://jingfen.jd.com/item.html?sku=46004095519&q=FXYTFBFuGHUWFRxfEHYQFRVsQCNGExRpFXQVFhxoE3cTFkZtESEUQBY/FiUiFhRrEHkaExFfVyVNQEAsfgZzBxI8GXAWE0M8FXQbExE/QyEbFR1pESUSRxE/EHIaFRJtIHERFxVvFnUQEQ==&d=9GSoGc&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_1001480949_&utm_term=ba3d0b36811c4075bece3cc17c6a3e56
+ */
+export async function getJingfen(url: string) {
+  var { searchParams } = new URL(url);
+  var sku = searchParams.get("sku")!;
+  var q = searchParams.get("q");
+  /* var { status }:{
+    // 0:可领取 1:领取限制
+    status: number
+    // 1:优惠券
+    couponType: number
+  } = await requestData(
+    {
+      sku,
+      q,
+      eid: "-1",
+      fp: "-1",
+      shshshfp: "-1",
+      shshshfpa: "-1",
+      shshshfpb: "-1",
+      referUrl: url,
+      childActivityUrl: url,
+      pageClickKey: "MJDAlliance_CheckDetail"
+    },
+    {
+      functionId: "skuWithCoupon"
     }
+  );
+  var success = status === 0 */
+  var success = true;
+  var msg = "";
+  try {
+    await requestData(
+      {
+        sku,
+        q,
+        wxtoken: "",
+        eid,
+        fp,
+        shshshfp: getCookie("shshshfp"),
+        shshshfpa: getCookie("shshshfpa"),
+        shshshfpb: getCookie("shshshfpb"),
+        referUrl: url,
+        childActivityUrl: url,
+        pageClickKey: "MJDAlliance_CheckDetail"
+      },
+      {
+        functionId: "jingfenCoupon"
+      }
+    );
   } catch (e) {
-    return unescape(res);
+    msg = e.message;
+    success = msg === "您今天已经参加过此活动，别太贪心哟，明天再来~";
   }
+  return {
+    success,
+    url: getGoodsUrl(sku),
+    msg
+  };
+}
+
+export async function getGoodsPrice(skuId: string) {
+  var text = await req.get("https://wq.jd.com/pingou_api/getskusprice", {
+    qs: {
+      callback: "jsonp_7689380",
+      skuids: skuId,
+      area: "",
+      platform: 3,
+      origin: 2,
+      source: "pingou",
+      _: Date.now(),
+      g_ty: "ls"
+    }
+  });
+  // 小于0位已下架
+  var [{ p }] = getJsonpData(text);
+  return Number(p);
+}
+
+export function getGoodsUrl(skuId: string) {
+  return `https://item.m.jd.com/product/${skuId}.html`;
 }
 
 export async function getCartList() {

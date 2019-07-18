@@ -46,7 +46,7 @@ export async function getFloorCoupons(url: string) {
 export async function getActivityCoupons(url: string) {
   var items = await queryActivityCoupons(url);
   var activityId = /(\w+)\/index.html/.exec(url)![1];
-  return Promise.all(
+  await Promise.all(
     items.map(_items =>
       Promise.all(
         _items.map(item =>

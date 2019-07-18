@@ -90,7 +90,7 @@ export function logResult(msg: string) {
     };
   };
 }
-export function getJsonpData<T>(body: string): T {
+export function getJsonpData<T = any>(body: string): T {
   return JSON.parse(/[\w$]+\(([\s\S]*)\)(;|$)/.exec(body.trim())![1]);
 }
 

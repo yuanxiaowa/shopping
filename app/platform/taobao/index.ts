@@ -17,7 +17,8 @@ import {
   sixtyCourseReply,
   submitOrder,
   comment,
-  commentList
+  commentList,
+  getChaoshiGoodsList
 } from "./goods";
 
 export class Taobao extends AutoShop {
@@ -459,10 +460,16 @@ export class Taobao extends AutoShop {
     }
     return submitOrder(
       this.getNextDataByGoodsInfo(data, args.quantity),
-      args.other
+      args.other,
+      args
     );
   }
 
+  async goodsList({ keyword, name }) {
+    if (name === "chaoshi") {
+      return getChaoshiGoodsList(keyword);
+    }
+  }
   seckillList = seckillList;
   sixtyCourseList = sixtyCourseList;
   sixtyCourseReply = sixtyCourseReply;

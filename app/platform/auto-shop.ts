@@ -122,6 +122,7 @@ export default abstract class AutoShop implements AutoShopOptions {
   abstract getNextDataByGoodsInfo(data: any, quantity: number): any;
   abstract submitOrder(data: any, other?: any): Promise<any>;
   async seckillList(name: string): Promise<any> {}
+  async goodsList(args: { name: string; keyword: string }): Promise<any> {}
 
   async loginAction(page: Page): Promise<any> {
     return page.waitForNavigation({

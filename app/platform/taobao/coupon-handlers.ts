@@ -1,7 +1,13 @@
 import { startsWith } from "ramda";
 import { newPage } from "../../../utils/page";
 import { resolveUrl } from "./tools";
-import { getCouponEdetail, getTaolijin, getMarketCoupon } from "./goods";
+import {
+  getCouponEdetail,
+  getTaolijin,
+  getMarketCoupon,
+  getStoreCoupon,
+  getInnerStoreCoupon
+} from "./goods";
 
 /* async function handler(
   url: string,
@@ -59,6 +65,10 @@ const taobaoCouponHandlers = {
       "https://market.m.taobao.com/apps/aliyx/coupon/detail.html"
     ),
     handler: getMarketCoupon
+  },
+  store: {
+    test: startsWith("https://uland.taobao.com/quan/detail"),
+    handler: getInnerStoreCoupon
   }
 };
 

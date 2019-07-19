@@ -1,6 +1,6 @@
 import { getActivityCoupons, getGoodsCoupons, getFloorCoupons } from "./tools";
-import { startsWith } from "ramda";
-import { obtainFloorCoupon, getQuanpinCoupon } from "./goods";
+import { startsWith, test } from "ramda";
+import { obtainFloorCoupon, getQuanpinCoupon, getJingfen } from "./goods";
 import { newPage } from "../../../utils/page";
 import { delay } from "../../../utils/tools";
 
@@ -61,40 +61,14 @@ const jingdongCouponHandlers = {
   },
   jingfen: {
     test: startsWith("https://jingfen.jd.com/item.html"),
-    async handler(url) {
-      var page = await newPage();
-      await page.goto(url);
-      var success = await page.evaluate(() => {
-        let button = document.querySelector<HTMLElement>(".btnget span")!;
-        let text = button.innerText;
-        if (text === "立即领取") {
-          button.click();
-          let t = document
-            .querySelector<HTMLSpanElement>("#price_usecoupon")!
-            .innerText.trim();
-          if (t === "已下架") {
-            success = false;
-          }
-        } else if (text === "已领完") {
-          return false;
-        }
-        document.querySelector<HTMLParagraphElement>(".content")!.click();
-        return true;
-      });
-      (async () => {
-        await delay(1000);
-        await page.close();
-      })();
-      return {
-        success,
-        url: `https://item.jd.com/${/sku=(\d+)/.exec(url)![1]}.html`
-      };
-    }
+    handler: getJingfen
   },
-  goods_m: {
-    test: startsWith("https://item.m.jd.com/product/"),
+  goods: {
+    test: test(
+      /^https?:\/\/(item\.m\.jd.com\/product\/|item\.jd\.com\/\d+\.html)/
+    ),
     async handler(url) {
-      await getGoodsCoupons(/product\/(\w+)/.exec(url)![1]);
+      await getGoodsCoupons(/\d+/.exec(url)![0]);
       return {
         success: true,
         url
@@ -104,13 +78,11 @@ const jingdongCouponHandlers = {
   floor: {
     // https://wqs.jd.com/event/promote/mobile8/index.shtml?ptag=17036.106.1&ad_od=4&cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=e653d855fd454bfe86b29fa2bf38fdb2&scpos=#st=592
     test: startsWith("https://wqs.jd.com/event/promote"),
-    async handler(url) {
-      return getFloorCoupons(url);
-    }
+    handler: getFloorCoupons
   },
   activity: {
     // https://pro.m.jd.com/mall/active/2fJDHSrZhhDcNKg9ahyKkbny5r4X/index.html?jd_pop=29588686-c925-471d-b9f2-49696e154408&abt=0&jd_pop=be4dd5ce-8a22-4e00-a791-b00f4c114ab6&abt=0&cu=true&cu=true&cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=d1dc38952a544e00879cf4a4f4b871b6
-    test: startsWith("https://pro.m.jd.com/mall/active"),
+    test: test(/^https:\/\/pro(\.m)?\.jd\.com\/mall\/active/),
     async handler(url) {
       return getActivityCoupons(url);
     }

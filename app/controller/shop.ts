@@ -140,12 +140,18 @@ export default class ShopController extends Controller {
     ctx.body = await handle(app[platform].resolveUrls(data));
   }
   /**
-   * 超市秒杀
+   * 秒杀列表
    */
   public async seckillList() {
     const { ctx, app } = this;
     var { platform, name } = ctx.query;
     ctx.body = await handle(app[platform].seckillList(name));
+  }
+
+  public async goodsList() {
+    const { ctx, app } = this;
+    var { platform } = ctx.query;
+    ctx.body = await handle(app[platform].goodsList(ctx.query));
   }
 
   public async sixtyCourseList() {

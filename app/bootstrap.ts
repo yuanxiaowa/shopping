@@ -11,5 +11,5 @@ export default async function bootstrap() {
     bootstrapJingdongTasks();
   });
   await bootstrapBrowser();
-  await Promise.all([taobao.start() /* jingdong.start() */]);
+  await Promise.all([taobao.start() /* , jingdong.start() */]);
 }

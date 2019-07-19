@@ -1,4 +1,5 @@
 import request = require("request-promise-native");
+import iconv = require("iconv-lite");
 import signData from "./h";
 import { getCookie, logFileWrapper } from "../../../utils/tools";
 import {
@@ -11,7 +12,14 @@ import { isSubmitOrder } from "../../common/config";
 var req: request.RequestPromiseAPI;
 var cookie = "";
 var logFile = logFileWrapper("taobao");
-
+var mteeInfo = {
+  mteeAsac: "1A19322J4Z3PLXO583LRB6",
+  mteeType: "sdk",
+  mteeUa:
+    "118#ZVWZzwoQWZOMce1AcZ2C2ZZTZeeh2Z3PZe2x1zqTzHRzZyCZXoTSOE2zZCmQVHR4Zg2ZOzqTzfQZZZZZyUTctZxv2ic2vggVZZZuusqhzeWZZZZ/VoTXlZ2Z2Z+hyGeaZZZ1ZsiTzeWzZgFZVoqaYH2zZZ+TXHWVZgZZZsqTzeRzZZZ/Voq4zeZzZewiXHWVZgYmZzqXugQzAgZ+13uiEMgZAYuKXd/OqQHJZCuD2VjFDmBX0C2chjPmY26t+uqvOHMh/9AaugZCmrDtKHZzhSb7VjJOheZTtBs5MfQ16oArfK5BsYqKD1184zinpXcsW+SGYAuaz67WTu+xQWzBUeNthJxTVO/OdITR/qhhsVAK6bw7pmnFRiO2gto4LFW+L6qXg47/ENel0VQN2kE03NZgMMrQdmdvraOVFlk/H2HpbwVQtqir2dohTjEvB9R6Ke2BApCluW8SVnqQqQFp2xph96B2ffyd4OrysMsMvaNRAh7Rh1Sa5+a0n7h9Nq90SSJJq+YI+T2kuCiQ7mmvJWLvo2xzhUd0K2p5By38syqGNJPF9LOEJavnVIqe/8vFhIAcEsG/QN2qlDCWkp3h6VsVuWKjRi2I8foq4tVGNBxffzAoWqfQTDFijzCZXp5uv1WDulAqQjqe1oAhqhUa0B7uSMz4q1upLZr7EEZYrKffq9dE8fLod9cybaR9cEZ6oyDBCttgvsSGY1OlOakcl/Y++eMWwgNoCC3Wg8XnO6eWvoTX6oqIJ0ODfQhK1phwmcLs8g/YoUFi7eVWWYWvNtb9LJlXBO4On7HiWAbH/rcED1sjC63hfNEJTK9ePmoZs0hFZNJvzFhznsV/C70C0DjCBOV+WCJTTDpYoP/LEfQbRpRHAB5UfZIRSFZgYAKd6djO3hfSolSenQ1WDpuC1WfJMpoSNa4jj4fL6tvWG36B0ql/kG4TID1KKPiI9r8KoRdgkI/U3n4IUVGgHJXC5A+eZh5RmjYo5kJppMDWQ6YuJtNqSFRZLXMwKdEtUjpl2nAs1PD4JuIOAGSpzJOw/rmeFEmWoWs4CmWiG+Y5VtIu3z9VqChym6YYTdeQ6R7e1c8ednj7ppetA0XuL8XNXz/AB0uCr7yGYdYPs3gjWx+wNK+wfEGxJRW0lsF64B0iFw++ciqIKhqt2EbaqMNzLiV3FHwLwy0VF8OegMIcX46igQkn5xfkrwO4kTF4c+F4QZKlJGC55aeKpKAkMsGFqQ+wFlRLZn4I+mFkJKoBN4HE+mNkasj+r7WFsQ3voJklRjLYyyNtjfTFnz9xW1FerxD/yOwx8Kc5rmWlKFSv7V5980z9kw5aHedoaX/vrILcugZSvLxTD/4RVTK7b70JB0PCJh5pOLPsrBaUs8mup/zbO1GwVD+ckUJlyBVQHFJn4IAh3SMRQhvZCHPYwCcww5Llswe1ziLEUMUHZEKQaRTN31MZwcj/R5GISZk+t7sFIW3WriuoIRPUW+owiEHU4zti8Zs9dctB2Vg5yE5Um/ujdjAaau28rzm+OCJwn+1J9UfCQj5mk3FccKwLFM6fSqUQrKU6UINbSZZUv7cXq3B3L2fT8WRCvsXTABH3/VkF2vENTW2rGkeon+l5ifriuammRyitrbI36s1Dkxv/2p+I6ZQQi+ybrcdBIOOZptSDHNkZZrNUkVpAVeU+pTQq5gqwM2oS4lO63qSfmll4Jwnv15cZH4S34R6WG8a8LHFFk4muSDjEFlCbAWdRPdr6PJXqoEiPu9h8HUd8ZGpfLuya3R7qw6++LAO6WfC93+8r9TXB58dqpgf2g2thao3311tinHBhzniQWTQLpab1TmsHEYRwr2WODuLwNnSHHcBlTVaGUziBRMWN0UEOGlFWDRiovNGNEFujZsggZpomiNbGaOS+fpVAxxVwedPoUlcV",
+  ulandSrc: "201_11.230.188.217_8942114_1563529853358",
+  umidToken: "T1B909C1008F917EC23F10509E607EFB7EF74F21A9C621A9A956FAEDC63"
+};
 // https://h5api.m.tmall.com/h5/com.taobao.mtop.deliver.getaddresslist/2.0/?jsv=2.4.0&appKey=12574478&t=1563378313960&sign=f0e97945748477d409a623c2cf6cad16&api=com.taobao.mtop.deliver.getAddressList&v=2.0&ecode=1&type=jsonp&dataType=jsonp&callback=mtopjsonp1&data=%7B%22addrOption%22%3A%220%22%2C%22sortType%22%3A%220%22%7D
 
 export function setReq(_cookie: string) {
@@ -141,14 +149,12 @@ export async function getTaolijin(url: string) {
       (async () => {
         var res = await requestData(
           "mtop.alimama.union.hsf.app.coupon.apply",
-          {
-            couponKey,
-            asac: "1A17621S4VF9XKFZ9JX5X7",
-            mteeUa:
-              "118#ZVWZzm7xkziA3eIVOg2VBeZTZeghte10ZHxc9KqhzHWzZgzlVfqVagZZZZzTcG+WnuMdZJ43zg2ZZReuX5q4ze2zZe/h0HmRWnXlZsqTzHSVZgZZ0oqWTcb2ZZZTTgRVZg2CYOqhzHRZZgCZXoqVzHZzueZhVHWVZgZuTfqhzHRZZgZzbVCaYe4J2xQZrZd3uhZZAZgBz0WzqZZ1ZxzD2VjF7EMIAvuXnhEgjFVTM50zdgQZuYPAPQqZZyfLzo+VEc8ZXGtCtF8Qm9N7R9eFEvdJuq43voVr4ZbXI5aGRSoQES2/kt/MbBPDG8mcUWu7UC9YhWjzgXywEsYVmqLN3ToJ4Dztfj0ONFORVGWMOv/PlSRDVpjW5BfakmoWscRl2nCMnBRAlpp4kCJ7RC5QMEhO6OMPqQR44aYxcLKorqCkY6eCkh+2InoVt/5t8pyfPi7wtQFuavhYdeS+lxGVyQEorc4gIB0I9vI/oUA9fEx052mSWX8Azb6UsjsFM6e8TPVLXYPXpUBQAlmAdcVAQsctEeIHNh1BuCXf5zYMEddqghtLmJQ41tzS8Yiw0yVibN35vVYISQXeEN5t6+ile84QN/AOjCO7NobmT6mNYMztYV1ndC00lrngi4hjbIzt7b51TOGhxHhYbfggIT1FzASXygzJGTA2jM8XzUtouJ7/5xldPnZW2fQcF0v0CXZXqs3YXPfpcvw854QSauAEuXQ31BPek90ZRCNSubbwz4FbU+CvqQvk5FEuuV+MMg7O75vcPFMncFRa838RmKOM5Ly4pzzi3fYEo3N5nOu4nWRI+wxOVjfnXjGUDngeKOEyXuw5GnAP0WYczFi/VhMfvFn+A3rQ9PPMMYVszuUaz+UlDTM1dv6aAeUpzFA3aQewzao45a/dJemIY+NdPq+ubwIWEPk13UCjrlf0DwRwHKRVl+y1ZAXFb3S7ityI//1vAOyKXA2GYCrQkNgo0WuRzR9w4zqpvMoiK76nMv/VjC3udPZA1I0Uu8/4srp0PLuLqjK7PeZHhF4zcp+NGJ9chmoxk/HmOlvwO5zY8NW3Wh0/2hDCRjdUdI2UMwMg157LRNQPgJZ1dmIa9MbpYVPfKaLf696nJTGe1WoYv6hl8Ke+Lgc9O16Yc4tRatU3eQTZMzT6ecwduQcxNQ4fTUEVHvVtgXsH0KZOuUbqcaXFbANGJ5clr9sLQxpnGecgPLHVcnHmthhPER2Su6aM5vnW9COgPGDBjJCdp09dk4PMybfd6RoyB4iKmLjnObX6g9L9GnLOBVRd+Sf4ODiJLr+OYFDdKkjo5fbDeniYAmGQ5xvssc7jdG78SYWQ9TXEHHFBufgOrTtZfD2HbTlT5/BwJWGKgQ2fpi9Ld9B8/pJoRYm0+yXsHSjjnzvB5sFICUZobbeF1lNKyQJt0fhizOl3DMql4Rz8HEspQD46ACVWrMxlKKSaL/o5Ln6mn4/vwETWmvQ2B09vsj8BoZLFjhjME7ZGju/azAPgKOJvCKRDlZCQ6hlvqr4tT4aaZZjn0G3OUYOgYBClrvRoBU3ORG43mD3EUH==",
-            umidToken:
-              "T10F75B291D933B5C1A807601D6CE5783BE4555DD3B707CAB2D07191AC2"
-          },
+          Object.assign(
+            {
+              couponKey
+            },
+            mteeInfo
+          ),
           "get",
           "1.0"
         );
@@ -245,19 +251,21 @@ export async function getCouponEdetail(url: string) {
   var res = await requestData(
     "mtop.alimama.union.xt.en.api.entry",
     {
-      variableMap: JSON.stringify({
-        couponKey,
-        af: "1",
-        pid,
-        st: "39",
-        ulandSrc: "201_11.1.228.74_6456882_1563377267124",
-        itemId,
-        mteeAsac: "1A19322J4Z3PLXO583LRB6",
-        mteeType: "sdk",
-        mteeUa:
-          "118#ZVWZzCA3/BkM6Z1z+H2C8ZZTZeghNe5QZeVfqzqTzHRzZBbZXfqbagZzZZDTaUrG1Fcpy4rhzggZZZFZVoq4zHZzueZhaVxoZZQCuxTIQ72ZueCZ0oq4ze22ZZZhZZRVZg2CuOqhzHRZZgCZXoqVzHZzueZhVHWVZgZuTfqhzHRZGeZZYiZ4zr2zC8LexedMZuQHIKiKzTLS4ezHQDzqpiAvSXiYlSmq9wJi1khe0XNw4C+8ugZCmrDtKHZzhSN7VNcFheZTtW+havmhgmkDn0eGT/TxpkDVC9xdxga6QChiQBUnd8W9aRukowAnBRYkfjE4v5tSW+DlLU5MkLX8m+LY56xirC5AUBv0z8ddaC7MbOQOWjJ9UjPgkInsgKlvjLIlYuraqfZ3euJNbLpxZUI5KomRvh/2BL/9rYgwsdO+UQKjLGwRyFxXvxbttGcqy+AQd2tysPX4PGr6r/fZTl2RjASzcJmZc0pKZLlCJW1iE0RNyeitfyzN1tc42yoJRKxWqts/wsnP9GfVY5P/D75G7vrBD5M6EUBO7ddL2yIMaGzU/sRxAxUi8nX0ytBFP/Dp/LBEFDzbpW+AN4FYBZJ2K3S6dyu1iKEbORPk5MwVL2g2bZuNybpSLKpdAEGf9PhEuJ+7SA4P70rNaZIeQHYZ5U2qDEDFM43MCIw7nCPc3t3qQuMeh8igtCR3Kv4BeAS+lc0IIdOkk7NEq874rTTI9f9JO+N62qEIW8r/Gf8vc+64qhtwJuVv4J036PSA6GvsS5Cb6xkxwCujWETyGDdSzGRFMtcrY9AOb47qXKn8hzegjoY4+4vTPNapOBUeWca3rKSKtMIyhSEnswAgl8S/JtocWA4mqHfoQcJ+mmeN5HNw3sTT+06rdFraLNOSNXdSBHEeWJrqCyJGi6DSKBX367muBdX+PpPiXuuanVkX+rIe2o81u6qDZ2gETiMWroPXhYOiW+Gmz2w1xxgkfLXhxQ3MbSuqeMGCJACdK1zBkXjGM+o8LPUsM8kJ9yr+EvgU6nCZYvLFrMW3R3ChywjJ493cWutSB8u5E4X+R+dMnv12e7893q6jwrBakFP1gbp2B7vQ0axMm1bdYevxUctZY2hYk60cCF3ZOs3+sx98urUHSytcR48xBB3HY9a4qvjXGw6VM8zfGT/xG4CtOxPpI+hDgRBh1dbePtn9qWr32Q9Ri4Utp47w6WAEqjKbDkgobXz3w+iJh00vp+KHBp5wiiRUwS8HQpae9/zHzvalY9TOyhKVeWjdRIBLzdvEtFWPHp90DXng4MqUNVzWTSdmn5bSLbAaWFXmOFeQZC5lya+3yAd/JlL2vmjy+t43PvYNpTDXUqPHKkApdsnnJ0oDvL03e5t/5v73YiXaK7sKITgFham0nOAukqR2xxbll3dhmKrofB2dVDKXPWyJWuQsWyP69uMRvTAYXYXuLobMQstu2SDFoEyKYKc1V+FgomjiYA04/qi/JDY4gYt3C9A10r/q4Hm8hnPAGTjG020mPGdnWr0zFEhaS5aU98UlSWnsAoQpOLatVfNIMG8a5pdl7JbitmNI7jMxcnGkza7Z0nqLu2Du3V/DDknuHVJAlQBgy9jjvy0g1ZhFeyjGBLtYqk7FWxbDoE6rtHpAha77FaOYUQbe0Q/UGr+17dda76/S+0j30t2uTt9H0xxlGE7GtYutsP3tYqq5QJ60n4f5jovaVCpb+2V4BiFT2pyjX0198AFezFqnmdIlWmA+dimx8CmzV2uY4ac4WxKfshGNn54+HeSFJwjO118hQ3fXn6hZixHOiWfoFxDqc8hOnjf7VIhaz1lX6LxYbxW9r3Mr37fyf10ETkDeU0F/+jTh9MIg2Y4yfOj1sLs+kYUkK7JFLjhWIoNCTTY9Pmq=",
-        umidToken: "TF44A803333093064CAB6B2D37D0D5BBEE668B6B93921C9D552094C90DF"
-      }),
+      variableMap: JSON.stringify(
+        Object.assign(
+          {
+            couponKey,
+            af: "1",
+            pid,
+            st: "39",
+            ulandSrc: "201_11.1.228.74_6456882_1563377267124",
+            itemId,
+            mteeAsac: "1A19322J4Z3PLXO583LRB6",
+            mteeType: "sdk"
+          },
+          mteeInfo
+        )
+      ),
       floorId: "13352"
     },
     "get",
@@ -333,6 +341,65 @@ export async function getMarketCoupon(url: string) {
   };
 }
 
+/**
+ * 领取内部店铺券
+ * @param url
+ * @example https://uland.taobao.com/quan/detail?ut_sk=1.XSfi5EEpzUIDAD46j6ev8P7T_21380790_1563514793271.TaoPassword-QQ.windvane&imsi=460011598911726&__share__id__=1&share_crt_v=1&sellerId=2200827691658&xi=592229907275&sourceType=other&suid=BFEA8241-BCCD-4A63-BA5E-77CE930312AC&activityId=d48fc2fa5da44d7e9ff7d81fc0784f7d&sp_tk=77%20lTTZJbVlTUXF5dGbvv6U%3D&imei=861997040593290&un=04ec1ab5583d2c369eedd86203cf18d8&ttid=10005934%40taobao_android_8.7.0
+ */
+export async function getInnerStoreCoupon(url: string) {
+  /*
+    获取状态
+    mtop.alimama.union.hsf.mama.coupon.get
+    {"sellerId":"2200827691658","activityId":"d48fc2fa5da44d7e9ff7d81fc0784f7d","pid":"mm_33231688_7050284_23466709"}
+    {
+      "message": "",
+      "result": {
+        "msgInfo": "coupon status not valid",
+        // 0:可领 12:失效
+        "retStatus": "12",
+        "shopLogo": "//img.alicdn.com/bao/uploaded//d7/2d/TB1QtptRQvoK1RjSZFNSuwxMVXa.jpg",
+        "shopName": "鸿星尔克outlets店",
+        "shopUrl": "https://s.click.taobao.com/t?e=m%3D2%26s%3DcDhKoND6PJFw4vFB6t2Z2jAVflQIoZeptCNrm84%2FxJjdZa3YWKemDUTN71Q0pd8s2FYyuHGhGgg%2FmLO%2F5foB9eoryUtqIh4%2B4jMnl1H7sduZ4Y8JljmSnsn1Peil2YWXl0Ey3zWanW1TqyIhDoGSFVum7ZfZdxsPxBB%2F012F9lkSPClEt413j5jZQFcAPNl6"
+      },
+      "success": "true"
+    }
+   */
+
+  var { searchParams } = new URL(url);
+  var res = await requestData(
+    "mtop.alimama.union.hsf.mama.coupon.apply",
+    Object.assign(
+      {
+        sellerId: searchParams.get("sellerId"),
+        activityId: searchParams.get("activityId"),
+        pid: searchParams.get("pid") || "mm_33231688_7050284_23466709"
+      },
+      mteeInfo
+    ),
+    "get",
+    "1.0"
+  );
+  logFile(res, "内部店铺优惠券");
+  var success = res.success === "true";
+  var msg = "领取成功";
+  var manual;
+  if (!success) {
+    msg = res.message;
+  } else {
+    let { retStatus, msgInfo } = res.result;
+    if (retStatus === "4") {
+      manual = true;
+    }
+    success = retStatus === "0";
+    msg = msgInfo;
+  }
+  return {
+    success,
+    msg,
+    manual
+  };
+}
+
 export async function getStoreCoupon(arg: {
   sellerId: string;
   itemId: string;
@@ -394,6 +461,30 @@ export async function getChaoshiCoupon(url: string) {
   await req.get(
     "https://pages.tmall.com/wow/chaoshi/act/wupr?__share__id__=1&share_crt_v=1&disableNav=YES&clickid=I220_12934752281563334657389832&wh_pid=act%2Falipay-fddew&%3A1562722996_273_1814643204=&tkFlag=1&tk_cps_param=118770447&sourceType=other&sp_tk=77%2BlYTZJbFk2a0k5YlTvv6U%3D&type=2&suid=D4896C7D-775F-4FD1-83AE-CA02284E20B0&wh_biz=tm&utparam=%7B%22ranger_buckets%22%3A%223042%22%7D&e=5G5jofRaROzKHwXYt0GK7-GCrBUXRDJ7JMc6T-9QrFVy1_NmXSnu4K3G98p2zSm3QsD6q6f1XPUJnFZ9u4P0mYRqxKSGsgCT8sviUM61dt2zZ2XZRKAfeid9H6GwqKYA8lo6HDoeVZpDcdFQGwqrO5njwOJxMd6Sd6vbaT_nXo_U4vk3CD6EfpnjwOJxMd6SYXwZ6GyZXXd4MCjxSJNmpBFGSN27hbJORRq7BkT9HWmiZ-QMlGz6FQ&disableAB=true&un=dbd409acd9cb28554c6e4bed9157ce66&eRedirect=1&ttid=201200%40taobao_iphone_8.8.0&cpp=1&shareurl=true&app=chrome&ali_trackid=&tk_cps_ut=2&sourceType=other&suid=7ff09f5d-b67d-41f7-86be-cbc26ea29ace&ut_sk=1.XK%2BQ06Gx8KwDAHyGAUJXIrJu_21646297_1563378089122.Copy.chaoshi_act_page_tb&ali_trackid=2:mm_130931909_559550329_109023950193:1563379429_121_861011236"
   );
+}
+
+export async function getChaoshiGoodsList(keyword: string) {
+  var buf = await req.get("https://list.tmall.com/chaoshi_data.htm", {
+    qs: {
+      p: 1,
+      user_id: 725677994,
+      q: keyword,
+      cat: 50514008,
+      sort: "p",
+      unify: "yes",
+      from: "chaoshi"
+    },
+    headers: {
+      "X-Requested-With": "XMLHttpRequest"
+    },
+    encoding: null
+  });
+  var text = iconv.decode(buf, "gb2312");
+  var { srp, status } = JSON.parse(text);
+  if (status.success) {
+    return srp;
+  }
+  throw new Error("出错了");
 }
 
 /* getTaolijin(
@@ -472,7 +563,8 @@ export async function addCart(args: {
       }),
       skuId
     },
-    "post"
+    "post",
+    "3.1"
   );
   return cartId;
 }
@@ -593,7 +685,7 @@ export async function cartToggle(data: { items: any; checked: boolean }) {
   // await page.click(".go-btn");
 }
 
-export async function submitOrder(data: any, other: any = {}) {
+export async function submitOrder(data: any, other: any = {}, args: any = {}) {
   // other.memo other.ComplexInput
   console.log("-------------开始进入手机订单结算页-------------");
   var data1;
@@ -633,6 +725,12 @@ export async function submitOrder(data: any, other: any = {}) {
   if (invalids.length > 0) {
     throw new Error("有失效宝贝");
   }
+  var realPay = data.realPay_1;
+  if (args.forcePrice) {
+    if (Number(args.expectedPrice) < Number(realPay.fields.price)) {
+      throw new Error("价格太高了，买不起");
+    }
+  }
   var orderData = Object.keys(data).reduce(
     (state, name) => {
       var item = data[name];
@@ -646,7 +744,6 @@ export async function submitOrder(data: any, other: any = {}) {
     <any>{}
   );
   var submitOrder = data.submitOrder_1;
-  var realPay = data.realPay_1;
   var address = data.address_1;
   realPay.fields.currencySymbol = "￥";
   submitOrder._realPay = realPay;

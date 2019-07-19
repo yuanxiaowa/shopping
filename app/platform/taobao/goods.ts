@@ -463,17 +463,20 @@ export async function getChaoshiCoupon(url: string) {
   );
 }
 
-export async function getChaoshiGoodsList(keyword: string) {
+export async function getChaoshiGoodsList(keyword: string, other: any) {
   var buf = await req.get("https://list.tmall.com/chaoshi_data.htm", {
-    qs: {
-      p: 1,
-      user_id: 725677994,
-      q: keyword,
-      cat: 50514008,
-      sort: "p",
-      unify: "yes",
-      from: "chaoshi"
-    },
+    qs: Object.assign(
+      {
+        p: 1,
+        user_id: 725677994,
+        q: keyword,
+        cat: 50514008,
+        sort: "p",
+        unify: "yes",
+        from: "chaoshi"
+      },
+      other
+    ),
     headers: {
       "X-Requested-With": "XMLHttpRequest"
     },
@@ -686,6 +689,8 @@ export async function cartToggle(data: { items: any; checked: boolean }) {
 }
 
 export async function submitOrder(data: any, other: any = {}, args: any = {}) {
+  var r = Date.now();
+  console.time("订单结算" + r);
   // other.memo other.ComplexInput
   console.log("-------------开始进入手机订单结算页-------------");
   var data1;
@@ -713,6 +718,7 @@ export async function submitOrder(data: any, other: any = {}, args: any = {}) {
     }
     throw e;
   }
+  console.timeEnd("订单结算" + r);
   console.log("-------------已经进入手机订单结算页-------------");
   logFile(data1, "手机订单结算页");
   console.log("-------------进入手机订单结算页，准备提交-------------");
@@ -784,6 +790,8 @@ export async function submitOrder(data: any, other: any = {}, args: any = {}) {
     return;
   }
   try {
+    r = Date.now();
+    console.log("订单提交", r);
     let ret = await requestData(
       "mtop.trade.createorder.h5",
       postdata,
@@ -792,6 +800,7 @@ export async function submitOrder(data: any, other: any = {}, args: any = {}) {
     );
     logFile(ret, "手机订单提交成功");
     console.log("----------手机订单提交成功----------");
+    console.timeEnd("订单提交" + r);
   } catch (e) {
     if (e.message.includes("对不起，系统繁忙，请稍候再试")) {
       console.log(e.message);

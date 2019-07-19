@@ -2,6 +2,7 @@ import fs = require("fs-extra");
 import { join } from "path";
 import moment = require("moment");
 import { writeFile, writeJSON } from "fs-extra";
+import http = require("http");
 
 export function remain(h: number, m = 0) {
   var now = new Date();
@@ -152,5 +153,46 @@ export function logFileWrapper(name: string) {
       return writeFile(filename, content);
     }
     return writeJSON(filename, content);
+  };
+}
+
+export async function sysTime() {
+  function getDt(): Promise<{
+    rtl: number;
+    dt: number;
+  }> {
+    return new Promise(resolve => {
+      var start = Date.now();
+      http.get(
+        "http://api.m.taobao.com/rest/api3.do?api=mtop.common.getTimestamp",
+        res => {
+          var end = Date.now();
+          var text = "";
+          res.on("data", chunk => (text += chunk));
+          res.on("end", () => {
+            var rtl = (end - start) / 2;
+            var {
+              data: { t }
+            } = JSON.parse(text);
+            resolve({
+              dt: rtl - (end - t),
+              rtl
+            });
+          });
+        }
+      );
+    });
+  }
+  var count = 100;
+  var total = 0;
+  var total_rtl = 0;
+  for (let i = 0; i < count; i++) {
+    var { rtl, dt } = await getDt();
+    total += dt;
+    total_rtl += rtl;
+  }
+  return {
+    dt: total / count,
+    rtl: total_rtl / count
   };
 }

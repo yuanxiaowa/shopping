@@ -39,6 +39,9 @@ export function getMobileCartList(resData: any) {
   var structure: Record<string, string[]> = hierarchy.structure;
 
   function getPatternUrl(data: any) {
+    if (!data.url.startsWith("$")) {
+      return data.url;
+    }
     return (<string>controlParas[pattern.exec(data.url)![1]]).replace(
       pattern,
       (_, key) => data[key]
@@ -108,17 +111,34 @@ export function getMobileCartList(resData: any) {
       });
     } else {
       if (name === "bundlev2_invalid") {
-        ret.push({
-          id: "",
-          title: "聚划算未开团",
-          sellerId: "",
-          shopId: "",
-          valid: false,
-          url: "",
-          items: items
-            .filter(key => data[key].fields.titleInCheckBox === "预热")
-            .map(mapper)
-        });
+        let items_jhs = items
+          .filter(key => data[key].fields.titleInCheckBox === "预热")
+          .map(mapper);
+        if (items_jhs.length > 0) {
+          ret.unshift({
+            id: "",
+            title: "聚划算未开团",
+            sellerId: "",
+            shopId: "",
+            valid: false,
+            url: "",
+            items: items_jhs
+          });
+        }
+        let items_invalid = items
+          .filter(key => data[key].fields.titleInCheckBox !== "预热")
+          .map(mapper);
+        if (items_invalid.length > 0) {
+          ret.push({
+            id: name,
+            title: "失效宝贝",
+            sellerId: "",
+            shopId: "",
+            valid: false,
+            url: "",
+            items: items_invalid
+          });
+        }
         return;
       }
       structure[name].forEach(key => findData(key));

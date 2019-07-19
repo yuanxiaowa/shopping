@@ -1,6 +1,6 @@
 import { Controller } from "egg";
 import moment = require("moment");
-import { delay } from "../../utils/tools";
+import { delay, sysTime } from "../../utils/tools";
 
 async function handle(p: Promise<any>, msg?: string) {
   try {
@@ -18,6 +18,15 @@ async function handle(p: Promise<any>, msg?: string) {
   }
 }
 
+var DT = 0;
+
+console.log("开始同步时钟");
+sysTime().then(({ dt, rtl }) => {
+  console.log("同步时间", (dt > 0 ? "慢了" : "快了") + dt + "ms");
+  console.log("单程时间", rtl + "ms");
+  DT = dt + rtl;
+});
+
 export default class ShopController extends Controller {
   public async cartList() {
     const { ctx, app } = this;
@@ -28,16 +37,16 @@ export default class ShopController extends Controller {
     const { ctx, app } = this;
     var { platform, t } = ctx.query;
     var data = ctx.request.body;
-    var dt = moment(t).diff(moment());
+    var dt = moment(t).diff(moment()) - DT;
     if (dt > 0) {
       (async () => {
         await delay(dt);
-        console.log(platform, "开始直接下单");
+        console.log(platform, "开始从购物车下单");
         await app[platform].cartBuy(data);
       })();
       ctx.body = {
         code: 0,
-        msg: moment(t || undefined).fromNow() + " 直接下单"
+        msg: moment(t || undefined).fromNow() + " 从购物车下单"
       };
     } else {
       ctx.body = await handle(app[platform].cartBuy(data), "下单成功");
@@ -78,14 +87,32 @@ export default class ShopController extends Controller {
     var { platform, t } = ctx.query;
     var data = ctx.request.body;
     var ins = app[platform];
-    var dt = moment(t).diff(moment());
+    if (data.mc_dot1) {
+      let id = await ins.cartAdd(data);
+      let items: any[] = await ins.goodsList({
+        name: "chaoshi"
+      });
+      let i = items.findIndex(item => Number(item.price) > 0.01);
+      let ids = await Promise.all(
+        items.slice(0, i).map(({ url }) =>
+          ins.cartAdd({
+            url,
+            quantity: 1
+          })
+        )
+      );
+      ids.push(id);
+      ctx.body = await handle(ins.coudan(ids), "下单成功");
+      return;
+    }
+    var dt = moment(t).diff(moment()) - DT;
     if (dt > 0) {
       (async () => {
         let p1 = delay(dt);
         let goodsInfo = await ins.getGoodsInfo(data.url, data.skus);
         let nextData = ins.getNextDataByGoodsInfo(goodsInfo, data.quantity);
         await p1;
-        console.log(platform, "开始从购物车下单");
+        console.log(platform, "直接下单");
         await handle(ins.submitOrder(nextData, data.other));
       })();
       ctx.body = {

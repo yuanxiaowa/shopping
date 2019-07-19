@@ -96,8 +96,17 @@ export class Taobao extends AutoShop {
     }
     return this.buyDirectFromPc(data);
   }
-  coudan(items: [string, number][]): Promise<any> {
-    throw new Error("Method not implemented.");
+  async coudan(ids: string[]): Promise<any> {
+    var list = await this.cartList();
+    var datas: any[] = [];
+    list.items.forEach(({ items }) => {
+      items.forEach(item => {
+        if (ids.includes(item.cartId)) {
+          datas.push(item);
+        }
+      });
+    });
+    return this.cartBuy({ items: datas });
   }
 
   async cartListFromPc() {
@@ -303,7 +312,7 @@ export class Taobao extends AutoShop {
     );
   }
 
-  cartBuy(items: any[]) {
+  cartBuy(items: any) {
     if (this.mobile) {
       return this.cartBuyFromMobile(items);
     }
@@ -456,7 +465,7 @@ export class Taobao extends AutoShop {
   async buyDirectFromMobile(args) {
     var data = await this.getGoodsInfo(args.url, args.skus);
     if (!data.buyEnable) {
-      throw new Error(data.msg);
+      throw new Error(data.msg || "不能购买");
     }
     return submitOrder(
       this.getNextDataByGoodsInfo(data, args.quantity),
@@ -465,9 +474,12 @@ export class Taobao extends AutoShop {
     );
   }
 
-  async goodsList({ keyword, name }) {
+  async goodsList({ keyword, start_price, end_price, name }) {
     if (name === "chaoshi") {
-      return getChaoshiGoodsList(keyword);
+      return getChaoshiGoodsList(keyword, {
+        start_price,
+        end_price
+      });
     }
   }
   seckillList = seckillList;

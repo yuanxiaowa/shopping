@@ -17,7 +17,7 @@ import jingdongHandlers from "./handlers";
 import jingdongCouponHandlers from "./coupon-handlers";
 import { resolveUrl } from "./tools";
 import { isSubmitOrder } from "../../common/config";
-import { delay, getCookieFilename, getCookie } from "../../../utils/tools";
+import { delay, getCookie } from "../../../utils/tools";
 import qs = require("querystring");
 
 const getSkuId = (url: string) => {
@@ -75,7 +75,6 @@ export class Jindong extends AutoShop {
         "https://wq.jd.com/mlogin/mpage/Login?rurl=https%3A%2F%2Fwqs.jd.com%2Fevent%2Fpromote%2Fmobile8%2Findex.shtml%3Fptag%3D17036.106.1%26ad_od%3D4%26cu%3Dtrue%26cu%3Dtrue%26utm_source%3Dkong%26utm_medium%3Djingfen%26utm_campaign%3Dt_2011246109_%26utm_term%3D5adc74e4969b47088e630d31139d99f1%26scpos%3D%23st%3D911",
       state_url:
         "https://home.m.jd.com/myJd/newhome.action?sid=a0726f04feb43ee99a9f7a4af7c605a3",
-      cookie_filename: getCookieFilename("jd-goods"),
       handlers: jingdongHandlers,
       // https://m.jr.jd.com/member/rightsCenter/?cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=4fa157535d65429cbdd4a80e012d3f86#/
       coupon_handlers: jingdongCouponHandlers
@@ -94,7 +93,7 @@ export class Jindong extends AutoShop {
     }
     return Promise.all(urls.map(this.resolveUrl));
   }
-  coudan(items: [string, number][]): Promise<any> {
+  coudan(items: string[]): Promise<any> {
     return this.cartBuy(undefined);
   }
   cartList() {
@@ -133,15 +132,17 @@ export class Jindong extends AutoShop {
   async buyDirect({
     url,
     quantity,
-    other
+    other,
+    expectedPrice
   }: {
     url: string;
     quantity: number;
     other: any;
+    expectedPrice?: number;
   }): Promise<any> {
     // var data = await getGoodsInfo(skuId);
     var data = this.getNextDataByGoodsInfo({ skuId: getSkuId(url) }, quantity);
-    return this.submitOrder(data);
+    return this.submitOrder(data, other, expectedPrice);
   }
   async cartBuy(data: any) {
     return this.submitOrder({
@@ -178,9 +179,26 @@ export class Jindong extends AutoShop {
     };
   }
 
-  async submitOrder(data: any, other?: any): Promise<any> {
+  async submitOrder(
+    data: any,
+    other?: any,
+    expectedPrice?: number
+  ): Promise<any> {
     var page = await newPage();
     await page.goto(data.submit_url);
+    if (typeof expectedPrice === "number") {
+      let total = await page.evaluate(() =>
+        Number(
+          document
+            .querySelector<HTMLElement>("#pageTotalPrice")!
+            .getAttribute("price")
+        )
+      );
+      if (expectedPrice < total) {
+        page.close();
+        throw new Error("太贵了");
+      }
+    }
     if (!isSubmitOrder) {
       await page.setOfflineMode(true);
     }

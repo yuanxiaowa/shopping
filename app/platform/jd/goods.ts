@@ -167,7 +167,7 @@ export async function obtainGoodsCoupon(data: { roleId: number; key: string }) {
       }
     }
   );
-  logFile(text, '商品下方领券')
+  logFile(text, "商品下方领券");
   return getJsonpData<{
     batchid: string;
     code: number;

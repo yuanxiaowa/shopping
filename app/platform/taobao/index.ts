@@ -1,5 +1,5 @@
 import AutoShop from "../auto-shop";
-import { getCookie, getCookieFilename } from "../../../utils/tools";
+import { getCookie } from "../../../utils/tools";
 import { getPcCartInfo } from "./pc";
 import { Page } from "puppeteer";
 import taobaoHandlers from "./handlers";
@@ -28,7 +28,6 @@ export class Taobao extends AutoShop {
     super({
       name: "taobao",
       login_url: "https://login.taobao.com/member/login.jhtml",
-      cookie_filename: getCookieFilename("taobao"),
       state_url:
         "https://main.m.taobao.com/mytaobao/index.html?spm=a215s.7406091.toolbar.i2",
       handlers: taobaoHandlers,

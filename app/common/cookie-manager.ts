@@ -1,7 +1,7 @@
 import { writeFile, readFileSync, ensureFile } from "fs-extra";
 
 export class Cookie {
-  cookie: string;
+  cookie = "";
   constructor(public filename: string) {}
   async init() {
     try {

@@ -732,7 +732,7 @@ export async function submitOrder(data: any, other: any = {}, args: any = {}) {
     throw new Error("有失效宝贝");
   }
   var realPay = data.realPay_1;
-  if (args.forcePrice) {
+  if (args.expectedPrice) {
     if (Number(args.expectedPrice) < Number(realPay.fields.price)) {
       throw new Error("价格太高了，买不起");
     }

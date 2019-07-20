@@ -131,18 +131,6 @@ export function getCookie(name: string, cookie: string) {
   return "";
 }
 
-export function getCookieFilename(name: string) {
-  return join(process.cwd(), ".data", "cookies", name + ".txt");
-}
-
-export function getCookieFromFile(name: string) {
-  var filename = getCookieFilename(name);
-  if (fs.existsSync(filename)) {
-    return fs.readFileSync(filename, "utf8");
-  }
-  return "";
-}
-
 export function logFileWrapper(name: string) {
   return async (content: any, label: string) => {
     var now = moment();

@@ -5,12 +5,11 @@ import { writeFile, ensureDir, readFileSync } from "fs-extra";
 import { Page } from "puppeteer";
 import { newPage } from "../../utils/page";
 import iconv = require("iconv-lite");
-import cookieManager from "../common/cookie-manager";
+import cookieManager, { Cookie } from "../common/cookie-manager";
 
 interface AutoShopOptions {
   name: string;
   ua?: string;
-  cookie_filename: string;
   state_url: string;
   login_url: string;
   handlers: Record<
@@ -34,7 +33,6 @@ export default abstract class AutoShop implements AutoShopOptions {
   name!: string;
   ua =
     "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1";
-  cookie_filename!: string;
   state_url!: string;
   handlers!: Record<
     string,
@@ -49,6 +47,7 @@ export default abstract class AutoShop implements AutoShopOptions {
   >;
   req!: RequestAPI<RequestPromise<any>, RequestPromiseOptions, RequiredUriUrl>;
   cookie!: string;
+  cookier!: Cookie;
   interval_check = 1000 * 60 * 60;
   onAfterLogin() {}
   constructor(data: AutoShopOptions) {
@@ -184,7 +183,8 @@ export default abstract class AutoShop implements AutoShopOptions {
     await page.close();
   }
   init() {
-    this.setCookie(readFileSync(this.cookie_filename, "utf8"));
+    this.cookier = cookieManager[this.name];
+    this.setCookie(this.cookier.get());
     return ensureDir(".data/" + this.name);
   }
   async checkStatus() {

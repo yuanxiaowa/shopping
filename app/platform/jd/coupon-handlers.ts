@@ -1,6 +1,12 @@
 import { getActivityCoupons, getGoodsCoupons, getFloorCoupons } from "./tools";
 import { startsWith, test } from "ramda";
-import { obtainFloorCoupon, getQuanpinCoupon, getJingfen } from "./goods";
+import {
+  obtainFloorCoupon,
+  getQuanpinCoupon,
+  getJingfen,
+  getCouponSingle,
+  getShopCoupons
+} from "./goods";
 import { newPage } from "../../../utils/page";
 import { delay } from "../../../utils/tools";
 
@@ -90,6 +96,24 @@ const jingdongCouponHandlers = {
   quanpinByPhone: {
     test: startsWith("https://h5.m.jd.com/babelDiy/Zeus"),
     handler: getQuanpinCoupon
+  },
+  shop: {
+    test: startsWith("https://shop.m.jd.com/?"),
+    async handler(url: string) {
+      var urls = await getShopCoupons(url);
+      try {
+        await Promise.all(urls.map(getCouponSingle));
+        return {
+          success: true
+        };
+      } catch (e) {
+        return e;
+      }
+    }
+  },
+  couponSingle: {
+    test: startsWith("https://coupon.m.jd.com/coupons/show.action"),
+    handler: getCouponSingle
   }
 };
 

@@ -412,6 +412,50 @@ export async function getQuanpinCoupon(url: string, phone = "18605126843") {
 }
 
 /**
+ * 领取单张优惠券
+ * @param url
+ * @example https://coupon.m.jd.com/coupons/show.action?key=95f6d76c6af84f61b6431c128938a9a6&roleId=20962745&to=https://pro.m.jd.com/mall/active/VfaRyNj2vtwfoWgUEFoqGzF4B1Z/index.html&sceneval=2&time=1563640816871
+ */
+export async function getCouponSingle(url: string) {
+  var { searchParams } = new URL(url);
+  var text: string = await req.get(
+    "https://s.m.jd.com/activemcenter/mfreecoupon/getcoupon",
+    {
+      qs: {
+        key: searchParams.get("key"),
+        roleId: searchParams.get("roleId"),
+        to: searchParams.get("to"),
+        verifycode: "",
+        verifysession: "",
+        _: Date.now(),
+        sceneval: searchParams.get("sceneval"),
+        g_login_type: "1",
+        callback: "jsonpCBKA",
+        g_ty: "ls"
+      },
+      headers: {
+        Referer: url
+      }
+    }
+  );
+  var { ret, errmsg } = getJsonpData(text);
+  // 145:提交频繁 16:已抢完
+  return {
+    success: ret === 0,
+    msg: errmsg
+  };
+}
+
+export async function getShopCoupons(url: string): Promise<string[]> {
+  var html: string = await req.get(url);
+  var urls =
+    html.match(
+      /https:\/\/coupon\.m\.jd\.com\/coupons\/show\.action\?[^"']+/g
+    ) || [];
+  return urls;
+}
+
+/**
  * 领取内部优惠券
  * @param url
  * @example https://jingfen.jd.com/item.html?sku=46004095519&q=FXYTFBFuGHUWFRxfEHYQFRVsQCNGExRpFXQVFhxoE3cTFkZtESEUQBY/FiUiFhRrEHkaExFfVyVNQEAsfgZzBxI8GXAWE0M8FXQbExE/QyEbFR1pESUSRxE/EHIaFRJtIHERFxVvFnUQEQ==&d=9GSoGc&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_1001480949_&utm_term=ba3d0b36811c4075bece3cc17c6a3e56

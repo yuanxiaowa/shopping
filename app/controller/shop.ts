@@ -87,7 +87,7 @@ export default class ShopController extends Controller {
     var { platform, t } = ctx.query;
     var data = ctx.request.body;
     var ins = app[platform];
-    if (data.mc_dot1) {
+    if (platform === "taobao" && data.mc_dot1) {
       let id = await ins.cartAdd(data);
       let items: any[] = await ins.goodsList({
         name: "chaoshi"
@@ -95,12 +95,15 @@ export default class ShopController extends Controller {
       let i = items.findIndex(item => Number(item.price) > 0.01);
       let ids = await Promise.all(
         items.slice(0, i).map(({ url }) =>
-          ins.cartAdd({
-            url,
-            quantity: 1
-          })
+          ins
+            .cartAdd({
+              url,
+              quantity: 1
+            })
+            .catch(() => undefined)
         )
       );
+      ids = ids.filter(Boolean);
       ids.push(id);
       ctx.body = await handle(ins.coudan(ids), "下单成功");
       return;
@@ -113,7 +116,13 @@ export default class ShopController extends Controller {
         let nextData = ins.getNextDataByGoodsInfo(goodsInfo, data.quantity);
         await p1;
         console.log(platform, "直接下单");
-        await handle(ins.submitOrder(nextData, data.other));
+        await handle(
+          ins.submitOrder(
+            Object.assign(data, {
+              data: nextData
+            })
+          )
+        );
       })();
       ctx.body = {
         code: 0,
@@ -188,5 +197,10 @@ export default class ShopController extends Controller {
   public async sixtyCourseReply() {
     const { ctx, app } = this;
     ctx.body = await handle(app.taobao.sixtyCourseReply(ctx.query));
+  }
+
+  public async testOrder() {
+    const { ctx, app } = this;
+    ctx.body = await handle(app[ctx.query.platform].testOrder(ctx.query));
   }
 }

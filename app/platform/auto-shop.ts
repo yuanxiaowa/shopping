@@ -6,6 +6,7 @@ import { Page } from "puppeteer";
 import { newPage } from "../../utils/page";
 import iconv = require("iconv-lite");
 import cookieManager, { Cookie } from "../common/cookie-manager";
+import { ArgBuyDirect, ArgOrder, ArgCartBuy } from "./struct";
 
 interface AutoShopOptions {
   name: string;
@@ -104,7 +105,7 @@ export default abstract class AutoShop implements AutoShopOptions {
   }
   abstract coudan(items: string[]): Promise<any>;
   abstract cartList(): Promise<any>;
-  abstract cartBuy(data: any): Promise<any>;
+  abstract cartBuy(data: ArgCartBuy): Promise<any>;
   async cartToggle(data: { items: any; checked: boolean }): Promise<any> {}
   async cartToggleAll(data: any): Promise<any> {}
   abstract cartAdd(data: any): Promise<any>;
@@ -112,16 +113,13 @@ export default abstract class AutoShop implements AutoShopOptions {
   abstract cartUpdateQuantity(data: any): Promise<any>;
   abstract comment(data: any): Promise<any>;
   abstract commentList(data: { page: number; type: number }): Promise<any>;
-  abstract buyDirect(data: {
-    url: string;
-    quantity: number;
-    skus?: number[];
-  }): Promise<any>;
+  abstract buyDirect(data: ArgBuyDirect): Promise<any>;
   abstract getGoodsInfo(url: string, skus?: number[]): Promise<any>;
   abstract getNextDataByGoodsInfo(data: any, quantity: number): any;
-  abstract submitOrder(data: any, other?: any): Promise<any>;
+  abstract submitOrder(data: ArgOrder<any>): Promise<any>;
   async seckillList(name: string): Promise<any> {}
   async goodsList(args: { name: string; keyword: string }): Promise<any> {}
+  async testOrder(args): Promise<any> {}
 
   async loginAction(page: Page): Promise<any> {
     return page.waitForNavigation({

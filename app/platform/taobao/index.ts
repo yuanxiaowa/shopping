@@ -20,6 +20,9 @@ import {
   commentList,
   getChaoshiGoodsList
 } from "./goods";
+import { newPage } from "../../../utils/page";
+import { readJSONSync } from "fs-extra";
+import { ArgOrder, ArgBuyDirect } from "../struct";
 
 export class Taobao extends AutoShop {
   mobile = true;
@@ -84,12 +87,7 @@ export class Taobao extends AutoShop {
   }
   comment = comment;
   commentList = commentList;
-  buyDirect(data: {
-    url: string;
-    quantity: number;
-    skus?: number[];
-    other?: any;
-  }): Promise<any> {
+  buyDirect(data: ArgBuyDirect): Promise<any> {
     if (this.mobile) {
       return this.buyDirectFromMobile(data);
     }
@@ -108,41 +106,239 @@ export class Taobao extends AutoShop {
     return this.cartBuy({ items: datas });
   }
 
-  async cartListFromPc() {
-    var html: string = await this.req.get(`https://cart.taobao.com/cart.htm`, {
-      qs: {
-        spm: "a231o.7712113/g.1997525049.1.3e004608MXPqWt",
-        prepvid: `200_11.21.9.212_38091_${Date.now()}`,
-        extra: "",
-        from: "mini",
-        ad_id: "",
-        am_id: "",
-        cm_id: "",
-        pm_id: "1501036000a02c5c3739",
-        // pid: "mm_121093092_20166288_69356911",
-        clk1: "",
-        unid: "",
-        source_id: "",
-        app_pvid: `200_11.21.9.212_38091_${Date.now()}`
+  spm = "a222m.7628550.0.1";
+
+  cartBuyFromMobile(args: { items: any[] }) {
+    return submitOrder({
+      data: {
+        buyNow: "false",
+        buyParam: args.items.map(({ settlement }) => settlement).join(","),
+        spm: this.spm
+      },
+      other: {}
+    });
+  }
+
+  cartBuy(args: any) {
+    if (this.mobile) {
+      return this.cartBuyFromMobile(args);
+    }
+    return this.cartBuyFromPc(args);
+  }
+
+  submitOrder(data) {
+    if (this.mobile) {
+      return submitOrder(data);
+    }
+    return this.submitOrderFromPc(data);
+  }
+
+  getGoodsInfo = getGoodsInfo;
+
+  getNextDataByGoodsInfo({ delivery, skuId, itemId }, quantity: number) {
+    return {
+      buyNow: true,
+      exParams: JSON.stringify({
+        addressId:
+          delivery.areaSell === "true" ? delivery.addressId : undefined,
+        buyFrom: "tmall_h5_detail"
+      }),
+      itemId,
+      quantity,
+      serviceId: null,
+      skuId
+    };
+  }
+
+  async buyDirectFromMobile(args: ArgBuyDirect) {
+    var data = await this.getGoodsInfo(args.url, args.skus);
+    if (!data.buyEnable) {
+      throw new Error(data.msg || "不能购买");
+    }
+    return submitOrder(
+      Object.assign(args, {
+        data: this.getNextDataByGoodsInfo(data, args.quantity)
+      })
+    );
+  }
+
+  async goodsList({ keyword, start_price, end_price, name }) {
+    if (name === "chaoshi") {
+      return getChaoshiGoodsList(keyword, {
+        start_price,
+        end_price
+      });
+    }
+  }
+  seckillList = seckillList;
+  sixtyCourseList = sixtyCourseList;
+  sixtyCourseReply = sixtyCourseReply;
+
+  cartToggle = cartToggle;
+
+  async loginAction(page: Page) {
+    var res = await page.waitForResponse(res =>
+      res.url().startsWith("https://img.alicdn.com/imgextra")
+    );
+    return res.url();
+  }
+
+  onAfterLogin() {
+    setReq(this.cookie);
+    this.spm = `a1z0d.6639537.1997196601.${(Math.random() * 100) >>
+      0}.412f7484UFYI5e`;
+  }
+
+  async testOrder(args) {
+    var page = await newPage();
+    await page.setRequestInterception(true);
+    page.on("request", e => {
+      if (
+        /\/(mtop.trade.buildorder.h5|mtop.trade.order.build.h5)\//.test(e.url())
+      ) {
+        e.respond({
+          status: 200,
+          body: JSON.stringify({
+            api: RegExp.$1,
+            ret: ["SUCCESS::调用成功"],
+            data: readJSONSync(args.file)
+          })
+        });
+      } else {
+        e.continue();
       }
     });
-    var text = /var firstData = (.*);}catch \(e\)/.exec(html)![1];
-    var res_data = JSON.parse(text);
-    return getPcCartInfo(res_data);
+    page.goto(
+      "https://buy.m.tmall.com/order/confirm_order_wap.htm?enc=%E2%84%A2&itemId=538364857603&exParams=%7B%22addressId%22%3A%229607477385%22%2C%22etm%22%3A%22%22%7D&skuId=3471693791586&quantity=1&divisionCode=320583&userId=842405758&buyNow=true&_input_charset=utf-8&areaId=320583&addressId=9607477385&x-itemid=538364857603&x-uid=842405758"
+    );
+    return;
+  }
+
+  async buyDirectFromPc({ url, quantity }: ArgBuyDirect) {
+    var html: string = await this.req.get(url, {
+      headers: {
+        "user-agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
+      }
+    });
+    this.logFile(url + "\n" + html, "直接购买-商品详情");
+    var text = /TShop.Setup\(\s*(.*)\s*\);/.exec(html)![1];
+    var {
+      itemDO,
+      valItemInfo: { skuList, skuMap },
+      tradeConfig
+    } = JSON.parse(text);
+    var form_str = /<form id="J_FrmBid"[^>]*>([\s\S]*?)<\/form>/.exec(html)![1];
+    var form_item_r = /\sname="([^"]+)"\s+value="([^"]*)"/g;
+    var form: Record<string, string> = {};
+    while (form_item_r.test(form_str)) {
+      form[RegExp.$1] = RegExp.$2;
+    }
+    if (!form.buyer_from) {
+      form.buyer_from = "ecity";
+    }
+    var skuItem = skuList.find(
+      (item: any) => skuMap[`;${item.pvs};`].stock > 0
+    );
+    var skuId: string;
+    if (skuItem) {
+      skuId = skuItem.skuId;
+    } else {
+      throw new Error("没货了");
+    }
+    Object.assign(form, {
+      root_refer: "",
+      item_url_refer: url,
+
+      allow_quantity: itemDO.quantity,
+      buy_param: [itemDO.itemId, 1, skuId].join("_"),
+      quantity,
+      _tb_token_: "edeb7b783ff65",
+      skuInfo: [itemDO.title].join(";"),
+      _input_charset: "UTF-8",
+      skuId,
+      bankfrom: "",
+      from_etao: "",
+      item_id_num: itemDO.itemId,
+      item_id: itemDO.itemId,
+      auction_id: itemDO.itemId,
+      seller_rank: "0",
+      seller_rate_sum: "0",
+      is_orginal: "no",
+      point_price: "false",
+      secure_pay: "true",
+      pay_method: "\u6b3e\u5230\u53d1\u8d27",
+      from: "item_detail",
+      buy_now: itemDO.reservePrice,
+      current_price: itemDO.reservePrice,
+      auction_type: itemDO.auctionType,
+      seller_num_id: itemDO.userId,
+      activity: "",
+      chargeTypeId: ""
+    });
+    /* var pdetail = this.req.get("https:" + /var l,url='([^']+)/.exec(html)![1], {
+      headers: {
+        Referer: url
+      }
+    });
+    var detail_text = await pdetail;
+    var {
+      defaultModel: {
+        deliveryDO: { areaId }
+      }
+    } = JSON.parse(/\((.*)\)/.exec(detail_text)![1]);
+    Object.assign(form, {
+      destination: areaId
+    }); */
+    var qs_data = {
+      "x-itemid": itemDO.itemId,
+      "x-uid": getCookie("unb", this.cookie)
+    };
+    /* var page = await newPage();
+    // await page.goto(url);
+    await page.evaluate(form => {
+      var ele = document.createElement("form");
+      ele.action = "https://buy.tmall.com/order/confirm_order.htm";
+      ele.method = "post";
+      Object.keys(form).forEach(name => {
+        var input = document.createElement("input");
+        input.name = name;
+        input.value = form[name];
+        ele.appendChild(input);
+      });
+      document.body.appendChild(ele);
+      ele.submit();
+    }, form); */
+    console.log("进入订单结算页");
+    try {
+      var ret = await this.submitOrderFromPc({
+        data: {
+          form,
+          addr_url: "https:" + tradeConfig[2],
+          Referer: url
+        },
+        other: {}
+      });
+      /* var ret = await this.req.post("https:" + tradeConfig[2], {
+        form,
+        qs: qs_data
+      }); */
+      console.log(ret);
+    } catch (e) {
+      console.error("订单提交出错", e);
+    }
   }
 
   async submitOrderFromPc(
-    {
-      form,
-      addr_url,
-      Referer
-    }: {
+    args: ArgOrder<{
       form: Record<string, any>;
       addr_url: string;
       Referer: string;
-    },
-    other: any = {}
+    }>
   ): Promise<any> {
+    var {
+      data: { form, addr_url, Referer }
+    } = args;
     this.logFile(addr_url + "\n" + JSON.stringify(form), "进入订单结算页");
     var html: string = await this.req.post(addr_url, {
       form,
@@ -247,12 +443,12 @@ export class Taobao extends AutoShop {
       console.log("-----订单提交成功，等待付款----");
     } catch (e) {
       console.trace(e);
-      return this.submitOrderFromPc({ form, addr_url, Referer });
+      return this.submitOrderFromPc(args);
     }
   }
 
-  async cartBuyFromPc(
-    goods: {
+  async cartBuyFromPc(args: {
+    items: {
       sellerId: string;
       cartId: string;
       skuId: string;
@@ -260,8 +456,9 @@ export class Taobao extends AutoShop {
       quantity: number;
       createTime: string;
       attr: string;
-    }[]
-  ) {
+    }[];
+  }) {
+    var goods = args.items;
     var cartIdStr = goods.map(({ cartId }) => cartId).join(",");
     var sellerIdStr = [...new Set(goods.map(({ sellerId }) => sellerId))].join(
       ","
@@ -292,209 +489,37 @@ export class Taobao extends AutoShop {
       source_time: Date.now()
     };
     await this.submitOrderFromPc({
-      form,
-      addr_url: `https://buy.tmall.com/order/confirm_order.htm?spm=${this.spm}`,
-      Referer: `https://cart.taobao.com/cart.htm?spm=a21bo.2017.1997525049.1.5af911d9eInVdr&from=mini&ad_id=&am_id=&cm_id=`
-    });
-  }
-
-  spm = "a222m.7628550.0.0";
-
-  cartBuyFromMobile(data) {
-    return submitOrder(
-      {
-        buyNow: "false",
-        buyParam: data.items.map(({ settlement }) => settlement).join(","),
-        spm: this.spm
+      data: {
+        form,
+        addr_url: `https://buy.tmall.com/order/confirm_order.htm?spm=${
+          this.spm
+        }`,
+        Referer: `https://cart.taobao.com/cart.htm?spm=a21bo.2017.1997525049.1.5af911d9eInVdr&from=mini&ad_id=&am_id=&cm_id=`
       },
-      data.other
-    );
+      other: {}
+    });
   }
 
-  cartBuy(items: any) {
-    if (this.mobile) {
-      return this.cartBuyFromMobile(items);
-    }
-    return this.cartBuyFromPc(items);
-  }
-
-  async buyDirectFromPc({
-    url,
-    quantity
-  }: {
-    url: string;
-    quantity: number;
-    other?: any;
-  }) {
-    var html: string = await this.req.get(url, {
-      headers: {
-        "user-agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
+  async cartListFromPc() {
+    var html: string = await this.req.get(`https://cart.taobao.com/cart.htm`, {
+      qs: {
+        spm: "a231o.7712113/g.1997525049.1.3e004608MXPqWt",
+        prepvid: `200_11.21.9.212_38091_${Date.now()}`,
+        extra: "",
+        from: "mini",
+        ad_id: "",
+        am_id: "",
+        cm_id: "",
+        pm_id: "1501036000a02c5c3739",
+        // pid: "mm_121093092_20166288_69356911",
+        clk1: "",
+        unid: "",
+        source_id: "",
+        app_pvid: `200_11.21.9.212_38091_${Date.now()}`
       }
     });
-    this.logFile(url + "\n" + html, "直接购买-商品详情");
-    var text = /TShop.Setup\(\s*(.*)\s*\);/.exec(html)![1];
-    var {
-      itemDO,
-      valItemInfo: { skuList, skuMap },
-      tradeConfig
-    } = JSON.parse(text);
-    var form_str = /<form id="J_FrmBid"[^>]*>([\s\S]*?)<\/form>/.exec(html)![1];
-    var form_item_r = /\sname="([^"]+)"\s+value="([^"]*)"/g;
-    var form: Record<string, string> = {};
-    while (form_item_r.test(form_str)) {
-      form[RegExp.$1] = RegExp.$2;
-    }
-    if (!form.buyer_from) {
-      form.buyer_from = "ecity";
-    }
-    var skuItem = skuList.find(
-      (item: any) => skuMap[`;${item.pvs};`].stock > 0
-    );
-    var skuId: string;
-    if (skuItem) {
-      skuId = skuItem.skuId;
-    } else {
-      throw new Error("没货了");
-    }
-    Object.assign(form, {
-      root_refer: "",
-      item_url_refer: url,
-
-      allow_quantity: itemDO.quantity,
-      buy_param: [itemDO.itemId, 1, skuId].join("_"),
-      quantity,
-      _tb_token_: "edeb7b783ff65",
-      skuInfo: [itemDO.title].join(";"),
-      _input_charset: "UTF-8",
-      skuId,
-      bankfrom: "",
-      from_etao: "",
-      item_id_num: itemDO.itemId,
-      item_id: itemDO.itemId,
-      auction_id: itemDO.itemId,
-      seller_rank: "0",
-      seller_rate_sum: "0",
-      is_orginal: "no",
-      point_price: "false",
-      secure_pay: "true",
-      pay_method: "\u6b3e\u5230\u53d1\u8d27",
-      from: "item_detail",
-      buy_now: itemDO.reservePrice,
-      current_price: itemDO.reservePrice,
-      auction_type: itemDO.auctionType,
-      seller_num_id: itemDO.userId,
-      activity: "",
-      chargeTypeId: ""
-    });
-    /* var pdetail = this.req.get("https:" + /var l,url='([^']+)/.exec(html)![1], {
-      headers: {
-        Referer: url
-      }
-    });
-    var detail_text = await pdetail;
-    var {
-      defaultModel: {
-        deliveryDO: { areaId }
-      }
-    } = JSON.parse(/\((.*)\)/.exec(detail_text)![1]);
-    Object.assign(form, {
-      destination: areaId
-    }); */
-    var qs_data = {
-      "x-itemid": itemDO.itemId,
-      "x-uid": getCookie("unb", this.cookie)
-    };
-    /* var page = await newPage();
-    // await page.goto(url);
-    await page.evaluate(form => {
-      var ele = document.createElement("form");
-      ele.action = "https://buy.tmall.com/order/confirm_order.htm";
-      ele.method = "post";
-      Object.keys(form).forEach(name => {
-        var input = document.createElement("input");
-        input.name = name;
-        input.value = form[name];
-        ele.appendChild(input);
-      });
-      document.body.appendChild(ele);
-      ele.submit();
-    }, form); */
-    console.log("进入订单结算页");
-    try {
-      var ret = await this.submitOrderFromPc({
-        form,
-        addr_url: "https:" + tradeConfig[2],
-        Referer: url
-      });
-      /* var ret = await this.req.post("https:" + tradeConfig[2], {
-        form,
-        qs: qs_data
-      }); */
-      console.log(ret);
-    } catch (e) {
-      console.error("订单提交出错", e);
-    }
-  }
-
-  submitOrder(data, other: any = {}) {
-    if (this.mobile) {
-      return submitOrder(data, other);
-    }
-    return this.submitOrderFromPc(data, other);
-  }
-
-  getGoodsInfo = getGoodsInfo;
-
-  getNextDataByGoodsInfo({ delivery, skuId, itemId }, quantity: number) {
-    return {
-      buyNow: true,
-      exParams: JSON.stringify({
-        addressId:
-          delivery.areaSell === "true" ? delivery.addressId : undefined,
-        buyFrom: "tmall_h5_detail"
-      }),
-      itemId,
-      quantity,
-      serviceId: null,
-      skuId
-    };
-  }
-
-  async buyDirectFromMobile(args) {
-    var data = await this.getGoodsInfo(args.url, args.skus);
-    if (!data.buyEnable) {
-      throw new Error(data.msg || "不能购买");
-    }
-    return submitOrder(
-      this.getNextDataByGoodsInfo(data, args.quantity),
-      args.other,
-      args
-    );
-  }
-
-  async goodsList({ keyword, start_price, end_price, name }) {
-    if (name === "chaoshi") {
-      return getChaoshiGoodsList(keyword, {
-        start_price,
-        end_price
-      });
-    }
-  }
-  seckillList = seckillList;
-  sixtyCourseList = sixtyCourseList;
-  sixtyCourseReply = sixtyCourseReply;
-
-  cartToggle = cartToggle;
-
-  async loginAction(page: Page) {
-    var res = await page.waitForResponse(res =>
-      res.url().startsWith("https://img.alicdn.com/imgextra")
-    );
-    return res.url();
-  }
-
-  onAfterLogin() {
-    setReq(this.cookie);
+    var text = /var firstData = (.*);}catch \(e\)/.exec(html)![1];
+    var res_data = JSON.parse(text);
+    return getPcCartInfo(res_data);
   }
 }

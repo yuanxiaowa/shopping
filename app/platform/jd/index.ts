@@ -19,6 +19,7 @@ import { resolveUrl } from "./tools";
 import { isSubmitOrder } from "../../common/config";
 import { delay, getCookie } from "../../../utils/tools";
 import qs = require("querystring");
+import { ArgBuyDirect, ArgOrder } from "../struct";
 
 const getSkuId = (url: string) => {
   return /(\d+)\.html/.exec(url)![1];
@@ -129,31 +130,38 @@ export class Jindong extends AutoShop {
     // 5:已取消 6:已完成
     return getCommentList(6, data.page);
   }
-  async buyDirect({
-    url,
-    quantity,
-    other,
-    expectedPrice
-  }: {
-    url: string;
-    quantity: number;
-    other: any;
-    expectedPrice?: number;
-  }): Promise<any> {
+
+  async buyDirect(data: ArgBuyDirect): Promise<any> {
     // var data = await getGoodsInfo(skuId);
-    var data = this.getNextDataByGoodsInfo({ skuId: getSkuId(url) }, quantity);
-    return this.submitOrder(data, other, expectedPrice);
+    var res = this.getNextDataByGoodsInfo(
+      { skuId: getSkuId(data.url) },
+      data.quantity
+    );
+    return this.submitOrder(
+      Object.assign(
+        {
+          data: res
+        },
+        data
+      )
+    );
   }
+
   async cartBuy(data: any) {
     return this.submitOrder({
-      submit_url: "https://p.m.jd.com/norder/order.action"
+      data: {
+        submit_url: "https://p.m.jd.com/norder/order.action"
+      },
+      other: {}
     });
   }
+
   async getGoodsInfo(url: string, skus?: number[] | undefined): Promise<any> {
     return {
       skuId: getSkuId(url)
     };
   }
+
   getNextDataByGoodsInfo({ skuId }: any, quantity: number) {
     var submit_url =
       "https://wq.jd.com/deal/confirmorder/main?" +
@@ -180,13 +188,13 @@ export class Jindong extends AutoShop {
   }
 
   async submitOrder(
-    data: any,
-    other?: any,
-    expectedPrice?: number
+    args: ArgOrder<{
+      submit_url: string;
+    }>
   ): Promise<any> {
     var page = await newPage();
-    await page.goto(data.submit_url);
-    if (typeof expectedPrice === "number") {
+    await page.goto(args.data.submit_url);
+    if (typeof args.expectedPrice === "number") {
       let total = await page.evaluate(() =>
         Number(
           document
@@ -194,7 +202,7 @@ export class Jindong extends AutoShop {
             .getAttribute("price")
         )
       );
-      if (expectedPrice < total) {
+      if (args.expectedPrice < total) {
         page.close();
         throw new Error("太贵了");
       }
@@ -218,7 +226,7 @@ export class Jindong extends AutoShop {
       await page.close();
       await delay(2000);
       console.log("retry");
-      return this.cartBuy(data);
+      return this.submitOrder(args);
     }
     await page.waitForNavigation();
     await page.close();

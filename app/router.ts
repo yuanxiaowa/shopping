@@ -27,4 +27,5 @@ export default (app: Application) => {
   router.get("/sixty-course/reply", controller.shop.sixtyCourseReply);
 
   router.get("/qrcode/generate", controller.common.qrcode);
+  router.get("/test/order", controller.shop.testOrder);
 };

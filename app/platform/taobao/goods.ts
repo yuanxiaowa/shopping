@@ -8,6 +8,7 @@ import {
 } from "./mobile-data-transform";
 import moment = require("moment");
 import { isSubmitOrder } from "../../common/config";
+import { ArgOrder } from "../struct";
 
 var req: request.RequestPromiseAPI;
 var cookie = "";
@@ -688,7 +689,7 @@ export async function cartToggle(data: { items: any; checked: boolean }) {
   // await page.click(".go-btn");
 }
 
-export async function submitOrder(data: any, other: any = {}, args: any = {}) {
+export async function submitOrder(args: ArgOrder<any>) {
   var r = Date.now();
   console.time("订单结算" + r);
   // other.memo other.ComplexInput
@@ -710,11 +711,16 @@ export async function submitOrder(data: any, other: any = {}, args: any = {}) {
     //   LoginRequest: "true",
     //   H5Request: "true"
     // }
-    data1 = await requestData("mtop.trade.buildorder.h5", data, "post", "3.0");
+    data1 = await requestData(
+      "mtop.trade.buildorder.h5",
+      args.data,
+      "post",
+      "3.0"
+    );
   } catch (e) {
     if (e.name === "FAIL_SYS_TRAFFIC_LIMIT") {
       console.log("太挤了，正在重试");
-      return submitOrder(data, other);
+      return submitOrder(args);
     }
     throw e;
   }
@@ -732,7 +738,7 @@ export async function submitOrder(data: any, other: any = {}, args: any = {}) {
     throw new Error("有失效宝贝");
   }
   var realPay = data.realPay_1;
-  if (args.expectedPrice) {
+  if (typeof args.expectedPrice === "number") {
     if (Number(args.expectedPrice) < Number(realPay.fields.price)) {
       throw new Error("价格太高了，买不起");
     }
@@ -742,17 +748,17 @@ export async function submitOrder(data: any, other: any = {}, args: any = {}) {
       var item = data[name];
       item._request = request_tags[item.tag];
       if (item.submit) {
-        item.fields.value = other[item.tag];
+        item.fields.value = args.other[item.tag];
         state[name] = item;
       }
       return state;
     },
     <any>{}
   );
-  var submitOrder = data.submitOrder_1;
+  var dataSubmitOrder = data.submitOrder_1;
   var address = data.address_1;
   realPay.fields.currencySymbol = "￥";
-  submitOrder._realPay = realPay;
+  dataSubmitOrder._realPay = realPay;
   if (address) {
     let { fields } = address;
     fields.info = {
@@ -761,7 +767,7 @@ export async function submitOrder(data: any, other: any = {}, args: any = {}) {
     fields.url =
       "//buy.m.tmall.com/order/addressList.htm?enableStation=true&requestStationUrl=%2F%2Fstationpicker-i56.m.taobao.com%2Finland%2FshowStationInPhone.htm&_input_charset=utf8&hidetoolbar=true&bridgeMessage=true";
     fields.title = "管理收货地址";
-    submitOrder._address = address;
+    dataSubmitOrder._address = address;
   }
   var coupon = data.coupon_3;
   if (coupon && coupon.fields.totalValue) {
@@ -805,7 +811,7 @@ export async function submitOrder(data: any, other: any = {}, args: any = {}) {
     if (e.message.includes("对不起，系统繁忙，请稍候再试")) {
       console.log(e.message);
       console.log("正在重试");
-      return submitOrder(data, other);
+      return submitOrder(args);
     }
     throw e;
   }

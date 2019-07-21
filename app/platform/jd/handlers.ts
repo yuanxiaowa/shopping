@@ -1,6 +1,6 @@
-import { isSubmitOrder } from "../../common/config";
 import { Page } from "puppeteer";
 import { startsWith } from "ramda";
+import { config } from "../../common/config";
 
 const jingdongHandlers = {
   jindong: {
@@ -38,7 +38,7 @@ await page.waitForNavigation(); */
       await page.goto(
         "https://trade.jd.com/shopping/order/getOrderInfo.action"
       );
-      if (!isSubmitOrder) {
+      if (!config.isSubmitOrder) {
         await page.setOfflineMode(true);
       }
       await page.click("#order-submit");
@@ -75,7 +75,7 @@ await page.waitForNavigation(); */
         document.querySelector<HTMLDivElement>("#buyBtn2")!.click();
       }, num);
       await page.waitForNavigation();
-      if (!isSubmitOrder) {
+      if (!config.isSubmitOrder) {
         await page.setOfflineMode(true);
         throw new Error("");
       }
@@ -96,7 +96,7 @@ await page.waitForNavigation(); */
       if (ele) {
         ele.click();
       }
-      if (!isSubmitOrder) {
+      if (!config.isSubmitOrder) {
         await page.setOfflineMode(true);
       }
       await page.click("#appConfirm");

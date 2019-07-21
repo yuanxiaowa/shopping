@@ -7,6 +7,7 @@ import {
 } from "../../../utils/tools";
 import { RequestAPI, RequiredUriUrl } from "request";
 import { getComment } from "../comment-tpl";
+import { executer } from "./tools";
 
 const logFile = logFileWrapper("jingdong");
 
@@ -1043,70 +1044,74 @@ export async function addComment(orderId: string) {
       .map(item => commentGoodsItem(item, Referer))
   );
   // 总体评价
-  await req.get("https://wq.jd.com/eval/SendDSR", {
-    qs: {
-      pin: getCookie("pin"),
-      userclient: "29",
-      orderId,
-      otype: "1",
-      // 商品符合度
-      DSR1: 5,
-      // 店铺服务态度
-      DSR2: 5,
-      // 物流发货速度
-      DSR3: 5,
-      // 配送员服务
-      DSR4: 5,
-      _: Date.now(),
-      sceneval: "2",
-      g_login_type: "1",
-      callback: "jsonpCBKC",
-      g_ty: "ls"
-    },
-    headers: {
-      Referer
-    }
-  });
-}
-
-export async function commentGoodsItem(data, Referer: string) {
-  let res = await req.post(
-    "https://wq.jd.com/eval/SendEval?sceneval=2&g_login_type=1&g_ty=ajax",
-    {
-      form: {
-        productId: data.productId,
-        orderId: data.orderId,
-        score: 5,
-        content: getComment(),
-        commentTagStr: "1",
+  await executer(() =>
+    req.get("https://wq.jd.com/eval/SendDSR", {
+      qs: {
+        pin: getCookie("pin"),
         userclient: "29",
-        imageJson: `//img30.360buyimg.com/shaidan//${
-          data.productSolrInfo.imgUrl
-        }`,
-        anonymous: "0",
-        syncsg: "0",
-        scence: "101100000",
-        videoid: "",
-        URL: ""
+        orderId,
+        otype: "1",
+        // 商品符合度
+        DSR1: 5,
+        // 店铺服务态度
+        DSR2: 5,
+        // 物流发货速度
+        DSR3: 5,
+        // 配送员服务
+        DSR4: 5,
+        _: Date.now(),
+        sceneval: "2",
+        g_login_type: "1",
+        callback: "jsonpCBKC",
+        g_ty: "ls"
       },
       headers: {
         Referer
       }
-    }
+    })
   );
-  let {
-    data: {
-      jingdong_club_productcomment_weixinsave_responce: {
-        resultCode,
-        errorMessage
+}
+
+export function commentGoodsItem(data, Referer: string) {
+  return executer(async () => {
+    let res = await req.post(
+      "https://wq.jd.com/eval/SendEval?sceneval=2&g_login_type=1&g_ty=ajax",
+      {
+        form: {
+          productId: data.productId,
+          orderId: data.orderId,
+          score: 5,
+          content: getComment(),
+          commentTagStr: "1",
+          userclient: "29",
+          imageJson: `//img30.360buyimg.com/shaidan//${
+            data.productSolrInfo.imgUrl
+          }`,
+          anonymous: "0",
+          syncsg: "0",
+          scence: "101100000",
+          videoid: "",
+          URL: ""
+        },
+        headers: {
+          Referer
+        }
       }
+    );
+    let {
+      data: {
+        jingdong_club_productcomment_weixinsave_responce: {
+          resultCode,
+          errorMessage
+        }
+      }
+    } = JSON.parse(res);
+    if (resultCode === "11") {
+      console.log(errorMessage);
+      await delay(3000);
+      return commentGoodsItem(data, Referer);
     }
-  } = JSON.parse(res);
-  if (resultCode === "11") {
-    console.log(errorMessage);
-    await delay(3000);
-    return commentGoodsItem(data, Referer);
-  }
+  });
 }
 
 export async function getGoodsCommentList(skuId: string) {

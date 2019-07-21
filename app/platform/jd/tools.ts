@@ -12,7 +12,7 @@ import {
 } from "./goods";
 import { delay } from "../../../utils/tools";
 
-const couponExecuter = (() => {
+export const executer = (() => {
   var handlers: (() => any)[] = [];
   var pending = false;
   async function start() {
@@ -22,7 +22,7 @@ const couponExecuter = (() => {
     pending = true;
     while (handlers.length > 0) {
       await handlers.shift()!();
-      await delay(1000);
+      await delay(1000 + Math.random() * 1500);
     }
     pending = false;
   }
@@ -53,7 +53,7 @@ export async function getGoodsCoupons(skuId: string) {
   return wrapItems(
     Promise.all(
       coupons.map(item =>
-        couponExecuter(() =>
+        executer(() =>
           obtainGoodsCoupon({
             roleId: item.roleId,
             key: item.key
@@ -72,7 +72,7 @@ export async function getFloorCoupons(url: string) {
       items.map(_items =>
         Promise.all(
           _items.map(item =>
-            couponExecuter(() =>
+            executer(() =>
               obtainFloorCoupon({
                 key: item.key,
                 level: item.level
@@ -93,7 +93,7 @@ export async function getActivityCoupons(url: string) {
       items.map(_items =>
         Promise.all(
           _items.map(item =>
-            couponExecuter(() =>
+            executer(() =>
               obtainActivityCoupon({
                 activityId,
                 args: item.args,

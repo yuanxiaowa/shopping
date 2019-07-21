@@ -393,7 +393,7 @@ export async function getInnerStoreCoupon(url: string) {
     "1.0"
   );
   logFile(res, "内部店铺优惠券");
-  var success = res.success === "true";
+  var success = res.success === true;
   var msg = "领取成功";
   var manual;
   if (!success) {

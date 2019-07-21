@@ -23,6 +23,8 @@ import {
   delay
 } from "../../../utils/tools";
 import { Page } from "puppeteer";
+import { newPage, getPageCookie } from "../../../utils/page";
+import { setReq } from "../taobao/goods";
 const user = require("../../../.data/user.json");
 
 export async function doWelfareActions() {
@@ -132,6 +134,13 @@ export async function do618Hongbao() {
 } */
 
 export async function doAll() {
+  var b = await check();
+  if (!b) {
+    let page = await newPage();
+    await login(page);
+    setReq(await getPageCookie(page));
+    page.close();
+  }
   return Promise.all([
     doSign(),
     doJinguo(),

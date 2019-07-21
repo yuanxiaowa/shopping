@@ -144,6 +144,11 @@ export default class ShopController extends Controller {
     var { data } = ctx.request.body;
     ctx.body = await handle(app[platform].qiangquan(data));
   }
+  public async coupons() {
+    const { ctx, app } = this;
+    var { platform } = ctx.query;
+    ctx.body = await handle(app[platform].coupons(ctx.query));
+  }
   public async commentList() {
     const { ctx, app } = this;
     var { platform } = ctx.query;

@@ -1,14 +1,18 @@
 import request = require("request-promise-native");
 import iconv = require("iconv-lite");
 import signData from "./h";
-import { getCookie, logFileWrapper } from "../../../utils/tools";
+import { getCookie, logFileWrapper, getJsonpData } from "../../../utils/tools";
 import {
   transformMobileGoodsInfo,
   getMobileCartList
 } from "./mobile-data-transform";
 import moment = require("moment");
-import { isSubmitOrder } from "../../common/config";
+import { config } from "../../common/config";
 import { ArgOrder } from "../struct";
+import cheerio = require("cheerio");
+import qs = require("querystring");
+import { newPage } from "../../../utils/page";
+import { writeFile } from "fs-extra";
 
 var req: request.RequestPromiseAPI;
 var cookie = "";
@@ -52,7 +56,9 @@ const request_tags = {
   promotion: true,
   service: true,
   address: true,
-  voucher: true
+  voucher: true,
+  redEnvelope: true,
+  postageInsurance: true
 };
 async function requestData(
   api: string,
@@ -66,14 +72,18 @@ async function requestData(
   var token = getCookie("_m_h5_tk", cookie);
   token = token && token.split("_")![0];
   var qs: any = {
-    jsv: "2.4.16",
+    jsv: "2.4.7",
     appKey,
     api,
     v: version,
-    type: "json",
-    ecode: "0",
+    type: "originaljson",
+    ecode: 1,
     dataType: "json",
-    t
+    t,
+    ttid: "#b#ad##_h5",
+    AntiFlood: true,
+    LoginRequest: true,
+    H5Request: true
   };
   var sign = signData([token, t, appKey, data_str].join("&"));
   qs.sign = sign;
@@ -85,7 +95,7 @@ async function requestData(
     };
   }
   var text: string = await req(
-    `https://acs.m.taobao.com/h5/${api}/${version}/`,
+    `https://h5api.m.taobao.com/h5/${api}/${version}/`,
     {
       method,
       qs,
@@ -93,7 +103,9 @@ async function requestData(
     }
   );
   var { data, ret } = JSON.parse(text);
-  var [code, msg] = ret[ret.length - 1].split("::");
+  var arr_msg = ret[ret.length - 1].split("::");
+  var code = arr_msg[0];
+  var msg = arr_msg[arr_msg.length - 1];
   if (code !== "SUCCESS") {
     let err = new Error(msg);
     err.name = code;
@@ -109,8 +121,8 @@ export async function getTaolijin(url: string) {
   var eh = searchParams.get("eh");
   var resdata: {
     coupon: {
-      // 0:可领取 6:已失效
-      couponStatus: "0" | "6";
+      // 0:可领取 6:已失效 9:已领过
+      couponStatus: "0" | "6" | "9";
       couponKey: string;
     };
     couponItem: {
@@ -180,7 +192,7 @@ export async function getTaolijin(url: string) {
       msg
     };
   } else {
-    success = false;
+    success = couponStatus === "9";
   }
 
   if (rightsInstance.rightsStatus === "0") {
@@ -464,19 +476,21 @@ export async function getChaoshiCoupon(url: string) {
   );
 }
 
-export async function getChaoshiGoodsList(keyword: string, other: any) {
+export async function getChaoshiGoodsList(args) {
+  var q = args.keyword;
+  delete args.keyword;
   var buf = await req.get("https://list.tmall.com/chaoshi_data.htm", {
     qs: Object.assign(
       {
         p: 1,
         user_id: 725677994,
-        q: keyword,
+        q,
         cat: 50514008,
         sort: "p",
         unify: "yes",
         from: "chaoshi"
       },
-      other
+      args
     ),
     headers: {
       "X-Requested-With": "XMLHttpRequest"
@@ -489,6 +503,41 @@ export async function getChaoshiGoodsList(keyword: string, other: any) {
     return srp;
   }
   throw new Error("出错了");
+}
+
+export async function getGoodsList(data: any) {}
+
+export async function getGoodsListCoudan(data: any) {
+  var page = data.page;
+  var q = data.keyword;
+  delete data.page;
+  delete data.keyword;
+  var qs = Object.assign(
+    {
+      page_size: "20",
+      sort: "p",
+      q,
+      page_no: page,
+      callback: "jsonp_20135"
+    },
+    data
+  );
+  var text: string = await req.get(
+    "https://list.tmall.com/m/search_items.htm",
+    {
+      // page_size=20&sort=s&page_no=1&spm=a3113.8229484.coupon-list.7.BmOFw0&g_couponFrom=mycoupon_pc&g_m=couponuse&g_couponId=2995448186&g_couponGroupId=121250001&callback=jsonp_90716703
+      qs,
+      headers: {
+        referer: "https://list.tmall.com/coudan/search_product.htm"
+      }
+    }
+  );
+  var { total_page, item } = getJsonpData(text);
+  return {
+    total: total_page,
+    page,
+    items: item
+  };
 }
 
 /* getTaolijin(
@@ -549,6 +598,9 @@ export async function addCart(args: {
     itemId = /id=(\d+)/.exec(args.url)![1];
   } else {
     var res = await getGoodsInfo(args.url, args.skus);
+    if (res.quantity === 0) {
+      throw new Error("无库存了");
+    }
     skuId = res.skuId;
     itemId = res.itemId;
   }
@@ -689,6 +741,118 @@ export async function cartToggle(data: { items: any; checked: boolean }) {
   // await page.click(".go-btn");
 }
 
+function transformOrderData(orderdata: any, args: ArgOrder<any>) {
+  var {
+    data,
+    linkage,
+    hierarchy: { structure, root }
+  } = orderdata;
+  var invalids = structure[root].filter(name => name.startsWith("invalid"));
+  if (invalids.length > 0) {
+    throw new Error("有失效宝贝");
+  }
+  var realPay = data.realPay_1;
+  if (typeof args.expectedPrice === "number") {
+    if (Number(args.expectedPrice) < Number(realPay.fields.price)) {
+      throw new Error("价格太高了，买不起");
+    }
+  }
+  var orderData = Object.keys(data).reduce(
+    (state, name) => {
+      var item = data[name];
+      item._request = request_tags[item.tag];
+      if (item.submit) {
+        item.fields.value = args.other[item.tag];
+        state[name] = item;
+      }
+      return state;
+    },
+    <any>{}
+  );
+  var dataSubmitOrder = data.submitOrder_1;
+  var address = data.address_1;
+  realPay.fields.currencySymbol = "￥";
+  dataSubmitOrder._realPay = realPay;
+  if (address) {
+    let { fields } = address;
+    fields.info = {
+      value: fields.options[0].deliveryAddressId.toString()
+    };
+    fields.url =
+      "//buy.m.tmall.com/order/addressList.htm?enableStation=true&requestStationUrl=%2F%2Fstationpicker-i56.m.taobao.com%2Finland%2FshowStationInPhone.htm&_input_charset=utf8&hidetoolbar=true&bridgeMessage=true";
+    fields.title = "管理收货地址";
+    dataSubmitOrder._address = address;
+  }
+  var coupon = data.coupon_3;
+  if (coupon && coupon.fields.totalValue) {
+    coupon.fields.value =
+      "-" + Number(/￥(.*)/.exec(coupon.fields.totalValue)![1]).toFixed(2);
+  }
+  var ua = "";
+  var postdata = {
+    params: JSON.stringify({
+      data: JSON.stringify(orderData),
+      hierarchy: JSON.stringify({
+        structure
+      }),
+      linkage: JSON.stringify({
+        common: {
+          compress: linkage.common.compress,
+          submitParams: linkage.common.submitParams,
+          validateParams: linkage.common.validateParams
+        },
+        signature: linkage.signature
+      })
+    }),
+    ua
+  };
+  return postdata;
+}
+
+function getTransformData(data: any) {
+  function sortObj(obj) {
+    return Object.keys(obj)
+      .sort()
+      .reduce((state, key) => {
+        var item = obj[key];
+        if (typeof item === "object") {
+          item = sortObj(item);
+        }
+        state[key] = item;
+        return state;
+      }, {});
+  }
+  var params = JSON.parse(data.params);
+  Object.keys(params).forEach(key => {
+    var item = JSON.parse(params[key]);
+    params[key] = Object.keys(item)
+      .sort()
+      .reduce((state, key) => {
+        state[key] = item[key];
+        return state;
+      }, {});
+  });
+  return JSON.stringify(sortObj(params), null, 2);
+}
+
+async function getPageData(args: ArgOrder<any>) {
+  const qs = require("querystring");
+  var page = await newPage();
+  await page.goto(
+    `https://buy.m.tmall.com/order/confirmOrderWap.htm?` +
+      qs.stringify(args.data)
+  );
+  await page.setOfflineMode(true);
+  page.click("span[title=提交订单]");
+  var req = await page.waitForRequest(req =>
+    req
+      .url()
+      .startsWith("https://h5api.m.tmall.com/h5/mtop.trade.createorder.h5/3.0")
+  );
+  var data = JSON.parse(qs.parse(req.postData()).data);
+  return data;
+}
+
 export async function submitOrder(args: ArgOrder<any>) {
   var r = Date.now();
   console.time("订单结算" + r);
@@ -728,76 +892,16 @@ export async function submitOrder(args: ArgOrder<any>) {
   console.log("-------------已经进入手机订单结算页-------------");
   logFile(data1, "手机订单结算页");
   console.log("-------------进入手机订单结算页，准备提交-------------");
-  var {
-    data,
-    linkage,
-    hierarchy: { structure, root }
-  } = data1;
-  var invalids = structure[root].filter(name => name.startsWith("invalid"));
-  if (invalids.length > 0) {
-    throw new Error("有失效宝贝");
-  }
-  var realPay = data.realPay_1;
-  if (typeof args.expectedPrice === "number") {
-    if (Number(args.expectedPrice) < Number(realPay.fields.price)) {
-      throw new Error("价格太高了，买不起");
-    }
-  }
-  var orderData = Object.keys(data).reduce(
-    (state, name) => {
-      var item = data[name];
-      item._request = request_tags[item.tag];
-      if (item.submit) {
-        item.fields.value = args.other[item.tag];
-        state[name] = item;
-      }
-      return state;
-    },
-    <any>{}
-  );
-  var dataSubmitOrder = data.submitOrder_1;
-  var address = data.address_1;
-  realPay.fields.currencySymbol = "￥";
-  dataSubmitOrder._realPay = realPay;
-  if (address) {
-    let { fields } = address;
-    fields.info = {
-      value: fields.options[0].deliveryAddressId
-    };
-    fields.url =
-      "//buy.m.tmall.com/order/addressList.htm?enableStation=true&requestStationUrl=%2F%2Fstationpicker-i56.m.taobao.com%2Finland%2FshowStationInPhone.htm&_input_charset=utf8&hidetoolbar=true&bridgeMessage=true";
-    fields.title = "管理收货地址";
-    dataSubmitOrder._address = address;
-  }
-  var coupon = data.coupon_3;
-  if (coupon && coupon.fields.totalValue) {
-    coupon.fields.value = "-" + /￥(.*)/.exec(coupon.fields.totalValue)![1];
-  }
-  var ua = "";
-  var postdata = {
-    params: JSON.stringify({
-      data: JSON.stringify(orderData),
-      hierarchy: JSON.stringify({
-        structure
-      }),
-      linkage: JSON.stringify({
-        common: {
-          compress: linkage.common.compress,
-          submitParams: linkage.common.submitParams,
-          validateParams: linkage.common.validateParams
-        },
-        signature: linkage.signature
-      })
-    }),
-    ua
-  };
+  var postdata = transformOrderData(data1, args);
   logFile(postdata, "订单结算页提交的数据");
-  if (!isSubmitOrder) {
+  /* writeFile("a1.json", getTransformData(postdata));
+  writeFile("a2.json", getTransformData(await getPageData(args))); */
+  if (!config.isSubmitOrder) {
     return;
   }
   try {
     r = Date.now();
-    console.log("订单提交", r);
+    console.time("订单提交" + r);
     let ret = await requestData(
       "mtop.trade.createorder.h5",
       postdata,
@@ -898,6 +1002,61 @@ export async function seckillList(name: string) {
     }
   }
   return [];
+}
+
+export async function getCoupons({ page }: { page: number }) {
+  var buf: Buffer = await req.get(
+    "https://taoquan.taobao.com/coupon/list_my_coupon.htm",
+    {
+      qs: {
+        sname: "",
+        ctype: "44,61,65,66,247",
+        sortby: "",
+        order: "desc",
+        page
+      },
+      encoding: null
+    }
+  );
+  var html: string = iconv.decode(buf, "gb2312");
+  var $ = cheerio.load(html);
+  var items = $(".tmall-coupon-box:not(.tmall-coupon-out)")
+    .not(".tmall-coupon-used")
+    .map((index, ele) => {
+      var $ele = $(ele);
+      var $detail = $(ele).find(".key-detail");
+      var title = $detail.text().trim();
+      var limit = $ele
+        .find(".limit-text")
+        .text()
+        .trim();
+      var time = $detail
+        .next()
+        .text()
+        .trim();
+      var url = $ele.find(".btn").attr("href");
+      var arr = /满(.*?)可使用(.*?)元/.exec(title)!;
+      return {
+        title,
+        limit,
+        time,
+        url,
+        params: qs.parse(url.substring(url.indexOf("?") + 1)),
+        quota: arr[1],
+        price: arr[2]
+      };
+    })
+    .get();
+  var total = Number(
+    $(".vm-page-next")
+      .prev()
+      .text()
+  );
+  return {
+    page,
+    total,
+    items
+  };
 }
 
 export async function getSixtyCourse(actId: string) {

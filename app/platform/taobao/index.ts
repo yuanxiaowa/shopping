@@ -18,7 +18,10 @@ import {
   submitOrder,
   comment,
   commentList,
-  getChaoshiGoodsList
+  getChaoshiGoodsList,
+  getCoupons,
+  getGoodsList,
+  getGoodsListCoudan
 } from "./goods";
 import { newPage } from "../../../utils/page";
 import { readJSONSync } from "fs-extra";
@@ -155,6 +158,27 @@ export class Taobao extends AutoShop {
     if (!data.buyEnable) {
       throw new Error(data.msg || "不能购买");
     }
+    if (data.quantity === 0) {
+      if (args.jianlou) {
+        data = await new Promise((resolve, reject) => {
+          var start = Date.now();
+          let f = async () => {
+            var data = await this.getGoodsInfo(args.url, args.skus);
+            if (data.quantity > 0) {
+              return resolve(data);
+            }
+            if (Date.now() - start > args.jianlou! * 60 * 1000) {
+              reject("无机会了");
+            } else {
+              setTimeout(f, 1000);
+            }
+          };
+          setTimeout(f, 1000);
+        });
+      } else {
+        throw new Error("无库存了");
+      }
+    }
     return submitOrder(
       Object.assign(args, {
         data: this.getNextDataByGoodsInfo(data, args.quantity)
@@ -162,14 +186,16 @@ export class Taobao extends AutoShop {
     );
   }
 
-  async goodsList({ keyword, start_price, end_price, name }) {
-    if (name === "chaoshi") {
-      return getChaoshiGoodsList(keyword, {
-        start_price,
-        end_price
-      });
+  async goodsList(args) {
+    if (args.name === "chaoshi") {
+      return getChaoshiGoodsList(args);
     }
+    if (args.type === "coudan") {
+      return getGoodsListCoudan(args);
+    }
+    return getGoodsList(args);
   }
+  coupons = getCoupons;
   seckillList = seckillList;
   sixtyCourseList = sixtyCourseList;
   sixtyCourseReply = sixtyCourseReply;

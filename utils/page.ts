@@ -69,6 +69,14 @@ export async function newPage() {
   return page;
 }
 
+export async function getPageCookie(page: Page) {
+  var cookies = await page.cookies();
+  var cookie_str = cookies
+    .map(cookie => `${cookie.name}=${cookie.value}`)
+    .join("; ");
+  return cookie_str;
+}
+
 export function destroyBrowser() {
   return browser.close();
 }

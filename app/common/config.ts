@@ -1,1 +1,3 @@
-export const isSubmitOrder = false;
+export const config = {
+  isSubmitOrder: false
+};

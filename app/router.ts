@@ -20,6 +20,7 @@ export default (app: Application) => {
   router.post("/resolve/urls", controller.shop.resolveUrls);
   router.get("/seckill/list", controller.shop.seckillList);
   router.get("/goods/list", controller.shop.goodsList);
+  router.get("/coupons", controller.shop.coupons);
 
   router.get("/check/status", controller.shop.checkStatus);
 
@@ -28,4 +29,7 @@ export default (app: Application) => {
 
   router.get("/qrcode/generate", controller.common.qrcode);
   router.get("/test/order", controller.shop.testOrder);
+
+  router.get("/config", controller.common.getConfig);
+  router.post("/config", controller.common.setConfig);
 };

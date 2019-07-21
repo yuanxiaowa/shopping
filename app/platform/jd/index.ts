@@ -16,10 +16,11 @@ import {
 import jingdongHandlers from "./handlers";
 import jingdongCouponHandlers from "./coupon-handlers";
 import { resolveUrl } from "./tools";
-import { isSubmitOrder } from "../../common/config";
+import { config } from "../../common/config";
 import { delay, getCookie } from "../../../utils/tools";
 import qs = require("querystring");
 import { ArgBuyDirect, ArgOrder } from "../struct";
+import "./tasks";
 
 const getSkuId = (url: string) => {
   return /(\d+)\.html/.exec(url)![1];
@@ -207,7 +208,7 @@ export class Jindong extends AutoShop {
         throw new Error("太贵了");
       }
     }
-    if (!isSubmitOrder) {
+    if (!config.isSubmitOrder) {
       await page.setOfflineMode(true);
     }
     await page.evaluate(pass => {
@@ -234,7 +235,7 @@ export class Jindong extends AutoShop {
 
   async start() {
     await super.start();
-    // await this.preservePcState();
+    await this.preservePcState();
     this.onFirstLogin();
   }
 

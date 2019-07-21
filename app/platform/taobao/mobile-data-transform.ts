@@ -157,6 +157,7 @@ export function transformMobileGoodsInfo({ apiStack, item }, skus?: number[]) {
   let cartEnable = trade.cartEnable === "true";
   let msg: string | undefined;
   let cuxiao: any;
+  let quantity = 0;
   if (!buyEnable) {
     if (trade.hintBanner) {
       msg = trade.hintBanner.text;
@@ -202,8 +203,8 @@ export function transformMobileGoodsInfo({ apiStack, item }, skus?: number[]) {
       }
     }
     let item = skuCore.sku2info[skuId];
-    if (item && item.quantity === "0") {
-      throw new Error("无库存了");
+    if (item) {
+      quantity = Number(item.quantity);
     }
   }
   if (price.shopProm) {
@@ -233,6 +234,7 @@ export function transformMobileGoodsInfo({ apiStack, item }, skus?: number[]) {
   }
   return {
     itemId: item.itemId,
+    quantity,
     buyEnable,
     cartEnable,
     msg,

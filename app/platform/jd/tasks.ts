@@ -1,8 +1,10 @@
 import { doAll as doJdAll } from "./jd-util";
 import { doAll as doJrAll } from "./jr-util";
-import { getSignJRInfo, getSignAwardJR } from "./jinrong";
+import { getSignJRInfo, getSignAwardJR, onInitJingrong } from "./jinrong";
+import bus_global from "../../common/bus";
+import { onInitJingdong } from "./jindong";
 
-export default function bootstrapJingdongTasks() {
+function bootstrapJingdongTasks() {
   return Promise.all([doJdAll(), doJrAll()])
     .then(() => getSignJRInfo())
     .then(({ isGet }) => {
@@ -11,3 +13,9 @@ export default function bootstrapJingdongTasks() {
       }
     });
 }
+
+bus_global.on("cookie:init", () => {
+  Promise.all([onInitJingdong(), onInitJingrong()]).then(() => {
+    bootstrapJingdongTasks();
+  });
+});

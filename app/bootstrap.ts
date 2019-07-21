@@ -1,15 +1,11 @@
-import { taobao, jingdong } from "./platform";
-import bootstrapJingdongTasks from "./platform/jd/tasks";
 import { onInitCookieManager } from "./common/cookie-manager";
-import { onInitJingdong } from "./platform/jd/jindong";
-import { onInitJingrong } from "./platform/jd/jinrong";
 import { bootstrapBrowser } from "../utils/page";
+import bus_global from "./common/bus";
 
 export default async function bootstrap() {
-  onInitCookieManager().then(async () => {
-    await Promise.all([onInitJingdong(), onInitJingrong()]);
-    bootstrapJingdongTasks();
+  onInitCookieManager().then(() => {
+    bus_global.emit("cookie:init");
   });
   await bootstrapBrowser();
-  await Promise.all([taobao.start(), jingdong.start()]);
+  bus_global.emit("bootstrap");
 }

@@ -1,5 +1,6 @@
 import { Controller } from "egg";
 import request = require("request-promise-native");
+import { config } from "../common/config";
 
 export default class ShopController extends Controller {
   public async qrcode() {
@@ -28,5 +29,22 @@ export default class ShopController extends Controller {
         msg: "二维码生成失败"
       };
     }
+  }
+
+  public async setConfig() {
+    var { ctx } = this;
+
+    ctx.body = {
+      code: 0,
+      data: Object.assign(config, ctx.request.body)
+    };
+  }
+
+  public async getConfig() {
+    var { ctx } = this;
+    ctx.body = {
+      code: 0,
+      data: config
+    };
   }
 }

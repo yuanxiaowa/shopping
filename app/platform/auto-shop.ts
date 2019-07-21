@@ -3,7 +3,7 @@ import request = require("request-promise-native");
 import { RequestPromise, RequestPromiseOptions } from "request-promise-native";
 import { writeFile, ensureDir, readFileSync } from "fs-extra";
 import { Page } from "puppeteer";
-import { newPage } from "../../utils/page";
+import { newPage, getPageCookie } from "../../utils/page";
 import iconv = require("iconv-lite");
 import cookieManager, { Cookie } from "../common/cookie-manager";
 import { ArgBuyDirect, ArgOrder, ArgCartBuy } from "./struct";
@@ -119,19 +119,13 @@ export default abstract class AutoShop implements AutoShopOptions {
   abstract submitOrder(data: ArgOrder<any>): Promise<any>;
   async seckillList(name: string): Promise<any> {}
   async goodsList(args: { name: string; keyword: string }): Promise<any> {}
-  async testOrder(args): Promise<any> {}
+  async testOrder(args: { file: string }): Promise<any> {}
+  async coupons(args: { page: number }): Promise<any> {}
 
   async loginAction(page: Page): Promise<any> {
     return page.waitForNavigation({
       timeout: 0
     });
-  }
-  async getPageCookie(page: Page) {
-    var cookies = await page.cookies();
-    var cookie_str = cookies
-      .map(cookie => `${cookie.name}=${cookie.value}`)
-      .join("; ");
-    return cookie_str;
   }
   async login(page: Page, cb?: Function) {
     page.goto(this.login_url);
@@ -177,7 +171,7 @@ export default abstract class AutoShop implements AutoShopOptions {
       }
     }
     await page.goto(this.state_url);
-    this.setCookie(await this.getPageCookie(page));
+    this.setCookie(await getPageCookie(page));
     await page.close();
   }
   init() {
@@ -194,7 +188,7 @@ export default abstract class AutoShop implements AutoShopOptions {
     } else {
       (async () => {
         await page.goto(this.state_url);
-        this.setCookie(await this.getPageCookie(page));
+        this.setCookie(await getPageCookie(page));
         await page.close();
       })();
     }

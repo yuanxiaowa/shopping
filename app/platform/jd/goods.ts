@@ -32,6 +32,14 @@ export function setReq(
   req = _req;
 }
 
+export function goGetCookie(url: string) {
+  return req.get("https://wq.jd.com/mlogin/mpage/Login", {
+    qs: {
+      rurl: url
+    }
+  });
+}
+
 function time33(str: string) {
   for (var i = 0, len = str.length, hash = 5381; i < len; ++i) {
     hash += (hash << 5) + str.charAt(i).charCodeAt(0);
@@ -253,7 +261,7 @@ export async function obtainFloorCoupon(data: { key: string; level: string }) {
    "retmsg" : "未登录"
 }
 );}catch(e){} */
-  return ret;
+  return getJsonpData(ret);
 }
 
 /**

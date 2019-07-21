@@ -7,8 +7,41 @@ import {
   queryFloorCoupons,
   obtainFloorCoupon,
   queryActivityCoupons,
-  obtainActivityCoupon
+  obtainActivityCoupon,
+  goGetCookie
 } from "./goods";
+import { delay } from "../../../utils/tools";
+
+const couponExecuter = (() => {
+  var handlers: (() => any)[] = [];
+  var pending = false;
+  async function start() {
+    if (pending === true) {
+      return;
+    }
+    pending = true;
+    while (handlers.length > 0) {
+      await handlers.shift()!();
+      await delay(1000);
+    }
+    pending = false;
+  }
+  return function(handler: () => any) {
+    var p = new Promise(resolve => {
+      handlers.push(() => resolve(handler()));
+    });
+    start();
+    return p;
+  };
+})();
+
+async function wrapItems(p: Promise<any[]>) {
+  var res = await p;
+  return {
+    success: true,
+    res
+  };
+}
 
 export async function getGoodsCoupons(skuId: string) {
   var item = await getGoodsInfo(skuId);
@@ -17,26 +50,35 @@ export async function getGoodsCoupons(skuId: string) {
     vid: item.venderID,
     cid: item.category[item.category.length - 1]
   });
-  return Promise.all(
-    coupons.map(item =>
-      obtainGoodsCoupon({
-        roleId: item.roleId,
-        key: item.key
-      })
+  return wrapItems(
+    Promise.all(
+      coupons.map(item =>
+        couponExecuter(() =>
+          obtainGoodsCoupon({
+            roleId: item.roleId,
+            key: item.key
+          })
+        )
+      )
     )
   );
 }
 
 export async function getFloorCoupons(url: string) {
+  await goGetCookie(url);
   var items = await queryFloorCoupons(url);
-  return Promise.all(
-    items.map(_items =>
-      Promise.all(
-        _items.map(item =>
-          obtainFloorCoupon({
-            key: item.key,
-            level: item.level
-          })
+  return wrapItems(
+    Promise.all(
+      items.map(_items =>
+        Promise.all(
+          _items.map(item =>
+            couponExecuter(() =>
+              obtainFloorCoupon({
+                key: item.key,
+                level: item.level
+              })
+            )
+          )
         )
       )
     )
@@ -46,16 +88,20 @@ export async function getFloorCoupons(url: string) {
 export async function getActivityCoupons(url: string) {
   var items = await queryActivityCoupons(url);
   var activityId = /(\w+)\/index.html/.exec(url)![1];
-  await Promise.all(
-    items.map(_items =>
-      Promise.all(
-        _items.map(item =>
-          obtainActivityCoupon({
-            activityId,
-            args: item.args,
-            scene: item.scene,
-            childActivityUrl: encodeURIComponent(url)
-          })
+  return wrapItems(
+    Promise.all(
+      items.map(_items =>
+        Promise.all(
+          _items.map(item =>
+            couponExecuter(() =>
+              obtainActivityCoupon({
+                activityId,
+                args: item.args,
+                scene: item.scene,
+                childActivityUrl: encodeURIComponent(url)
+              })
+            )
+          )
         )
       )
     )

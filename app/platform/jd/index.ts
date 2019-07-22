@@ -12,7 +12,8 @@ import {
   addCart,
   delCart,
   updateCartQuantity,
-  calcPrice
+  calcPrice,
+  getGoodsInfo
 } from "./goods";
 import jingdongHandlers from "./handlers";
 import jingdongCouponHandlers from "./coupon-handlers";
@@ -134,7 +135,22 @@ export class Jindong extends AutoShop {
   }
 
   async buyDirect(data: ArgBuyDirect): Promise<any> {
-    // var data = await getGoodsInfo(skuId);
+    if (data.jianlou) {
+      let start = Date.now();
+      await (async function f() {
+        let ret = await getGoodsInfo(getSkuId(data.url));
+        if (ret.stock.StockState === 34) {
+          if (Date.now() - start < data.jianlou! * 60 * 1000) {
+            console.log("无库存，1s后再看");
+            return new Promise(resolve =>
+              setTimeout(() => f().then(resolve), 1000)
+            );
+          } else {
+            throw new Error("时间到了，刷新停止");
+          }
+        }
+      })();
+    }
     var res = this.getNextDataByGoodsInfo(
       { skuId: getSkuId(data.url) },
       data.quantity

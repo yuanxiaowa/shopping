@@ -49,6 +49,8 @@ export async function getGoodsInfo(skuId: string) {
         // 0：京东
         isJDexpress: string;
         v: number;
+        // 34:无货 36:预定 33,39,40:现货
+        StockState: number;
       };
       promov2: {
         pis: {

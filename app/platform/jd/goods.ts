@@ -43,7 +43,7 @@ export async function getGoodsInfo(skuId: string) {
       price: {
         p: number;
         op: number;
-        tpp?: number
+        tpp?: number;
       };
       stock: {
         // 0：京东
@@ -1142,9 +1142,9 @@ type DisCount = DisCount1 | DisCount2 | DisCount3;
 export async function calcPrice({
   skuId,
   plus = false
-}:{
-  skuId: string,
-   plus:boolean
+}: {
+  skuId: string;
+  plus?: boolean;
 }) {
   var {
     item,
@@ -1210,7 +1210,7 @@ export async function calcPrice({
     needMoney: item.quota,
     rewardMoney: item.discount
   }));
-  var p =  Number(plus ? (price.tpp || price.p): price.p) ;
+  var p = Number(plus ? price.tpp || price.p : price.p);
   var ret: {
     total: number;
     num: number;

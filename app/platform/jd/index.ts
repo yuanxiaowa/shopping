@@ -164,8 +164,11 @@ export class Jindong extends AutoShop {
     };
   }
 
-  async calcPrice({ url }: { url: string }) {
-    return calcPrice(getSkuId(url));
+  async calcPrice(args: { url: string }) {
+    return calcPrice({
+      skuId: getSkuId(args.url),
+      ...args
+    });
   }
 
   getNextDataByGoodsInfo({ skuId }: any, quantity: number) {

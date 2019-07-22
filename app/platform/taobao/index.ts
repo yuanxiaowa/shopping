@@ -158,13 +158,13 @@ export class Taobao extends AutoShop {
     if (!data.buyEnable) {
       throw new Error(data.msg || "不能购买");
     }
-    if (data.quantity === 0) {
+    if (data.quantity < args.quantity) {
       if (args.jianlou) {
         data = await new Promise((resolve, reject) => {
           var start = Date.now();
           let f = async () => {
             var data = await this.getGoodsInfo(args.url, args.skus);
-            if (data.quantity > 0) {
+            if (data.quantity >= args.quantity) {
               return resolve(data);
             }
             if (Date.now() - start > args.jianlou! * 60 * 1000) {

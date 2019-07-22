@@ -44,7 +44,7 @@ async function wrapItems(p: Promise<any[]>) {
 }
 
 export async function getGoodsCoupons(skuId: string) {
-  var item = await getGoodsInfo(skuId);
+  var { item } = await getGoodsInfo(skuId);
   var coupons = await queryGoodsCoupon({
     skuId,
     vid: item.venderID,
@@ -52,14 +52,16 @@ export async function getGoodsCoupons(skuId: string) {
   });
   return wrapItems(
     Promise.all(
-      coupons.map(item =>
-        executer(() =>
-          obtainGoodsCoupon({
-            roleId: item.roleId,
-            key: item.key
-          })
+      coupons
+        .filter(item => item.owned)
+        .map(item =>
+          executer(() =>
+            obtainGoodsCoupon({
+              roleId: item.roleId!,
+              key: item.key
+            })
+          )
         )
-      )
     )
   );
 }

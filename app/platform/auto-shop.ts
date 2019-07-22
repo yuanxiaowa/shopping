@@ -121,6 +121,7 @@ export default abstract class AutoShop implements AutoShopOptions {
   async goodsList(args: { name: string; keyword: string }): Promise<any> {}
   async testOrder(args: { file: string }): Promise<any> {}
   async coupons(args: { page: number }): Promise<any> {}
+  async calcPrice(args: { url: string }): Promise<any> {}
 
   async loginAction(page: Page): Promise<any> {
     return page.waitForNavigation({

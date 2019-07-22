@@ -195,6 +195,12 @@ export default class ShopController extends Controller {
     ctx.body = await handle(app[platform].goodsList(ctx.query));
   }
 
+  public async calcPrice() {
+    const { ctx, app } = this;
+    var { platform } = ctx.query;
+    ctx.body = await handle(app[platform].calcPrice(ctx.query));
+  }
+
   public async sixtyCourseList() {
     const { ctx, app } = this;
     ctx.body = await handle(app.taobao.sixtyCourseList());

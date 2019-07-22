@@ -1,5 +1,5 @@
 import { startsWith } from "ramda";
-import { isSubmitOrder } from "../../common/config";
+import { config } from "../../common/config";
 
 const taobaoHandlers = {
   tmall: {
@@ -20,7 +20,7 @@ const taobaoHandlers = {
       // #J_LinkBasket 加入购物车
       await page.click("#J_LinkBuy");
       await page.waitForNavigation();
-      if (!isSubmitOrder) {
+      if (!config.isSubmitOrder) {
         await page.setOfflineMode(true);
       }
       await page.click("a.go-btn");
@@ -51,7 +51,7 @@ const taobaoHandlers = {
       }, num);
       await page.waitForNavigation();
 
-      if (!isSubmitOrder) {
+      if (!config.isSubmitOrder) {
         await page.setOfflineMode(true);
       }
       let btn = await page.waitForSelector('span[title="提交订单"]');
@@ -84,7 +84,7 @@ const taobaoHandlers = {
       // a.J_LinkAdd 加入购物车
       await page.click("#J_LinkBuy");
       await page.waitForNavigation();
-      if (!isSubmitOrder) {
+      if (!config.isSubmitOrder) {
         await page.setOfflineMode(true);
       }
       await page.click("a.go-btn");
@@ -108,7 +108,7 @@ const taobaoHandlers = {
       // .addcart
       await page.click(".gobuy");
       await page.waitForNavigation();
-      if (!isSubmitOrder) {
+      if (!config.isSubmitOrder) {
         await page.setOfflineMode(true);
       }
       await page.click('div[aria-label="提交订单"]');

@@ -8,6 +8,7 @@ import {
 import { RequestAPI, RequiredUriUrl } from "request";
 import { getComment } from "../comment-tpl";
 import { executer } from "./tools";
+import R = require("ramda");
 
 const logFile = logFileWrapper("jingdong");
 
@@ -19,51 +20,6 @@ var req: RequestAPI<
 var eid = "";
 var fp = "0a2d744505998993736ee93c5880c826";
 var cookie = "";
-
-export function setReq(
-  _req: RequestAPI<
-    request.RequestPromise<any>,
-    request.RequestPromiseOptions,
-    RequiredUriUrl
-  >,
-  _cookie: string
-) {
-  cookie = _cookie;
-  eid = getCookie("3AB9D23F7A4B3C9B");
-  req = _req;
-}
-
-export function goGetCookie(url: string) {
-  return req.get("https://wq.jd.com/mlogin/mpage/Login", {
-    qs: {
-      rurl: url
-    }
-  });
-}
-
-function time33(str: string) {
-  for (var i = 0, len = str.length, hash = 5381; i < len; ++i) {
-    hash += (hash << 5) + str.charAt(i).charCodeAt(0);
-  }
-  return hash & 0x7fffffff;
-}
-function getCookie(name: string) {
-  var reg = new RegExp("(^| )" + name + "(?:=([^;]*))?(;|$)"),
-    val = cookie.match(reg);
-  if (!val || !val[2]) {
-    return "";
-  }
-  var res = val[2];
-  try {
-    if (/(%[0-9A-F]{2}){2,}/.test(res)) {
-      return decodeURIComponent(res);
-    } else {
-      return unescape(res);
-    }
-  } catch (e) {
-    return unescape(res);
-  }
-}
 
 export async function getGoodsInfo(skuId: string) {
   var ret: string = await req.get(
@@ -87,6 +43,7 @@ export async function getGoodsInfo(skuId: string) {
       price: {
         p: number;
         op: number;
+        tpp?: number
       };
       stock: {
         // 0：京东
@@ -99,9 +56,17 @@ export async function getGoodsInfo(skuId: string) {
           subextinfo: string;
         }[];
       }[];
+      pingou: "" | "1";
+      pingouItem?: {
+        m_bp: string;
+      };
+      sence: string;
     }
-  >JSON.parse(/window\._itemOnly\s*=\s*\(([\s\S]*?})\);/.exec(ret)![1]);
-  return res.item;
+  >eval(`(${/window\._itemInfo\s*=\s*\(([\s\S]*?})\);/.exec(ret)![1]})`);
+  res.item = JSON.parse(
+    /window\._itemOnly\s*=\s*\(([\s\S]*?})\);/.exec(ret)![1]
+  ).item;
+  return res;
 }
 
 export async function queryGoodsCoupon(data: {
@@ -124,26 +89,28 @@ export async function queryGoodsCoupon(data: {
       }
     }
   );
-  var { coupons } = getJsonpData<{
-    coupons: {
-      key: string;
-      roleId: number;
-      name: string;
-      // 0:满减 1:打折
-      couponType: number;
-      discount: number;
-      quota: number;
-      discountdesc: {
-        // 最高减多少
-        high: string;
-        info: {
-          // 满多少减
-          quota: string;
-          // 多少折
-          discount: string;
-        }[];
-      };
-    }[];
+  interface T {
+    key: string;
+    roleId: number;
+    owned?: boolean;
+    name: string;
+    // 0:满减 1:打折
+    couponType: number;
+    discount: number;
+    quota: number;
+    discountdesc: {
+      // 最高减多少
+      high: string;
+      info: {
+        // 满多少减
+        quota: string;
+        // 多少折
+        discount: string;
+      }[];
+    };
+  }
+  var { coupons, use_coupons } = getJsonpData<{
+    coupons: T[];
     use_coupons: {
       id: number;
       type: number;
@@ -154,7 +121,19 @@ export async function queryGoodsCoupon(data: {
       name: string;
     }[];
   }>(text);
-  return coupons;
+  return <T[]>[
+    ...coupons,
+    ...use_coupons
+      .filter(item => item.type === 1)
+      .map(item => ({
+        owned: true,
+        name: item.name,
+        id: item.id,
+        quota: +item.quota,
+        discount: +item.parValue,
+        couponType: item.type
+      }))
+  ];
 }
 
 export async function obtainGoodsCoupon(data: { roleId: number; key: string }) {
@@ -546,10 +525,6 @@ export async function getGoodsPrice(skuId: string) {
   return Number(p);
 }
 
-export function getGoodsUrl(skuId: string) {
-  return `https://item.m.jd.com/product/${skuId}.html`;
-}
-
 export async function getCartList() {
   var html: string = await req.get(
     "https://p.m.jd.com/cart/cart.action?sceneval=2"
@@ -824,10 +799,6 @@ export async function getShopJindou() {
   );
 }
 
-export function getUuid() {
-  return getCookie("mba_muid");
-}
-
 /**
  * 每日视频红包
  */
@@ -942,11 +913,13 @@ export async function getVideoHongbao() {
   // {"data":{"currentTime":1562548312483,"awardType":["1"],"couponList":null,"discount":0.50},"code":"0"}
 }
 
+// export async function requestData
+
 export async function getCommentList(type: number, page: number) {
   var Referer =
     "https://wqs.jd.com/order/orderlist_merge.shtml?tab=1&ptag=7155.1.11&sceneval=2#page=2&itemInd=0&curTab=waitComment";
   var text: string = await req.get(
-    "https://wqdeal.jd.com/bases/orderlist/deallist",
+    "http://api.m.jd.com/client.action?functionId=getCommentWareList",
     {
       qs: {
         callersource: "mainorder",
@@ -1146,4 +1119,292 @@ export async function getGoodsCommentList(skuId: string) {
       };
     }[]
   >comments;
+}
+
+type DisCount1 = {
+  type: 1;
+  needMoney: number;
+  rewardMoney: number;
+};
+type DisCount2 = {
+  type: 2;
+  needMoney: number;
+  rewardMoney: number;
+  topMoney: number;
+};
+type DisCount3 = {
+  type: 3;
+  needNum: number;
+  rebate: number;
+};
+type DisCount = DisCount1 | DisCount2 | DisCount3;
+
+export async function calcPrice({
+  skuId,
+  plus = false
+}:{
+  skuId: string,
+   plus:boolean
+}) {
+  var {
+    item,
+    price,
+    promov2: [{ pis }]
+  } = await getGoodsInfo(skuId);
+  var coupons = await queryGoodsCoupon({
+    skuId,
+    vid: item.venderID,
+    cid: item.category[item.category.length - 1]
+  });
+  pis = pis.filter(({ subextinfo }) => subextinfo);
+  // 满199元减80元
+  // {"extType":1,"subExtType":1,"subRuleList":[{"needMoney":"199","rewardMoney":"80","subRuleList":[],"subRuleType":1}]}
+  // 每满199元，可减100元现金，最多可减800元
+  // {"extType":2,"needMoney":"199","rewardMoney":"100","subExtType":8,"subRuleList":[],"topMoney":"800"}
+  // 购买1件可优惠换购热销商品
+  // {"extType":24,"needNum":"1","subExtType":36,"subRuleList":[]}
+  // 满99元减30元，满199元减60元，满299元减90元
+  // {"extType":6,"subExtType":14,"subRuleList":[{"needMoney":"99","rewardMoney":"30","subRuleList":[]},{"needMoney":"199","rewardMoney":"60","subRuleList":[]},{"needMoney":"299","rewardMoney":"90","subRuleList":[]}]}
+  // 满2件，总价打8折；满3件，总价打7折
+  // {"extType":15,"subExtType":23,"subRuleList":[{"needNum":"2","rebate":"8","subRuleList":[]},{"needNum":"3","rebate":"7","subRuleList":[]}]}
+
+  var d1: DisCount[] = [];
+  var f = R.compose(
+    R.forEach((item: any) => {
+      var { extType, subRuleList } = item;
+      if (extType === 1 || extType === 6) {
+        d1.push(
+          ...subRuleList.map(({ needMoney, rewardMoney }) => ({
+            type: 1,
+            needMoney: Number(needMoney),
+            rewardMoney: Number(rewardMoney)
+          }))
+        );
+      } else if (extType === 2) {
+        d1.push({
+          type: 2,
+          needMoney: Number(item.needMoney),
+          rewardMoney: Number(item.rewardMoney),
+          topMoney: Number(item.topMoney)
+        });
+      } else if (extType === 15) {
+        d1.push(
+          ...subRuleList.map(({ needNum, rebate }) => ({
+            type: 3,
+            needNum: Number(needNum),
+            rebate: Number(rebate) / 10
+          }))
+        );
+      }
+    }),
+    R.map<any, any>(
+      R.compose(
+        JSON.parse,
+        R.prop("subextinfo")
+      )
+    )
+  );
+  f(pis);
+  var d2: DisCount[] = coupons.map(item => ({
+    type: 1,
+    needMoney: item.quota,
+    rewardMoney: item.discount
+  }));
+  var p =  Number(plus ? (price.tpp || price.p): price.p) ;
+  var ret: {
+    total: number;
+    num: number;
+    price: number;
+    d: any[];
+    total_raw: number;
+  }[] = [];
+  [...d1, ...d2].forEach(item => {
+    if (item.type === 1 || item.type === 2) {
+      let num = item.needMoney / p;
+      if (item.needMoney - Math.floor(num) * p >= 1) {
+        num++;
+      }
+      num = Math.floor(num);
+      let total_raw = num * p;
+      let total = total_raw - item.rewardMoney;
+      ret.push({
+        total,
+        total_raw,
+        num,
+        price: total / num,
+        d: [item]
+      });
+    } else if (item.type === 3) {
+      let num = item.needNum;
+      num = Math.floor(num);
+      let total_raw = num * p;
+      let total = total_raw * item.rebate;
+      ret.push({
+        total,
+        total_raw,
+        num,
+        price: total / num,
+        d: [item]
+      });
+    }
+  });
+  function calc1(item1: DisCount1, item2: DisCount1) {
+    let maxNeedMoney = Math.max(item1.needMoney, item2.needMoney);
+    let num = maxNeedMoney / p;
+    if (maxNeedMoney - Math.floor(num) * p >= 1) {
+      num++;
+    }
+    num = Math.floor(num);
+    let total_raw = num * p;
+    let total = total_raw - item1.rewardMoney - item2.rewardMoney;
+    return {
+      total,
+      num,
+      total_raw,
+      price: total / num,
+      d: [item1, item2]
+    };
+  }
+  function calc2(item1: DisCount2, item2: DisCount1) {
+    let maxNeedMoney = Math.max(item1.needMoney, item2.needMoney);
+    let num = maxNeedMoney / p;
+    if (maxNeedMoney - Math.floor(num) * p >= 1) {
+      num++;
+    }
+    num = Math.floor(num);
+    let total_raw = num * p;
+    let total =
+      num * p -
+      Math.min(
+        item1.rewardMoney * ((total_raw / item1.needMoney) >> 0),
+        item1.topMoney
+      ) -
+      item2.rewardMoney;
+    return {
+      total,
+      total_raw,
+      num,
+      price: total / num,
+      d: [item1, item2]
+    };
+  }
+  function calc3(item1: DisCount3, item2: DisCount1) {
+    let maxNeedMoney = item2.needMoney;
+    let num = maxNeedMoney / p;
+    if (maxNeedMoney - Math.floor(num) * p >= 1) {
+      num++;
+    }
+    num = Math.floor(num);
+    let total_raw = num * p;
+    let total = total_raw - total_raw * (1 - item1.rebate) - item2.rewardMoney;
+    return {
+      total,
+      total_raw,
+      num,
+      price: total / num,
+      d: [item1, item2]
+    };
+  }
+  function gcc(a: number, b: number) {
+    while (b > 0) {
+      let m = b;
+      b = a % b;
+      a = m;
+    }
+    return a;
+  }
+  for (let item1 of d1) {
+    for (let item2 of d2) {
+      if (item2.type === 1) {
+        if (item1.type === 1) {
+          ret.push(calc1(item1, item2));
+        } else if (item1.type === 2) {
+          ret.push(calc2(item1, item2));
+        } else if (item1.type === 3) {
+          ret.push(calc3(item1, item2));
+        }
+      } else if (item2.type === 3) {
+        if (item1.type === 1) {
+          ret.push(calc3(item2, item1));
+        } else if (item1.type === 2) {
+        } else if (item1.type === 3) {
+          let num = gcc(item1.needNum, item2.needNum);
+          let total_raw = p * num;
+          let total = total_raw * (1 - (1 - item1.rebate) - (1 - item2.rebate));
+          ret.push({
+            total,
+            total_raw,
+            num,
+            price: total / num,
+            d: [item1, item2]
+          });
+        }
+      }
+    }
+  }
+  if (!ret.find(item => item.num === 1)) {
+    ret.push({
+      total: p,
+      num: 1,
+      price: p,
+      d: [],
+      total_raw: p
+    });
+  }
+  return R.uniqBy<any, any>(item => item.num)(
+    ret.sort((item1, item2) => item1.price - item2.price)
+  );
+}
+
+export function getGoodsUrl(skuId: string) {
+  return `https://item.m.jd.com/product/${skuId}.html`;
+}
+
+export function setReq(
+  _req: RequestAPI<
+    request.RequestPromise<any>,
+    request.RequestPromiseOptions,
+    RequiredUriUrl
+  >,
+  _cookie: string
+) {
+  cookie = _cookie;
+  eid = getCookie("3AB9D23F7A4B3C9B");
+  req = _req;
+}
+
+export function goGetCookie(url: string) {
+  return req.get("https://wq.jd.com/mlogin/mpage/Login", {
+    qs: {
+      rurl: url
+    }
+  });
+}
+
+function time33(str: string) {
+  for (var i = 0, len = str.length, hash = 5381; i < len; ++i) {
+    hash += (hash << 5) + str.charAt(i).charCodeAt(0);
+  }
+  return hash & 0x7fffffff;
+}
+function getCookie(name: string) {
+  var reg = new RegExp("(^| )" + name + "(?:=([^;]*))?(;|$)"),
+    val = cookie.match(reg);
+  if (!val || !val[2]) {
+    return "";
+  }
+  var res = val[2];
+  try {
+    if (/(%[0-9A-F]{2}){2,}/.test(res)) {
+      return decodeURIComponent(res);
+    } else {
+      return unescape(res);
+    }
+  } catch (e) {
+    return unescape(res);
+  }
+}
+
+export function getUuid() {
+  return getCookie("mba_muid");
 }

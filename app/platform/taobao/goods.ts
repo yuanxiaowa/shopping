@@ -12,7 +12,6 @@ import { ArgOrder } from "../struct";
 import cheerio = require("cheerio");
 import qs = require("querystring");
 import { newPage } from "../../../utils/page";
-import { writeFile } from "fs-extra";
 
 var req: request.RequestPromiseAPI;
 var cookie = "";
@@ -157,7 +156,8 @@ export async function getTaolijin(url: string) {
   } = resdata;
   logFile(resdata, "淘礼金");
   let promises: Promise<any>[] = [];
-  if (couponStatus === "0") {
+  var _couponStatus = Number(couponStatus);
+  if (_couponStatus === 0) {
     promises.push(
       (async () => {
         var res = await requestData(
@@ -186,16 +186,11 @@ export async function getTaolijin(url: string) {
         }
       })()
     );
-    return {
-      success,
-      url: getGoodsUrl(itemId),
-      msg
-    };
   } else {
-    success = couponStatus === "9";
+    success = _couponStatus === 9;
   }
-
-  if (rightsInstance.rightsStatus === "0") {
+  var _rightsStatus = Number(rightsInstance.rightsStatus);
+  if (_rightsStatus === 0) {
     promises.push(
       (async () => {
         var res: {
@@ -230,7 +225,7 @@ export async function getTaolijin(url: string) {
         }
       })()
     );
-  } else if (rightsInstance.rightsStatus !== "5") {
+  } else if (_rightsStatus !== 5) {
     success = false;
   }
   if (promises.length > 0) {
@@ -238,7 +233,8 @@ export async function getTaolijin(url: string) {
   }
   return {
     success,
-    url: getGoodsUrl(itemId)
+    url: getGoodsUrl(itemId),
+    msg
   };
 }
 
@@ -393,17 +389,18 @@ export async function getInnerStoreCoupon(url: string) {
     "1.0"
   );
   logFile(res, "内部店铺优惠券");
-  var success = res.success === true;
+  var success = res.success;
   var msg = "领取成功";
   var manual;
   if (!success) {
     msg = res.message;
   } else {
     let { retStatus, msgInfo } = res.result;
-    if (retStatus === "4") {
+    retStatus = Number(retStatus);
+    if (retStatus === 4) {
       manual = true;
     }
-    success = retStatus === "0";
+    success = retStatus === 0;
     msg = msgInfo;
   }
   return {

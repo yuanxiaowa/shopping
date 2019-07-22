@@ -11,7 +11,8 @@ import {
   addComment,
   addCart,
   delCart,
-  updateCartQuantity
+  updateCartQuantity,
+  calcPrice
 } from "./goods";
 import jingdongHandlers from "./handlers";
 import jingdongCouponHandlers from "./coupon-handlers";
@@ -161,6 +162,10 @@ export class Jindong extends AutoShop {
     return {
       skuId: getSkuId(url)
     };
+  }
+
+  async calcPrice({ url }: { url: string }) {
+    return calcPrice(getSkuId(url));
   }
 
   getNextDataByGoodsInfo({ skuId }: any, quantity: number) {

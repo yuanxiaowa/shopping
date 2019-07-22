@@ -1151,7 +1151,9 @@ export async function calcPrice({
   var {
     item,
     price,
-    promov2: [{ pis }]
+    promov2: [{ pis }],
+    pingou,
+    pingouItem
   } = await getGoodsInfo(skuId);
   var coupons = await queryGoodsCoupon({
     skuId,
@@ -1212,7 +1214,12 @@ export async function calcPrice({
     needMoney: item.quota,
     rewardMoney: item.discount
   }));
-  var p = Number(plus ? price.tpp || price.p : price.p);
+  var p = Number(price.p);
+  if (pingouItem) {
+    p = Number(pingouItem.m_bp);
+  } else if (plus && price.tpp) {
+    p = Number(price.tpp);
+  }
   var ret: {
     total: number;
     num: number;

@@ -63,9 +63,11 @@ export async function getGoodsInfo(skuId: string) {
       sence: string;
     }
   >eval(`(${/window\._itemInfo\s*=\s*\(([\s\S]*?})\);/.exec(ret)![1]})`);
-  res.item = JSON.parse(
-    /window\._itemOnly\s*=\s*\(([\s\S]*?})\);/.exec(ret)![1]
-  ).item;
+  if (!res.item) {
+    res.item = JSON.parse(
+      /window\._itemOnly\s*=\s*\(([\s\S]*?})\);/.exec(ret)![1]
+    ).item;
+  }
   return res;
 }
 

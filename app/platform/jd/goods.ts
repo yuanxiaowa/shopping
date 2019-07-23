@@ -514,6 +514,40 @@ export async function getJingfen(url: string) {
   };
 }
 
+export async function getFanliCoupon(url: string) {
+  var { searchParams } = new URL(url);
+  /* 
+  var text = await req.get("https://ifanli.m.jd.com/rebate/act/getCouponSkuDetail", {
+    qs: {
+      platform: searchParams.get("platform"),
+      skuId: searchParams.get("skuId"),
+      type: searchParams.get("type"),
+      activityId: searchParams.get("activityId")
+    }
+  });
+  var {content,code,msg} = JSON.parse(text)
+  if (code !== 1) {
+    throw new Error(msg)
+  } */
+  var text = await req.get(
+    "https://ifanli.m.jd.com/rebate/userCenter/takeCoupon",
+    {
+      qs: {
+        platform: null,
+        skuId: searchParams.get("skuId"),
+        type: searchParams.get("type"),
+        activityId: searchParams.get("activityId"),
+        pageClickKey: "coupon_icon2?platform=androidgoods17get2"
+      }
+    }
+  );
+  var { content, code, msg } = JSON.parse(text);
+  if (code !== 1) {
+    throw new Error(msg);
+  }
+  return content;
+}
+
 export async function getGoodsPrice(skuId: string) {
   var text = await req.get("https://wq.jd.com/pingou_api/getskusprice", {
     qs: {

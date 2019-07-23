@@ -1,7 +1,12 @@
 import request = require("request-promise-native");
 import iconv = require("iconv-lite");
 import signData from "./h";
-import { getCookie, logFileWrapper, getJsonpData } from "../../../utils/tools";
+import {
+  getCookie,
+  logFileWrapper,
+  getJsonpData,
+  delay
+} from "../../../utils/tools";
 import {
   transformMobileGoodsInfo,
   getMobileCartList
@@ -473,10 +478,30 @@ export async function getChaoshiCoupon(url: string) {
   );
 }
 
-export async function getPindaoCoupon() {
+/**
+ * 频道优惠券
+ * @param url
+ * @example https://pages.tmall.com/wow/heihe/act/shuizhc?wh_biz=tm&ttid=201200%40taobao_iphone_8.8.0&acm=lb-zebra-388386-6780630.1003.4.6235143&pagefrom=oneshare&scm=1003.4.lb-zebra-388386-6780630.OTHER_15615208738601_6235143&spm=a21123.11972687.9691253925.1&suid=0FFFDFE8-924F-4E9B-AFC2-1521D96CF32B&sourceType=other&un=d6aaf44ab3ac122d132b0f6991806569&share_crt_v=1&sp_tk=77%20lSFV5MFlTQXcwaG%2Fvv6U%3D&cpp=1&shareurl=true&short_name=h.e7FfZnA&sm=344f29&app=chrome&ali_trackid=&e=zBTlKRBSJZzBd_r_ai1-KGpBaNgt-RghPtiOPDZF-tECwK-xSj3q_Kii75CDSRjIKSB1w8nO61xBoMXtbrXD7nUMqDuuQbYO2Hyr0OpOG9Kuhyokdt7R7vrAyWozvChN0PoPs5PAFJrAXhOyyTJuFuSKgrBmYEx8WedverPZWVri72Vq2GG5v2oTnmcQ2mGGZR8yJRJeVBdar-lV7wZHDN7qciEKDAUlh_WaoNwutL4O4Hi3kiJ34g&type=2&tk_cps_param=127911237&tkFlag=0&tk_cps_ut=2&sourceType=other&suid=9cdd01dd-80b7-4b4b-83eb-27040a65a533&ut_sk=1.XK%2BQ06Gx8KwDAHyGAUJXIrJu_21646297_1563880055513.Copy.2688
+ */
+export async function getPindaoCoupon(url: string) {
   // https://h5api.m.tmall.com/h5/mtop.latour2.strategy.show/1.0/?jsv=2.4.16&appKey=12574478&t=1563887122704&sign=22ba1a070d08f48bc14533c5965a668a&api=mtop.latour2.strategy.show&v=1.0&isSec=1&secType=2&timeout=5000&interval=300&mock=SkBTJf68N&jsonpIncPrefix=marketingUtils&useTes=true&type=jsonp&dataType=jsonp&callback=mtopjsonpmarketingUtils3&data=%7B%22filterCrowd%22%3A%22true%22%2C%22currentPage%22%3A1%2C%22pageSize%22%3A20%2C%22strategyCode%22%3A%221fb93af846af4545a464b32da1ca8163%22%2C%22channel%22%3A%22lafite_tmallfood%22%2C%22withItem%22%3A%22false%22%2C%22filterEmptyInventory%22%3A%22false%22%2C%22withIncrement%22%3A%22true%22%7D
-
-  var p1 = req.post(
+  var page = await newPage();
+  await page.goto(url);
+  var eles = await page.$$(".svelte-1k4joht.c39");
+  let h = 0;
+  let now_h = new Date().getHours();
+  for (let i of [10, 15, 20, 24]) {
+    if (now_h < i) {
+      h = i;
+      break;
+    }
+  }
+  await delay(moment(h, "h").diff() - 50);
+  eles.forEach(ele => {
+    ele.click();
+  });
+  getPindaoCoupon(url);
+  /* var p1 = req.post(
     "https://wgo.mmstat.com/tmall_interaction.fotocoupon.lottery",
     {
       json: {
@@ -528,7 +553,7 @@ export async function getPindaoCoupon() {
       }
     }
   );
-  await Promise.all([p1, p2]);
+  await Promise.all([p1, p2]); */
 }
 
 export async function getChaoshiGoodsList(args) {

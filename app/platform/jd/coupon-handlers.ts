@@ -5,7 +5,8 @@ import {
   getQuanpinCoupon,
   getJingfen,
   getCouponSingle,
-  getShopCoupons
+  getShopCoupons,
+  getFanliCoupon
 } from "./goods";
 import { newPage } from "../../../utils/page";
 import { delay } from "../../../utils/tools";
@@ -114,6 +115,10 @@ const jingdongCouponHandlers = {
   couponSingle: {
     test: startsWith("https://coupon.m.jd.com/coupons/show.action"),
     handler: getCouponSingle
+  },
+  shop2: {
+    test: startsWith("https://ifanli.m.jd.com/rebate/couponMiddle.html"),
+    handler: getFanliCoupon
   }
 };
 

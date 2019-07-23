@@ -72,7 +72,7 @@ const taobaoCouponHandlers = {
     handler: getInnerStoreCoupon
   },
   pindao: {
-    test: startsWith("https://uland.taobao.com/quan/detail"),
+    test: startsWith("https://pages.tmall.com/wow/"),
     handler: getPindaoCoupon
   }
 };

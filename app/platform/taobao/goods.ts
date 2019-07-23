@@ -473,6 +473,64 @@ export async function getChaoshiCoupon(url: string) {
   );
 }
 
+export async function getPindaoCoupon() {
+  // https://h5api.m.tmall.com/h5/mtop.latour2.strategy.show/1.0/?jsv=2.4.16&appKey=12574478&t=1563887122704&sign=22ba1a070d08f48bc14533c5965a668a&api=mtop.latour2.strategy.show&v=1.0&isSec=1&secType=2&timeout=5000&interval=300&mock=SkBTJf68N&jsonpIncPrefix=marketingUtils&useTes=true&type=jsonp&dataType=jsonp&callback=mtopjsonpmarketingUtils3&data=%7B%22filterCrowd%22%3A%22true%22%2C%22currentPage%22%3A1%2C%22pageSize%22%3A20%2C%22strategyCode%22%3A%221fb93af846af4545a464b32da1ca8163%22%2C%22channel%22%3A%22lafite_tmallfood%22%2C%22withItem%22%3A%22false%22%2C%22filterEmptyInventory%22%3A%22false%22%2C%22withIncrement%22%3A%22true%22%7D
+
+  var p1 = req.post(
+    "https://wgo.mmstat.com/tmall_interaction.fotocoupon.lottery",
+    {
+      json: {
+        gmkey: "CLK",
+        gokey: encodeURIComponent(
+          qs.stringify({
+            module: "fotocoupon",
+            ownerId: "2200611788315",
+            actId: "12750",
+            playMethodId: "1549",
+            action: "join",
+            _hng: "CN%7Czh-CN%7CCNY%7C156",
+            jsver: "aplus_wap",
+            lver: "8.6.10",
+            pver: "undefined",
+            cache: "864846f",
+            _slog: "0"
+          })
+        ),
+        cna: "Zx73FIp3JVUCAXLYX3jF+aoY",
+        "spm-cnt": "a21123.13070534.0.0.6c5531bbJZ8lO1",
+        logtype: "2"
+      }
+    }
+  );
+  var p2 = req.post(
+    "https://wgo.mmstat.com/bp_get_coupon.bp_get_coupon.bp_get_coupon",
+    {
+      json: {
+        gmkey: "EXP",
+        gokey: encodeURIComponent(
+          qs.stringify({
+            benefitId: "undefined",
+            itemIds: "",
+            channel: "lafite_tmallfood",
+            scm: "undefined",
+            pvid: "undefined",
+            _hng: "CN%7Czh-CN%7CCNY%7",
+            jsver: "aplus_wap",
+            lver: "8.6.10",
+            pver: "undefined",
+            cache: "96618aa",
+            _slog: "0"
+          })
+        ),
+        cna: "Zx73FIp3JVUCAXLYX3jF+aoY",
+        "spm-cnt": "a21123.13070534.0.0.6c5531bbJZ8lO1",
+        logtype: "2"
+      }
+    }
+  );
+  await Promise.all([p1, p2]);
+}
+
 export async function getChaoshiGoodsList(args) {
   var q = args.keyword;
   delete args.keyword;

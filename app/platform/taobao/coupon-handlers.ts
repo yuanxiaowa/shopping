@@ -6,7 +6,8 @@ import {
   getTaolijin,
   getMarketCoupon,
   getStoreCoupon,
-  getInnerStoreCoupon
+  getInnerStoreCoupon,
+  getPindaoCoupon
 } from "./goods";
 
 /* async function handler(
@@ -69,6 +70,10 @@ const taobaoCouponHandlers = {
   store: {
     test: startsWith("https://uland.taobao.com/quan/detail"),
     handler: getInnerStoreCoupon
+  },
+  pindao: {
+    test: startsWith("https://uland.taobao.com/quan/detail"),
+    handler: getPindaoCoupon
   }
 };
 

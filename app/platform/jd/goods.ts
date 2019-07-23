@@ -52,6 +52,7 @@ export async function getGoodsInfo(skuId: string) {
         v: number;
         // 34:无货 36:预定 33,39,40:现货
         StockState: number;
+        rn: number;
       };
       promov2: {
         pis: {

@@ -5,6 +5,7 @@ export interface ArgBuyDirect {
   expectedPrice?: number;
   skus?: number[];
   jianlou?: number;
+  from_cart?: boolean;
 }
 
 export interface ArgOrder<T> {

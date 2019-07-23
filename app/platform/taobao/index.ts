@@ -164,8 +164,16 @@ export class Taobao extends AutoShop {
             data
           };
         }, args.jianlou!);
-        p.then(() => {
+        p.then(async () => {
           console.log("有库存了，开始去下单");
+          if (args.from_cart) {
+            let id = await this.cartAdd({
+              url: args.url,
+              quantity: args.quantity,
+              skus: args.skus
+            });
+            return this.coudan([id]);
+          }
           return submitOrder(
             Object.assign(args, {
               data: this.getNextDataByGoodsInfo(data, args.quantity)

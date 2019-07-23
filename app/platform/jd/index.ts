@@ -131,40 +131,47 @@ export class Jindong extends AutoShop {
     return getCommentList(data.type, data.page);
   }
 
-  async buyDirect(data: ArgBuyDirect): Promise<any> {
-    if (data.jianlou) {
+  async buyDirect(args: ArgBuyDirect): Promise<any> {
+    if (args.jianlou) {
       createTimerExcuter(async () => {
-        let ret = await getGoodsInfo(getSkuId(data.url));
+        let data = await getGoodsInfo(getSkuId(args.url));
+        let success = data.stock.StockState !== 34;
+        if (success) {
+          if (data.stock.rn > -1) {
+            success = data.stock.rn >= args.quantity;
+          }
+        }
         return {
-          success: ret.stock.StockState === 34
+          success,
+          data
         };
-      }, data.jianlou).then(() => {
+      }, args.jianlou).then(() => {
         console.log("有库存了，去下单");
         var res = this.getNextDataByGoodsInfo(
-          { skuId: getSkuId(data.url) },
-          data.quantity
+          { skuId: getSkuId(args.url) },
+          args.quantity
         );
         return this.submitOrder(
           Object.assign(
             {
               data: res
             },
-            data
+            args
           )
         );
       });
       return;
     }
     var res = this.getNextDataByGoodsInfo(
-      { skuId: getSkuId(data.url) },
-      data.quantity
+      { skuId: getSkuId(args.url) },
+      args.quantity
     );
     return this.submitOrder(
       Object.assign(
         {
           data: res
         },
-        data
+        args
       )
     );
   }

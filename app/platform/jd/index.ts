@@ -13,20 +13,17 @@ import {
   delCart,
   updateCartQuantity,
   calcPrice,
-  getGoodsInfo
+  getGoodsInfo,
+  getSkuId
 } from "./goods";
 import jingdongHandlers from "./handlers";
 import jingdongCouponHandlers from "./coupon-handlers";
 import { resolveUrl } from "./tools";
 import { config } from "../../common/config";
-import { delay, getCookie } from "../../../utils/tools";
+import { delay, getCookie, createTimerExcuter } from "../../../utils/tools";
 import qs = require("querystring");
 import { ArgBuyDirect, ArgOrder } from "../struct";
 import "./tasks";
-
-const getSkuId = (url: string) => {
-  return /(\d+)\.html/.exec(url)![1];
-};
 const user = require("../../../.data/user.json");
 
 export async function buy(page: Page) {
@@ -129,27 +126,34 @@ export class Jindong extends AutoShop {
       await delay(3000);
     }
   }
-  commentList(data: { page: number }): Promise<any> {
-    // 5:已取消 6:已完成
-    return getCommentList(6, data.page);
+  commentList(data: { page: number; type: number }): Promise<any> {
+    // 2:待收货 3:全部 5:已取消 6:已完成 7:有效订单 8:待评价
+    return getCommentList(data.type, data.page);
   }
 
   async buyDirect(data: ArgBuyDirect): Promise<any> {
     if (data.jianlou) {
-      let start = Date.now();
-      await (async function f() {
+      createTimerExcuter(async () => {
         let ret = await getGoodsInfo(getSkuId(data.url));
-        if (ret.stock.StockState === 34) {
-          if (Date.now() - start < data.jianlou! * 60 * 1000) {
-            console.log("无库存，1s后再看");
-            return new Promise(resolve =>
-              setTimeout(() => f().then(resolve), 1000)
-            );
-          } else {
-            throw new Error("时间到了，刷新停止");
-          }
-        }
-      })();
+        return {
+          success: ret.stock.StockState === 34
+        };
+      }, data.jianlou).then(() => {
+        console.log("有库存了，去下单");
+        var res = this.getNextDataByGoodsInfo(
+          { skuId: getSkuId(data.url) },
+          data.quantity
+        );
+        return this.submitOrder(
+          Object.assign(
+            {
+              data: res
+            },
+            data
+          )
+        );
+      });
+      return;
     }
     var res = this.getNextDataByGoodsInfo(
       { skuId: getSkuId(data.url) },

@@ -879,6 +879,7 @@ export async function submitOrder(args: ArgOrder<any>) {
       "3.0"
     );
   } catch (e) {
+    console.error("获取订单信息出错", e);
     if (e.name === "FAIL_SYS_TRAFFIC_LIMIT") {
       console.log("太挤了，正在重试");
       return submitOrder(args);

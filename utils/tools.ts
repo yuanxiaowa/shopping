@@ -92,7 +92,8 @@ export function logResult(msg: string) {
   };
 }
 export function getJsonpData<T = any>(body: string): T {
-  return JSON.parse(/[\w$]+\(([\s\S]*)\)(;|$)/.exec(body.trim())![1]);
+  let text = /[\w$]+\(([\s\S]*)\)(;|$)/.exec(body.trim())![1];
+  return eval(`(${text})`);
 }
 
 export function writeResult(filename: string) {
@@ -182,5 +183,53 @@ export async function sysTime() {
   return {
     dt: total / count,
     rtl: total_rtl / count
+  };
+}
+
+export function createTimerExcuter<T = any>(
+  func: Function,
+  duration = 15,
+  interval = 1500
+) {
+  var t = duration * 60 * 1000;
+  var start = Date.now();
+  return new Promise<T>((resolve, reject) => {
+    async function f() {
+      var ret = await func();
+      if (ret.success) {
+        resolve(ret.data);
+      } else {
+        if (Date.now() - start > t) {
+          reject("超时了");
+        } else {
+          console.log(new Date().toLocaleString(), interval + "ms后重试");
+          setTimeout(f, interval);
+        }
+      }
+    }
+    f();
+  });
+}
+
+export function createScheduler(t = 1500) {
+  var handlers: (() => any)[] = [];
+  var pending = false;
+  async function start() {
+    if (pending === true) {
+      return;
+    }
+    pending = true;
+    while (handlers.length > 0) {
+      await handlers.shift()!();
+      await delay(t);
+    }
+    pending = false;
+  }
+  return function(handler: () => any) {
+    var p = new Promise(resolve => {
+      handlers.push(() => resolve(handler()));
+    });
+    start();
+    return p;
   };
 }

@@ -9,6 +9,7 @@ import { RequestAPI, RequiredUriUrl } from "request";
 import { getComment } from "../comment-tpl";
 import { executer } from "./tools";
 import R = require("ramda");
+import cheerio = require("cheerio");
 
 const logFile = logFileWrapper("jingdong");
 
@@ -281,6 +282,7 @@ export async function obtainActivityCoupon(data: {
   args: string;
   scene: string;
   childActivityUrl: string;
+  actKey: string;
 }) {
   var ret: string = await req.post(
     `https://api.m.jd.com/client.action?functionId=newBabelAwardCollection`,
@@ -805,6 +807,7 @@ export async function getShopJindou() {
 
 /**
  * 每日视频红包
+ * @example https://h5.m.jd.com/babelDiy/Zeus/2QJAgm3fJGpAkibejRi36LAQaRto/index.html?_ts=1561942901015&utm_source=iosapp&utm_medium=appshare&utm_campaign=t_335139774&utm_term=Wxfriends&ad_od=share&utm_user=plusmember&smartEntry=login
  */
 export async function getVideoHongbao() {
   console.log("检查视频红包活动");
@@ -923,7 +926,7 @@ export async function getCommentList(type: number, page: number) {
   var Referer =
     "https://wqs.jd.com/order/orderlist_merge.shtml?tab=1&ptag=7155.1.11&sceneval=2#page=2&itemInd=0&curTab=waitComment";
   var text: string = await req.get(
-    "http://api.m.jd.com/client.action?functionId=getCommentWareList",
+    "https://wqdeal.jd.com/bases/orderlist/deallist",
     {
       qs: {
         callersource: "mainorder",
@@ -966,7 +969,7 @@ export async function getCommentList(type: number, page: number) {
     jingdong_club_listorderhandlestate_get_responce: { vouchers }
   } = getJsonpData(text);
   var items = deal_list
-    .filter((_, i) => vouchers[i].isAppraise || vouchers[i].isNotBeenEvaluated)
+    // .filter((_, i) => vouchers[i].isAppraise || vouchers[i].isNotBeenEvaluated)
     .map(item => {
       var id = item.deal_id;
       var items = item.trade_list.map(item => ({
@@ -1051,6 +1054,15 @@ export async function addComment(orderId: string) {
 
 export function commentGoodsItem(data, Referer: string) {
   return executer(async () => {
+    let comments = await getGoodsCommentList(data.productId);
+    let images = R.compose(
+      R.map((item: any) =>
+        item.imgUrl.replace(/s128x96_/, "").replace(/^https?:/, "")
+      ),
+      R.sort((a, b) => Math.random() ** (Math.random() - 0.5)),
+      R.flatten,
+      R.map(R.prop("images"))
+    )(comments);
     let res = await req.post(
       "https://wq.jd.com/eval/SendEval?sceneval=2&g_login_type=1&g_ty=ajax",
       {
@@ -1061,9 +1073,9 @@ export function commentGoodsItem(data, Referer: string) {
           content: getComment(),
           commentTagStr: "1",
           userclient: "29",
-          imageJson: `//img30.360buyimg.com/shaidan//${
-            data.productSolrInfo.imgUrl
-          }`,
+          imageJson: images
+            .slice(0, (Math.random() * Math.min(images.length, 5)) >> 0)
+            .join(","),
           anonymous: "0",
           syncsg: "0",
           scence: "101100000",
@@ -1120,7 +1132,7 @@ export async function getGoodsCommentList(skuId: string) {
       content: string;
       images: {
         imgUrl: string;
-      };
+      }[];
     }[]
   >comments;
 }
@@ -1418,4 +1430,8 @@ function getCookie(name: string) {
 
 export function getUuid() {
   return getCookie("mba_muid");
+}
+
+export function getSkuId(url: string) {
+  return /(\d+)\.html/.exec(url)![1];
 }

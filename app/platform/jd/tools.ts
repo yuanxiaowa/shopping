@@ -10,30 +10,9 @@ import {
   obtainActivityCoupon,
   goGetCookie
 } from "./goods";
-import { delay } from "../../../utils/tools";
+import { delay, createScheduler } from "../../../utils/tools";
 
-export const executer = (() => {
-  var handlers: (() => any)[] = [];
-  var pending = false;
-  async function start() {
-    if (pending === true) {
-      return;
-    }
-    pending = true;
-    while (handlers.length > 0) {
-      await handlers.shift()!();
-      await delay(1000 + Math.random() * 1500);
-    }
-    pending = false;
-  }
-  return function(handler: () => any) {
-    var p = new Promise(resolve => {
-      handlers.push(() => resolve(handler()));
-    });
-    start();
-    return p;
-  };
-})();
+export const executer = createScheduler();
 
 async function wrapItems(p: Promise<any[]>) {
   var res = await p;
@@ -98,6 +77,7 @@ export async function getActivityCoupons(url: string) {
             executer(() =>
               obtainActivityCoupon({
                 activityId,
+                actKey: item.cpId,
                 args: item.args,
                 scene: item.scene,
                 childActivityUrl: encodeURIComponent(url)

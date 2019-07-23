@@ -93,18 +93,16 @@ export default class ShopController extends Controller {
         name: "chaoshi"
       });
       let i = items.findIndex(item => Number(item.price) > 0.01);
-      let ids = await Promise.all(
-        items.slice(0, i).map(({ url }) =>
-          ins
-            .cartAdd({
-              url,
-              quantity: 1
-            })
-            .catch(() => undefined)
-        )
-      );
-      ids = ids.filter(Boolean);
-      ids.push(id);
+      let ids: number[] = [id];
+      for (let { url } of items.slice(0, i)) {
+        try {
+          let id = await ins.cartAdd({
+            url,
+            quantity: 1
+          });
+          ids.push(id);
+        } catch (e) {}
+      }
       ctx.body = await handle(ins.coudan(ids), "下单成功");
       return;
     }

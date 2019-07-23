@@ -1,5 +1,5 @@
 import AutoShop from "../auto-shop";
-import { getCookie } from "../../../utils/tools";
+import { getCookie, createTimerExcuter } from "../../../utils/tools";
 import { getPcCartInfo } from "./pc";
 import { Page } from "puppeteer";
 import taobaoHandlers from "./handlers";
@@ -155,35 +155,34 @@ export class Taobao extends AutoShop {
 
   async buyDirectFromMobile(args: ArgBuyDirect) {
     var data = await this.getGoodsInfo(args.url, args.skus);
-    if (!data.buyEnable) {
-      throw new Error(data.msg || "不能购买");
-    }
     if (data.quantity < args.quantity) {
       if (args.jianlou) {
-        data = await new Promise((resolve, reject) => {
-          var start = Date.now();
-          let f = async () => {
-            var data = await this.getGoodsInfo(args.url, args.skus);
-            if (data.quantity >= args.quantity) {
-              return resolve(data);
-            }
-            if (Date.now() - start > args.jianlou! * 60 * 1000) {
-              reject("无机会了");
-            } else {
-              setTimeout(f, 1000);
-            }
+        let p = createTimerExcuter(async () => {
+          var data = await this.getGoodsInfo(args.url, args.skus);
+          return {
+            success: data.quantity >= args.quantity,
+            data
           };
-          setTimeout(f, 1000);
+        }, args.jianlou!);
+        p.then(() => {
+          console.log("有库存了，开始去下单");
+          return submitOrder(
+            Object.assign(args, {
+              data: this.getNextDataByGoodsInfo(data, args.quantity)
+            })
+          );
         });
-      } else {
-        throw new Error("无库存了");
       }
+    } else {
+      if (!data.buyEnable) {
+        throw new Error(data.msg || "不能购买");
+      }
+      return submitOrder(
+        Object.assign(args, {
+          data: this.getNextDataByGoodsInfo(data, args.quantity)
+        })
+      );
     }
-    return submitOrder(
-      Object.assign(args, {
-        data: this.getNextDataByGoodsInfo(data, args.quantity)
-      })
-    );
   }
 
   async goodsList(args) {

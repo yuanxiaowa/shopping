@@ -1357,12 +1357,21 @@ export async function commentOrder(orderId: string) {
     "get",
     "1.0"
   );
-  var items = subOrderRateInfos.map(item => ({
-    key: item.key,
-    orderMerchandiseScore: "5",
-    feedback: getComment(),
-    rateAnnoy: "1"
-  }));
+  var items = subOrderRateInfos.map(item => {
+    var ret: any = {
+      key: item.key,
+      feedback: getComment(),
+      rateAnnoy: "1",
+      ratePicInfos: [item.auctionInfo.auctionPicUrl]
+    };
+    if (item.orderMerchandiseScore) {
+      ret.orderMerchandiseScore = "5";
+    }
+    if (item.rateResult) {
+      ret.rateResult = "1";
+    }
+    return ret;
+  });
   return executer(() =>
     requestData(
       "mtop.order.doRate",

@@ -12,7 +12,7 @@ import {
 } from "./goods";
 import { delay, createScheduler } from "../../../utils/tools";
 
-export const executer = createScheduler();
+export const executer = createScheduler(3000);
 
 async function wrapItems(p: Promise<any[]>) {
   var res = await p;

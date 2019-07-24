@@ -121,10 +121,7 @@ export class Jindong extends AutoShop {
     return updateCartQuantity(data);
   }
   async comment(data: any): Promise<any> {
-    for (let orderId of data.orderIds) {
-      await addComment(orderId);
-      await delay(3000);
-    }
+    return Promise.all(data.orderIds.map(addComment));
   }
   commentList(data: { page: number; type: number }): Promise<any> {
     // 2:待收货 3:全部 5:已取消 6:已完成 7:有效订单 8:待评价

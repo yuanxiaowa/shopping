@@ -5,7 +5,8 @@ import {
   getCookie,
   logFileWrapper,
   getJsonpData,
-  delay
+  delay,
+  createScheduler
 } from "../../../utils/tools";
 import {
   transformMobileGoodsInfo,
@@ -17,6 +18,7 @@ import { ArgOrder } from "../struct";
 import cheerio = require("cheerio");
 import qs = require("querystring");
 import { newPage } from "../../../utils/page";
+import { getComment } from "../comment-tpl";
 
 var req: request.RequestPromiseAPI;
 var cookie = "";
@@ -68,7 +70,8 @@ async function requestData(
   api: string,
   data: any,
   method: "get" | "post" = "get",
-  version = "6.0"
+  version = "6.0",
+  ttid = "#b#ad##_h5"
 ) {
   var t = Date.now();
   var data_str = JSON.stringify(data);
@@ -84,7 +87,7 @@ async function requestData(
     ecode: 1,
     dataType: "json",
     t,
-    ttid: "#b#ad##_h5",
+    ttid,
     AntiFlood: true,
     LoginRequest: true,
     H5Request: true
@@ -113,6 +116,7 @@ async function requestData(
   if (code !== "SUCCESS") {
     let err = new Error(msg);
     err.name = code;
+    logFile(text, "_err-" + api);
     throw err;
   }
   return data;
@@ -486,6 +490,9 @@ export async function getChaoshiCoupon(url: string) {
 export async function getPindaoCoupon(url: string) {
   // https://h5api.m.tmall.com/h5/mtop.latour2.strategy.show/1.0/?jsv=2.4.16&appKey=12574478&t=1563887122704&sign=22ba1a070d08f48bc14533c5965a668a&api=mtop.latour2.strategy.show&v=1.0&isSec=1&secType=2&timeout=5000&interval=300&mock=SkBTJf68N&jsonpIncPrefix=marketingUtils&useTes=true&type=jsonp&dataType=jsonp&callback=mtopjsonpmarketingUtils3&data=%7B%22filterCrowd%22%3A%22true%22%2C%22currentPage%22%3A1%2C%22pageSize%22%3A20%2C%22strategyCode%22%3A%221fb93af846af4545a464b32da1ca8163%22%2C%22channel%22%3A%22lafite_tmallfood%22%2C%22withItem%22%3A%22false%22%2C%22filterEmptyInventory%22%3A%22false%22%2C%22withIncrement%22%3A%22true%22%7D
   var page = await newPage();
+  await page.setUserAgent(
+    "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3835.0 Mobile Safari/537.36"
+  );
   await page.goto(url);
   var eles = await page.$$(".svelte-1k4joht.c39");
   let h = 0;
@@ -496,7 +503,8 @@ export async function getPindaoCoupon(url: string) {
       break;
     }
   }
-  await delay(moment(h, "h").diff() - 50);
+  await delay(moment(h, "h").diff() - 100);
+  await page.reload();
   eles.forEach(ele => {
     ele.click();
   });
@@ -963,7 +971,7 @@ export async function submitOrder(args: ArgOrder<any>) {
     );
   } catch (e) {
     console.error("获取订单信息出错", e);
-    if (e.name === "FAIL_SYS_TRAFFIC_LIMIT") {
+    if (e.name === "FAIL_SYS_TRAFFIC_LIMIT" || e.message.includes("被挤爆")) {
       console.log("太挤了，正在重试");
       return submitOrder(args);
     }
@@ -993,16 +1001,19 @@ export async function submitOrder(args: ArgOrder<any>) {
     console.log("----------手机订单提交成功----------");
     console.timeEnd("订单提交" + r);
   } catch (e) {
-    if (e.message.includes("对不起，系统繁忙，请稍候再试")) {
+    if (
+      e.message.includes("对不起，系统繁忙，请稍候再试") ||
+      e.message.includes("被挤爆")
+    ) {
       console.log(e.message);
-      console.log("正在重试");
+      console.log(e.message, "正在重试");
       return submitOrder(args);
     }
     throw e;
   }
 }
 
-export function comment(data: any): Promise<any> {
+export function comment(args: any): Promise<any> {
   /* this.req.post("", {
     form: {
       callback: "RateWriteCallback548",
@@ -1029,11 +1040,7 @@ export function comment(data: any): Promise<any> {
       "492409251844405857_srNameList": ""
     }
   }); */
-  throw new Error("Method not implemented.");
-}
-
-export function commentList(): Promise<any> {
-  throw new Error("Method not implemented.");
+  return Promise.all(args.orderIds.map(commentOrder));
 }
 
 export async function seckillList(name: string) {
@@ -1292,4 +1299,81 @@ export async function sixtyCourseReply({
   );
   var { awards } = res3;
   return awards;
+}
+
+export async function commentList(type: number, page = 1) {
+  var {
+    data: { group, meta }
+  } = await requestData(
+    "mtop.order.queryboughtlist",
+    {
+      appName: "tborder",
+      appVersion: "1.0",
+      tabCode: "waitRate",
+      page
+    },
+    "get",
+    "4.0",
+    "##h5"
+  );
+  let items = group.map(obj => {
+    let id = Object.keys(obj)[0];
+    let list = obj[id].filter(
+      ({ cellType, cellData }) => cellType === "sub" && cellData[0].fields.pic
+    );
+    let title = list.map(({ cellData }) => cellData[0].fields.title).join(",");
+    let img = list[0].cellData[0].fields.pic;
+    let url = list[0].cellData[0].fields.pic;
+    return {
+      id,
+      items: [
+        {
+          id,
+          title,
+          img,
+          url
+        }
+      ]
+    };
+  });
+  return {
+    items,
+    page,
+    more: page < Number(meta.page.fields.totalPage)
+  };
+}
+
+const executer = createScheduler();
+
+export async function commentOrder(orderId: string) {
+  var {
+    mainOrderRateInfo: { saleConsignmentScore, serviceQualityScore },
+    subOrderRateInfos
+  } = await requestData(
+    "mtop.order.getOrderRateInfo",
+    {
+      orderId
+    },
+    "get",
+    "1.0"
+  );
+  var items = subOrderRateInfos.map(item => ({
+    key: item.key,
+    orderMerchandiseScore: "5",
+    feedback: getComment(),
+    rateAnnoy: "1"
+  }));
+  return executer(() =>
+    requestData(
+      "mtop.order.doRate",
+      {
+        mainOrderRateInfo:
+          '{"serviceQualityScore":"5","saleConsignmentScore":"5"}',
+        subOrderRateInfo: JSON.stringify(items),
+        orderId
+      },
+      "get",
+      "3.0"
+    )
+  );
 }

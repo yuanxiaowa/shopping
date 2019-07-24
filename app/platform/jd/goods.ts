@@ -948,9 +948,13 @@ export async function getVideoHongbao() {
       client: "wh5",
       clientVersion: "1.0.0",
       uuid
+    },
+    headers: {
+      Referer:
+        "https://h5.m.jd.com/babelDiy/Zeus/2QJAgm3fJGpAkibejRi36LAQaRto/index.html?_ts=1561942901015&utm_source=iosapp&utm_medium=appshare&utm_campaign=t_335139774&utm_term=Wxfriends&ad_od=share&utm_user=plusmember&smartEntry=login"
     }
   });
-  console.log(res);
+  console.log("视频红包", res);
 
   // {"data":{"currentTime":1562548312483,"awardType":["1"],"couponList":null,"discount":0.50},"code":"0"}
 }
@@ -1004,7 +1008,7 @@ export async function getCommentList(type: number, page: number) {
     jingdong_club_listorderhandlestate_get_responce: { vouchers }
   } = getJsonpData(text);
   var items = deal_list
-    // .filter((_, i) => vouchers[i].isAppraise || vouchers[i].isNotBeenEvaluated)
+    .filter((_, i) => vouchers[i].isAppraise || vouchers[i].isNotBeenEvaluated)
     .map(item => {
       var id = item.deal_id;
       var items = item.trade_list.map(item => ({
@@ -1109,7 +1113,7 @@ export function commentGoodsItem(data, Referer: string) {
           commentTagStr: "1",
           userclient: "29",
           imageJson: images
-            .slice(0, (Math.random() * Math.min(images.length, 5)) >> 0)
+            .slice(1, (Math.random() * Math.min(images.length, 5)) >> 0)
             .join(","),
           anonymous: "0",
           syncsg: "0",

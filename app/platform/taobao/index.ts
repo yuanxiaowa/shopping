@@ -89,7 +89,9 @@ export class Taobao extends AutoShop {
     return updateCart(data, "update");
   }
   comment = comment;
-  commentList = commentList;
+  commentList(args) {
+    return commentList(args.type, args.page);
+  }
   buyDirect(data: ArgBuyDirect): Promise<any> {
     if (this.mobile) {
       return this.buyDirectFromMobile(data);

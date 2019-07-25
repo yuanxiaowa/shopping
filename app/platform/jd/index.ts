@@ -23,7 +23,6 @@ import { config } from "../../common/config";
 import { delay, getCookie, createTimerExcuter } from "../../../utils/tools";
 import qs = require("querystring");
 import { ArgBuyDirect, ArgOrder } from "../struct";
-import "./tasks";
 const user = require("../../../.data/user.json");
 
 export async function buy(page: Page) {

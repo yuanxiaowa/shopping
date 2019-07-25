@@ -4,7 +4,7 @@ import { getSignJRInfo, getSignAwardJR, onInitJingrong } from "./jinrong";
 import bus_global from "../../common/bus";
 import { onInitJingdong } from "./jindong";
 
-function bootstrapJingdongTasks() {
+export function bootstrapJingdongTasks() {
   return Promise.all([doJdAll(), doJrAll()])
     .then(() => getSignJRInfo())
     .then(({ isGet }) => {
@@ -15,7 +15,5 @@ function bootstrapJingdongTasks() {
 }
 
 bus_global.on("cookie:init", () => {
-  Promise.all([onInitJingdong(), onInitJingrong()]).then(() => {
-    bootstrapJingdongTasks();
-  });
+  Promise.all([onInitJingdong(), onInitJingrong()]);
 });

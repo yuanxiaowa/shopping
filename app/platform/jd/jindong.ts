@@ -20,7 +20,8 @@ export function setReq() {
   req = request.defaults({
     headers: {
       "Accept-Encoding": "br, gzip, deflate",
-      Cookie: cookieManager.jingdong.get(),
+      Cookie:
+        'pin=yuanxiaowa_m;wskey=AAJcf7shAEDYu7LaGcbk-nbWLcDnG4Oeoz_J_xZxoK4REAJZkwdZi92N_GfRW2SRoLkV6aTVKDUBACmFY2zf4kM8L-I_bGQf;whwswswws=tQFD84i0iQ5D5JGqRkKjrdp/jMdLdn4WZNvxLhlBwaTiYSiko4ksawh6bqrrw8oeUXeAho8H/02KRTmqivgZiXg==;unionwsws={"jmafinger":"tQFD84i0iQ5D5JGqRkKjrdp/jMdLdn4WZNvxLhlBwaTiYSiko4ksawh6bqrrw8oeUXeAho8H/02KRTmqivgZiXg==","devicefinger":"eidI5B820114MEIyQjg1ODgtM0U2Qy00OQ==H7EFGMDYl9hrkgRaHyasfTfnHj8TMpWo8evL4bpDG0OIQXzNNSwh9uzitnan+QAeieHwU9aXjsqhiBwb"}',
       // Accept: '*/*',
       "User-Agent":
         "jdapp;iPhone;8.1.0;12.3.1;38276cc01428d153b8a9802e9787d279e0b5cc85;network/wifi;ADID/3D52573B-D546-4427-BC41-19BE6C9CE864;supportApplePay/3;hasUPPay/0;pushNoticeIsOpen/0;model/iPhone9,2;addressid/1091472708;hasOCPay/0;appBuild/166315;supportBestPay/0;pv/259.6;pap/JA2015_311210|8.1.0|IOS 12.3.1;apprpd/Home_Main;psn/38276cc01428d153b8a9802e9787d279e0b5cc85|1030;usc/pdappwakeupup_20170001;jdv/0|pdappwakeupup_20170001|t_335139774|appshare|CopyURL|1561092574799|1561092578;umd/appshare;psq/1;ucp/t_335139774;app_device/IOS;adk/;ref/JDMainPageViewController;utr/CopyURL;ads/;Mozilla/5.0 (iPhone; CPU iPhone OS 12_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148;supportJDSHWK/1"
@@ -187,15 +188,15 @@ export function getSignStatus(): RequestPromise<SignStatusInfo> {
     qs: {
       functionId: "findBeanIndex",
       body: JSON.stringify({
-        source: "apphome",
+        rnClient: "2",
         monitor_refer: "",
-        rnVersion: "3.9",
-        rnClient: "1",
-        monitor_source: "bean_m_bean_index"
+        monitor_source: "bean_app_bean_index",
+        source: "AppHome",
+        rnVersion: "4.7"
       }),
       appid: "ld",
       client: "apple",
-      clientVersion: "8.1.0",
+      clientVersion: "8.1.4",
       networkType: "wifi",
       osVersion: "12.3.1",
       uuid: "38276cc01428d153b8a9802e9787d279e0b5cc85",
@@ -234,7 +235,7 @@ export function getZhuanpanInfo(): RequestPromise<{
       body: JSON.stringify({ actId: "jgpqtzjhvaoym", appSource: "jdhome" }),
       appid: "ld",
       client: "apple",
-      clientVersion: "8.1.0",
+      clientVersion: "8.1.4",
       networkType: "wifi",
       osVersion: "12.3.1",
       uuid: "38276cc01428d153b8a9802e9787d279e0b5cc85",

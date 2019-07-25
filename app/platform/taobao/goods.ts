@@ -494,7 +494,6 @@ export async function getPindaoCoupon(url: string) {
     "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3835.0 Mobile Safari/537.36"
   );
   await page.goto(url);
-  var eles = await page.$$(".svelte-1k4joht.c39");
   let h = 0;
   let now_h = new Date().getHours();
   for (let i of [10, 15, 20, 24]) {
@@ -505,6 +504,7 @@ export async function getPindaoCoupon(url: string) {
   }
   await delay(moment(h, "h").diff() - 100);
   await page.reload();
+  var eles = await page.$$(".svelte-1k4joht.c39");
   eles.forEach(ele => {
     ele.click();
   });

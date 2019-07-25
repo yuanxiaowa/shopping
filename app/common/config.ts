@@ -1,3 +1,3 @@
 export const config = {
-  isSubmitOrder: false
+  isSubmitOrder: true
 };

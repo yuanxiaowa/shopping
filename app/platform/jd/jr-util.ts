@@ -138,6 +138,7 @@ export async function doAll() {
   if (!b) {
     let page = await newPage();
     await login(page);
+
     setReq(await getPageCookie(page));
     page.close();
   }

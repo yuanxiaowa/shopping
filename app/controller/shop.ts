@@ -138,8 +138,19 @@ export default class ShopController extends Controller {
   }
   public async qiangquan() {
     const { ctx, app } = this;
-    var { platform } = ctx.query;
+    var { platform, t } = ctx.query;
     var { data } = ctx.request.body;
+    var dt = moment(t).diff(moment()) - DT;
+    if (dt > 0) {
+      (async () => {
+        await delay(dt);
+        app[platform].qiangquan(data);
+      })();
+      ctx.body = {
+        code: 0,
+        msg: moment(t || undefined).fromNow() + " 将直接抢券"
+      };
+    }
     ctx.body = await handle(app[platform].qiangquan(data));
   }
   public async coupons() {

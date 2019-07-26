@@ -6,7 +6,8 @@ import {
   getJingfen,
   getCouponSingle,
   getShopCoupons,
-  getFanliCoupon
+  getFanliCoupon,
+  obtainGoodsCoupon
 } from "./goods";
 import { newPage } from "../../../utils/page";
 import { delay } from "../../../utils/tools";
@@ -101,9 +102,13 @@ const jingdongCouponHandlers = {
   shop: {
     test: startsWith("https://shop.m.jd.com/?"),
     async handler(url: string) {
-      var urls = await getShopCoupons(url);
+      var { urls, coupons } = await getShopCoupons(url);
       try {
-        await Promise.all(urls.map(getCouponSingle));
+        await Promise.all(
+          urls
+            .map(getCouponSingle)
+            .concat(<any[]>coupons.map(obtainGoodsCoupon))
+        );
         return {
           success: true
         };

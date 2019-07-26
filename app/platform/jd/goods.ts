@@ -10,6 +10,8 @@ import { getComment } from "../comment-tpl";
 import { executer } from "./tools";
 import R = require("ramda");
 import cheerio = require("cheerio");
+import qs = require("querystring");
+import moment = require("moment");
 
 const logFile = logFileWrapper("jingdong");
 
@@ -441,13 +443,20 @@ export async function getCouponSingle(url: string) {
   };
 }
 
-export async function getShopCoupons(url: string): Promise<string[]> {
+export async function getShopCoupons(url: string) {
   var html: string = await req.get(url);
-  var urls =
+  var text = /window.SHOP_COUPONS\s*=\s*(\[[\s\S]*?\])\s*;/.exec(html)![1];
+  var now = Date.now();
+  var coupons: any[] = JSON.parse(text).filter(
+    item =>
+      moment(item.beginTime, "yyyy.MM.DD").valueOf() <= now &&
+      now < moment(item.endTime, "yyyy.MM.DD").valueOf()
+  );
+  var urls: string[] =
     html.match(
       /https?:\/\/coupon\.m\.jd\.com\/coupons\/show\.action\?[^"']+/g
     ) || [];
-  return urls;
+  return { urls, coupons };
 }
 
 /**

@@ -7,5 +7,5 @@ export const jingdong = new Jindong();
 
 bus_global.on("bootstrap", () => {
   taobao.start();
-  // jingdong.start();
+  jingdong.start();
 });

@@ -1,5 +1,5 @@
 import AutoShop from "../auto-shop";
-import { getCookie, createTimerExcuter } from "../../../utils/tools";
+import { getCookie, createTimerExcuter, delay } from "../../../utils/tools";
 import { getPcCartInfo } from "./pc";
 import { Page } from "puppeteer";
 import taobaoHandlers from "./handlers";
@@ -26,6 +26,7 @@ import {
 import { newPage } from "../../../utils/page";
 import { readJSONSync } from "fs-extra";
 import { ArgOrder, ArgBuyDirect } from "../struct";
+const user = require("../../../.data/user.json").taobao;
 
 export class Taobao extends AutoShop {
   mobile = true;
@@ -212,6 +213,37 @@ export class Taobao extends AutoShop {
   cartToggle = cartToggle;
 
   async loginAction(page: Page) {
+    /* await page.waitForNavigation({
+      timeout: 0
+    });
+    await page.click(".J_Quick2Static");
+    await page.evaluate(username => {
+      document.querySelector<HTMLInputElement>(
+        "#TPL_username_1"
+      )!.value = username;
+    }, user.username);
+    await page.type("#TPL_password_1", user.password);
+    var [bar, area] = await Promise.all([
+      page.$("#nc_1_n1z"),
+      page.$("#nc_1__scale_text")
+    ]);
+    var bar_box = (await bar!.boundingBox())!;
+    var start_x = bar_box.x + bar_box.width / 2 + 10 - 10 * Math.random();
+    var start_y = bar_box.y + bar_box.height / 2 + 10 - 10 * Math.random();
+    var area_rect = await area!.boundingBox();
+    var mouse = page.mouse;
+    console.log(bar_box, area_rect);
+    await mouse.move(start_x, start_y);
+    await mouse.down();
+    var len = (600 + Math.random() * 500) / 16.66;
+    for (let i = 0; i < len; i++) {
+      await mouse.move(
+        start_x + (i / len) * area_rect!.width,
+        start_y + (Math.random() - 0.5) * 10
+      );
+      await delay(16.66);
+    }
+    await mouse.up(); */
     var res = await page.waitForResponse(res =>
       res.url().startsWith("https://img.alicdn.com/imgextra")
     );

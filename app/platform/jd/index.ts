@@ -23,7 +23,7 @@ import { config } from "../../common/config";
 import { delay, getCookie, createTimerExcuter } from "../../../utils/tools";
 import qs = require("querystring");
 import { ArgBuyDirect, ArgOrder } from "../struct";
-const user = require("../../../.data/user.json");
+const user = require("../../../.data/user.json").jingdong;
 
 export async function buy(page: Page) {
   if (page.url().startsWith("https://item.m.jd.com/")) {

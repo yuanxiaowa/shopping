@@ -932,29 +932,30 @@ export async function getVideoHongbao() {
     (item: any) =>
       item.groupId === "03303165" || item.groupName === "题目/选项/答案"
   );
-  let res = await req.get("https://api.m.jd.com/client.action", {
-    qs: {
-      appid: "answer_20190513",
-      t: now.getTime(),
-      functionId: "answerSendHb",
-      body: JSON.stringify({
-        activityId,
-        pageId,
-        reqSrc: "mainActivity",
-        platform: "APP/m",
-        answer: 1,
-        select: answer.list[0].desc
-      }),
-      client: "wh5",
-      clientVersion: "1.0.0",
-      uuid
-    },
-    headers: {
-      Referer:
-        "https://h5.m.jd.com/babelDiy/Zeus/2QJAgm3fJGpAkibejRi36LAQaRto/index.html?_ts=1561942901015&utm_source=iosapp&utm_medium=appshare&utm_campaign=t_335139774&utm_term=Wxfriends&ad_od=share&utm_user=plusmember&smartEntry=login"
-    }
-  });
-  console.log("视频红包", res);
+  console.log("视频答案", answer.list[0].desc);
+  // let res = await req.get("https://api.m.jd.com/client.action", {
+  //   qs: {
+  //     appid: "answer_20190513",
+  //     t: now.getTime(),
+  //     functionId: "answerSendHb",
+  //     body: JSON.stringify({
+  //       activityId,
+  //       pageId,
+  //       reqSrc: "mainActivity",
+  //       platform: "APP/m",
+  //       answer: 1,
+  //       select: answer.list[0].desc
+  //     }),
+  //     client: "wh5",
+  //     clientVersion: "1.0.0",
+  //     uuid
+  //   },
+  //   headers: {
+  //     Referer:
+  //       "https://h5.m.jd.com/babelDiy/Zeus/2QJAgm3fJGpAkibejRi36LAQaRto/index.html?_ts=1561942901015&utm_source=iosapp&utm_medium=appshare&utm_campaign=t_335139774&utm_term=Wxfriends&ad_od=share&utm_user=plusmember&smartEntry=login"
+  //   }
+  // });
+  // console.log("视频红包", res);
 
   // {"data":{"currentTime":1562548312483,"awardType":["1"],"couponList":null,"discount":0.50},"code":"0"}
 }

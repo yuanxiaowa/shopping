@@ -988,7 +988,7 @@ export async function submitOrder(args: ArgOrder<any>) {
   if (!config.isSubmitOrder) {
     return;
   }
-  try {
+  async function handler() {
     r = Date.now();
     console.time("订单提交" + r);
     let ret = await requestData(
@@ -1000,14 +1000,16 @@ export async function submitOrder(args: ArgOrder<any>) {
     logFile(ret, "手机订单提交成功");
     console.log("----------手机订单提交成功----------");
     console.timeEnd("订单提交" + r);
+  }
+  try {
+    await handler();
   } catch (e) {
     if (
       e.message.includes("对不起，系统繁忙，请稍候再试") ||
       e.message.includes("被挤爆")
     ) {
-      console.log(e.message);
       console.log(e.message, "正在重试");
-      return submitOrder(args);
+      return handler();
     }
     throw e;
   }

@@ -150,6 +150,7 @@ export default class ShopController extends Controller {
         code: 0,
         msg: moment(t || undefined).fromNow() + " 将直接抢券"
       };
+      return;
     }
     ctx.body = await handle(app[platform].qiangquan(data));
   }

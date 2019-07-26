@@ -26,6 +26,7 @@ import {
 import { newPage } from "../../../utils/page";
 import { readJSONSync } from "fs-extra";
 import { ArgOrder, ArgBuyDirect } from "../struct";
+import { config } from "../../common/config";
 const user = require("../../../.data/user.json").taobao;
 
 export class Taobao extends AutoShop {
@@ -94,10 +95,10 @@ export class Taobao extends AutoShop {
     return commentList(args.type, args.page);
   }
   buyDirect(data: ArgBuyDirect): Promise<any> {
-    if (this.mobile) {
-      return this.buyDirectFromMobile(data);
+    if (data.from_pc) {
+      return this.buyDirectFromPc(data);
     }
-    return this.buyDirectFromPc(data);
+    return this.buyDirectFromMobile(data);
   }
   async coudan(ids: string[]): Promise<any> {
     var list = await this.cartList();
@@ -126,17 +127,17 @@ export class Taobao extends AutoShop {
   }
 
   cartBuy(args: any) {
-    if (this.mobile) {
-      return this.cartBuyFromMobile(args);
+    if (args.from_pc) {
+      return this.cartBuyFromPc(args);
     }
-    return this.cartBuyFromPc(args);
+    return this.cartBuyFromMobile(args);
   }
 
   submitOrder(data) {
-    if (this.mobile) {
-      return submitOrder(data);
+    if (data.from_pc) {
+      return this.submitOrderFromPc(data);
     }
-    return this.submitOrderFromPc(data);
+    return submitOrder(data);
   }
 
   getGoodsInfo = getGoodsInfo;
@@ -467,6 +468,9 @@ export class Taobao extends AutoShop {
         return state;
       }, {});
       var ua_log = "";
+      if (!config.isSubmitOrder) {
+        return;
+      }
       var ret: string = await this.req.post(`https://buy.tmall.com${url}`, {
         qs: {
           spm: "a220l.1.a22016.d011001001001.undefined",

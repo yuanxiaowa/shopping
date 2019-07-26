@@ -445,7 +445,7 @@ export async function getShopCoupons(url: string): Promise<string[]> {
   var html: string = await req.get(url);
   var urls =
     html.match(
-      /https:\/\/coupon\.m\.jd\.com\/coupons\/show\.action\?[^"']+/g
+      /https?:\/\/coupon\.m\.jd\.com\/coupons\/show\.action\?[^"']+/g
     ) || [];
   return urls;
 }

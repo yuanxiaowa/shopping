@@ -989,30 +989,30 @@ export async function submitOrder(args: ArgOrder<any>) {
     return;
   }
   async function handler() {
-    r = Date.now();
-    console.time("订单提交" + r);
-    let ret = await requestData(
-      "mtop.trade.createorder.h5",
-      postdata,
-      "post",
-      "3.0"
-    );
-    logFile(ret, "手机订单提交成功");
-    console.log("----------手机订单提交成功----------");
-    console.timeEnd("订单提交" + r);
-  }
-  try {
-    await handler();
-  } catch (e) {
-    if (
-      e.message.includes("对不起，系统繁忙，请稍候再试") ||
-      e.message.includes("被挤爆")
-    ) {
-      console.log(e.message, "正在重试");
-      return handler();
+    try {
+      r = Date.now();
+      console.time("订单提交" + r);
+      let ret = await requestData(
+        "mtop.trade.createorder.h5",
+        postdata,
+        "post",
+        "3.0"
+      );
+      logFile(ret, "手机订单提交成功");
+      console.log("----------手机订单提交成功----------");
+      console.timeEnd("订单提交" + r);
+    } catch (e) {
+      if (
+        e.message.includes("对不起，系统繁忙，请稍候再试") ||
+        e.message.includes("被挤爆")
+      ) {
+        console.log(e.message, "正在重试");
+        return handler();
+      }
+      throw e;
     }
-    throw e;
   }
+  return handler();
 }
 
 export function comment(args: any): Promise<any> {

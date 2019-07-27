@@ -104,7 +104,7 @@ export default abstract class AutoShop implements AutoShopOptions {
     }
   }
   abstract coudan(items: string[]): Promise<any>;
-  abstract cartList(): Promise<any>;
+  abstract cartList(args: { from_pc: boolean }): Promise<any>;
   abstract cartBuy(data: ArgCartBuy): Promise<any>;
   async cartToggle(data: { items: any; checked: boolean }): Promise<any> {}
   async cartToggleAll(data: any): Promise<any> {}

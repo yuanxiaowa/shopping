@@ -68,9 +68,9 @@ export class Taobao extends AutoShop {
     return Promise.all(urls.map(resolveUrl));
   }
 
-  async cartList() {
+  async cartList(args) {
     var items;
-    if (this.mobile) {
+    if (!args.from_pc) {
       items = await getCartList();
     } else {
       items = await this.cartListFromPc();
@@ -101,7 +101,7 @@ export class Taobao extends AutoShop {
     return this.buyDirectFromMobile(data);
   }
   async coudan(ids: string[]): Promise<any> {
-    var list = await this.cartList();
+    var list = await this.cartList({});
     var datas: any[] = [];
     list.items.forEach(({ items }) => {
       items.forEach(item => {

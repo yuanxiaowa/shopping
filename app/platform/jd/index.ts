@@ -96,7 +96,7 @@ export class Jindong extends AutoShop {
   coudan(items: string[]): Promise<any> {
     return this.cartBuy(undefined);
   }
-  cartList() {
+  cartList(args: any) {
     return getCartList();
   }
   cartToggle(data): Promise<any> {

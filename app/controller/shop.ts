@@ -30,8 +30,11 @@ sysTime().then(({ dt, rtl }) => {
 export default class ShopController extends Controller {
   public async cartList() {
     const { ctx, app } = this;
-    var { platform } = ctx.query;
-    ctx.body = await handle(app[platform].cartList(), "已获取购物车数据");
+    var { platform, from_pc } = ctx.query;
+    ctx.body = await handle(
+      app[platform].cartList({ from_pc }),
+      "已获取购物车数据"
+    );
   }
   public async cartBuy() {
     const { ctx, app } = this;

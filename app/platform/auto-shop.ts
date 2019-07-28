@@ -113,7 +113,7 @@ export default abstract class AutoShop implements AutoShopOptions {
   abstract cartUpdateQuantity(data: any): Promise<any>;
   abstract comment(data: any): Promise<any>;
   abstract commentList(data: { page: number; type: number }): Promise<any>;
-  abstract buyDirect(data: ArgBuyDirect): Promise<any>;
+  abstract buyDirect(data: ArgBuyDirect, p?: Promise<void>): Promise<any>;
   abstract getGoodsInfo(url: string, skus?: number[]): Promise<any>;
   abstract getNextDataByGoodsInfo(data: any, quantity: number): any;
   abstract submitOrder(data: ArgOrder<any>): Promise<any>;

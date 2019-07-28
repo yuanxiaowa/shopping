@@ -1,7 +1,7 @@
-import { Jindong } from "./app/platform/jd";
+import { Jingdong } from "./app/platform/jd";
 import { Taobao } from "./app/platform/taobao";
 
-new Jindong().start();
+new Jingdong().start();
 new Taobao().start();
 
 // 【京东6月22日领券汇总】

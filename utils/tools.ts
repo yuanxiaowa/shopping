@@ -26,7 +26,7 @@ export function diffToNow(s: string) {
 }
 
 export function delay(t = 1000) {
-  return new Promise(resolve => setTimeout(resolve, t));
+  return new Promise<void>(resolve => setTimeout(resolve, t));
 }
 
 export function timer(t: number, total = Number.MAX_VALUE) {

@@ -94,11 +94,11 @@ export class Taobao extends AutoShop {
   commentList(args) {
     return commentList(args.type, args.page);
   }
-  buyDirect(data: ArgBuyDirect): Promise<any> {
+  buyDirect(data: ArgBuyDirect, p?: Promise<void>): Promise<any> {
     if (data.from_pc) {
-      return this.buyDirectFromPc(data);
+      return this.buyDirectFromPc(data, p);
     }
-    return this.buyDirectFromMobile(data);
+    return this.buyDirectFromMobile(data, p);
   }
   async coudan(ids: string[]): Promise<any> {
     var list = await this.cartList({});
@@ -157,7 +157,7 @@ export class Taobao extends AutoShop {
     };
   }
 
-  async buyDirectFromMobile(args: ArgBuyDirect) {
+  async buyDirectFromMobile(args: ArgBuyDirect, p?: Promise<void>) {
     var data = await this.getGoodsInfo(args.url, args.skus);
     if (data.quantity < args.quantity) {
       if (args.jianlou) {
@@ -189,6 +189,9 @@ export class Taobao extends AutoShop {
       if (!data.buyEnable) {
         throw new Error(data.msg || "不能购买");
       }
+      if (p) {
+        await p;
+      }
       return submitOrder(
         Object.assign(args, {
           data: this.getNextDataByGoodsInfo(data, args.quantity)
@@ -206,6 +209,7 @@ export class Taobao extends AutoShop {
     }
     return getGoodsList(args);
   }
+
   coupons = getCoupons;
   seckillList = seckillList;
   sixtyCourseList = sixtyCourseList;
@@ -282,13 +286,16 @@ export class Taobao extends AutoShop {
     return;
   }
 
-  async buyDirectFromPc({ url, quantity }: ArgBuyDirect) {
-    var html: string = await this.req.get(url, {
-      headers: {
-        "user-agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
+  async buyDirectFromPc({ url, quantity }: ArgBuyDirect, p?: Promise<void>) {
+    var html: string = await this.req.get(
+      url.replace("detail.m.tmall.com/", "detail.tmall.com/"),
+      {
+        headers: {
+          "user-agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
+        }
       }
-    });
+    );
     this.logFile(url + "\n" + html, "直接购买-商品详情");
     var text = /TShop.Setup\(\s*(.*)\s*\);/.exec(html)![1];
     var {
@@ -378,6 +385,9 @@ export class Taobao extends AutoShop {
       ele.submit();
     }, form); */
     console.log("进入订单结算页");
+    if (p) {
+      await p;
+    }
     try {
       var ret = await this.submitOrderFromPc({
         data: {

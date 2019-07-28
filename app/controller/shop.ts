@@ -93,10 +93,11 @@ export default class ShopController extends Controller {
     if (platform === "taobao" && data.mc_dot1) {
       let id = await ins.cartAdd(data);
       let items: any[] = await ins.goodsList({
-        name: "chaoshi"
+        name: "chaoshi",
+        keyword: ""
       });
       let i = items.findIndex(item => Number(item.price) > 0.01);
-      let ids: number[] = [id];
+      let ids: string[] = [id];
       for (let { url } of items.slice(0, i)) {
         try {
           let id = await ins.cartAdd({
@@ -111,20 +112,7 @@ export default class ShopController extends Controller {
     }
     var dt = moment(t).diff(moment()) - DT;
     if (dt > 0) {
-      (async () => {
-        let p1 = delay(dt);
-        let goodsInfo = await ins.getGoodsInfo(data.url, data.skus);
-        let nextData = ins.getNextDataByGoodsInfo(goodsInfo, data.quantity);
-        await p1;
-        console.log(platform, "直接下单");
-        await handle(
-          ins.submitOrder(
-            Object.assign(data, {
-              data: nextData
-            })
-          )
-        );
-      })();
+      ins.buyDirect(data, delay(dt));
       ctx.body = {
         code: 0,
         msg: moment(t || undefined).fromNow() + " 将直接下单"

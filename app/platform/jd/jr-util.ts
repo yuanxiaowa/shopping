@@ -163,9 +163,12 @@ export async function check() {
 }
 
 export async function login(page: Page) {
-  await page.goto(
-    "https://plogin.m.jd.com/user/login.action?appid=100&kpkey=&returnurl=https%3A%2F%2Fuuj.jr.jd.com%2Fwxgrowing%2Fmoneytree7%2Findex.html%3Fchannellv%3Dsy%26sid%3Dab609165f5b75d4f3516e331b1fa3ddw%26utm_term%3Dwxfriends%26utm_source%3DiOS*url*1563119411045%26utm_medium%3Djrappshare"
-  );
+  var url =
+    "https://plogin.m.jd.com/user/login.action?appid=100&kpkey=&returnurl=https%3A%2F%2Fuuj.jr.jd.com%2Fwxgrowing%2Fmoneytree7%2Findex.html%3Fchannellv%3Dsy%26sid%3Dab609165f5b75d4f3516e331b1fa3ddw%26utm_term%3Dwxfriends%26utm_source%3DiOS*url*1563119411045%26utm_medium%3Djrappshare";
+  await page.goto(url);
+  if (page.url() !== url) {
+    return delay(3000);
+  }
   await page.type("#username", user.username);
   await page.type("#password", user.password);
   await page.click("#loginBtn");

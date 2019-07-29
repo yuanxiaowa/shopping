@@ -69,8 +69,13 @@ export async function newPage() {
   return page;
 }
 
-export async function getPageCookie(page: Page) {
-  var cookies = await page.cookies();
+export async function getPageCookie(page: Page, urls?: string[]) {
+  var cookies: any;
+  if (urls) {
+    cookies = await page.cookies(...urls);
+  } else {
+    cookies = await page.cookies();
+  }
   var cookie_str = cookies
     .map(cookie => `${cookie.name}=${cookie.value}`)
     .join("; ");

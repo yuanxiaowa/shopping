@@ -297,7 +297,7 @@ export class Jingdong extends AutoShop {
 
   onFirstLogin() {
     getShopJindou();
-    getVideoHongbao();
+    // getVideoHongbao();
     this.req.get("https://vip.jd.com/sign/index");
   }
 

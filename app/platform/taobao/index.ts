@@ -423,6 +423,11 @@ export class Taobao extends AutoShop {
         Referer
       }
     });
+    if (html.includes("security-X5")) {
+      console.log("-------提交碰到验证拦截--------");
+      this.logFile(html, "订单提交验证拦截");
+      return;
+    }
     this.logFile(addr_url + "\n" + html, "订单结算页");
     var text = /var orderData = (.*);/.exec(html)![1];
     var {

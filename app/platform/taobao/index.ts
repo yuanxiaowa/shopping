@@ -300,7 +300,7 @@ export class Taobao extends AutoShop {
     var text = /TShop.Setup\(\s*(.*)\s*\);/.exec(html)![1];
     // detail.isHiddenShopAction
     var { itemDO, valItemInfo, tradeConfig } = JSON.parse(text);
-    if (itemDO.isOnline) {
+    if (!itemDO.isOnline) {
       throw new Error("商品已下架");
     }
     let form_str = /<form id="J_FrmBid"[^>]*>([\s\S]*?)<\/form>/.exec(html)![1];

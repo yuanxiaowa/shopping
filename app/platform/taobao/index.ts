@@ -298,11 +298,7 @@ export class Taobao extends AutoShop {
     );
     this.logFile(url + "\n" + html, "直接购买-商品详情");
     var text = /TShop.Setup\(\s*(.*)\s*\);/.exec(html)![1];
-    var {
-      itemDO,
-      valItemInfo: { skuList, skuMap },
-      tradeConfig
-    } = JSON.parse(text);
+    var { itemDO, valItemInfo, tradeConfig } = JSON.parse(text);
     var form_str = /<form id="J_FrmBid"[^>]*>([\s\S]*?)<\/form>/.exec(html)![1];
     var form_item_r = /\sname="([^"]+)"\s+value="([^"]*)"/g;
     var form: Record<string, string> = {};
@@ -312,14 +308,17 @@ export class Taobao extends AutoShop {
     if (!form.buyer_from) {
       form.buyer_from = "ecity";
     }
-    var skuItem = skuList.find(
-      (item: any) => skuMap[`;${item.pvs};`].stock > 0
-    );
-    var skuId: string;
-    if (skuItem) {
-      skuId = skuItem.skuId;
-    } else {
-      throw new Error("没货了");
+    var skuId = "0";
+    if (valItemInfo) {
+      let { skuList, skuMap } = valItemInfo;
+      var skuItem = skuList.find(
+        (item: any) => skuMap[`;${item.pvs};`].stock > 0
+      );
+      if (skuItem) {
+        skuId = skuItem.skuId;
+      } else {
+        throw new Error("没货了");
+      }
     }
     Object.assign(form, {
       root_refer: "",
@@ -441,8 +440,10 @@ export class Taobao extends AutoShop {
       > & {
         confirmOrder_1: {
           fields: {
+            pcSubmitUrl: string;
             secretValue: string;
             sparam1: string;
+            sparam2: string;
           };
         };
       };
@@ -460,8 +461,8 @@ export class Taobao extends AutoShop {
       };
     } = JSON.parse(text);
     console.log("-----进入订单结算页，准备提交订单----");
+    var { confirmOrder_1 } = data;
     try {
-      var url = /action="([^"]*)/.exec(html)![1].replace("&amp;", "&");
       var formData = [
         "_tb_token_",
         "action",
@@ -481,40 +482,45 @@ export class Taobao extends AutoShop {
       if (!config.isSubmitOrder) {
         return;
       }
-      var ret: string = await this.req.post(`https://buy.tmall.com${url}`, {
-        qs: {
-          spm: "a220l.1.a22016.d011001001001.undefined",
-          submitref: data.confirmOrder_1.fields.secretValue,
-          sparam1: data.confirmOrder_1.fields.sparam1
-        },
-        form: {
-          ...formData,
-          praper_alipay_cashier_domain: "cashierstl",
-          hierarchy: JSON.stringify({
-            structure
-          }),
-          data: JSON.stringify(
-            Object.keys(data).reduce((state: any, name) => {
-              var item = data[name];
-              if (item.submit) {
-                if (item.tag === "submitOrder") {
-                  if (item.fields) {
-                    if (ua_log) {
-                      item.fields.ua = ua_log;
+      delete linkage.common.queryParams;
+      var ret: string = await this.req.post(
+        `https://buy.tmall.com${confirmOrder_1.fields.pcSubmitUrl}`,
+        {
+          qs: {
+            spm: `a220l.1.a22016.d011001001001.undefined`,
+            submitref: confirmOrder_1.fields.secretValue,
+            sparam1: confirmOrder_1.fields.sparam1,
+            sparam2: confirmOrder_1.fields.sparam2
+          },
+          form: {
+            ...formData,
+            praper_alipay_cashier_domain: "cashierstl",
+            hierarchy: JSON.stringify({
+              structure
+            }),
+            data: JSON.stringify(
+              Object.keys(data).reduce((state: any, name) => {
+                var item = data[name];
+                if (item.submit) {
+                  if (item.tag === "submitOrder") {
+                    if (item.fields) {
+                      if (ua_log) {
+                        item.fields.ua = ua_log;
+                      }
                     }
                   }
+                  state[name] = item;
                 }
-                state[name] = item;
-              }
-              return state;
-            }, {})
-          ),
-          linkage: JSON.stringify({
-            common: linkage.common,
-            signature: linkage.signature
-          })
+                return state;
+              }, {})
+            ),
+            linkage: JSON.stringify({
+              common: linkage.common,
+              signature: linkage.signature
+            })
+          }
         }
-      });
+      );
       if (ret.indexOf("security-X5") > -1) {
         console.log("-------提交碰到验证拦截--------");
         this.logFile(ret, "订单提交验证拦截");

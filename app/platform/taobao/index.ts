@@ -298,20 +298,24 @@ export class Taobao extends AutoShop {
     );
     this.logFile(url + "\n" + html, "直接购买-商品详情");
     var text = /TShop.Setup\(\s*(.*)\s*\);/.exec(html)![1];
+    // detail.isHiddenShopAction
     var { itemDO, valItemInfo, tradeConfig } = JSON.parse(text);
-    var form_str = /<form id="J_FrmBid"[^>]*>([\s\S]*?)<\/form>/.exec(html)![1];
-    var form_item_r = /\sname="([^"]+)"\s+value="([^"]*)"/g;
-    var form: Record<string, string> = {};
+    if (itemDO.isOnline) {
+      throw new Error("商品已下架");
+    }
+    let form_str = /<form id="J_FrmBid"[^>]*>([\s\S]*?)<\/form>/.exec(html)![1];
+    let form_item_r = /\sname="([^"]+)"\s+value="([^"]*)"/g;
+    let form: Record<string, string> = {};
     while (form_item_r.test(form_str)) {
       form[RegExp.$1] = RegExp.$2;
     }
     if (!form.buyer_from) {
       form.buyer_from = "ecity";
     }
-    var skuId = "0";
+    let skuId = "0";
     if (valItemInfo) {
       let { skuList, skuMap } = valItemInfo;
-      var skuItem = skuList.find(
+      let skuItem = skuList.find(
         (item: any) => skuMap[`;${item.pvs};`].stock > 0
       );
       if (skuItem) {

@@ -387,7 +387,6 @@ export class Taobao extends AutoShop {
       document.body.appendChild(ele);
       ele.submit();
     }, form); */
-    console.log("进入订单结算页");
     if (p) {
       await p;
     }
@@ -420,7 +419,8 @@ export class Taobao extends AutoShop {
     var {
       data: { form, addr_url, Referer }
     } = args;
-    this.logFile(addr_url + "\n" + JSON.stringify(form), "进入订单结算页");
+    console.log("准备进入订单结算页");
+    this.logFile(addr_url + "\n" + JSON.stringify(form), "准备进入订单结算页");
     var html: string = await this.req.post(addr_url, {
       form,
       headers: {
@@ -428,9 +428,10 @@ export class Taobao extends AutoShop {
       }
     });
     if (html.lastIndexOf("security-X5", html.indexOf("</title>")) > -1) {
-      console.log("-------进入订单结算页碰到验证拦截--------");
+      let msg = "进入订单结算页碰到验证拦截";
+      console.log(`-------${msg}--------`);
       this.logFile(html, "订单提交验证拦截");
-      return;
+      throw new Error(msg);
     }
     this.logFile(addr_url + "\n" + html, "订单结算页");
     var text = /var orderData = (.*);/.exec(html)![1];
@@ -471,27 +472,30 @@ export class Taobao extends AutoShop {
     } = JSON.parse(text);
     console.log("-----进入订单结算页，准备提交订单----");
     var { confirmOrder_1 } = data;
+    var formData = [
+      "_tb_token_",
+      "action",
+      "event_submit_do_confirm",
+      "input_charset",
+      // "praper_alipay_cashier_domain",
+      "authYiYao",
+      "authHealth",
+      "F_nick"
+    ].reduce((state: any, name) => {
+      state[name] = new RegExp(
+        `name=['"]${name}['"].*? value=['"](.*?)['"]`
+      ).exec(html)![1];
+      return state;
+    }, {});
+    var ua_log = "";
+    if (structure.invalidGroup_2) {
+      throw new Error("存在无效商品");
+    }
+    if (!config.isSubmitOrder) {
+      return;
+    }
+    delete linkage.common.queryParams;
     try {
-      var formData = [
-        "_tb_token_",
-        "action",
-        "event_submit_do_confirm",
-        "input_charset",
-        // "praper_alipay_cashier_domain",
-        "authYiYao",
-        "authHealth",
-        "F_nick"
-      ].reduce((state: any, name) => {
-        state[name] = new RegExp(
-          `name=['"]${name}['"].*? value=['"](.*?)['"]`
-        ).exec(html)![1];
-        return state;
-      }, {});
-      var ua_log = "";
-      if (!config.isSubmitOrder) {
-        return;
-      }
-      delete linkage.common.queryParams;
       var ret: string = await this.req.post(
         `https://buy.tmall.com${confirmOrder_1.fields.pcSubmitUrl}`,
         {
@@ -569,7 +573,6 @@ export class Taobao extends AutoShop {
         attr
       })
     );
-    console.log("进入订单结算页");
     var form = {
       hex: "n",
       cartId: cartIdStr,
@@ -587,10 +590,8 @@ export class Taobao extends AutoShop {
     await this.submitOrderFromPc({
       data: {
         form,
-        addr_url: `https://buy.tmall.com/order/confirm_order.htm?spm=${
-          this.spm
-        }`,
-        Referer: `https://cart.taobao.com/cart.htm?spm=a21bo.2017.1997525049.1.5af911d9eInVdr&from=mini&ad_id=&am_id=&cm_id=`
+        addr_url: `https://buy.tmall.com/order/confirm_order.htm?spm=aa1z0d.6639537.0.0.undefined`,
+        Referer: `https://cart.taobao.com/cart.htm?spm=a220o.1000855.a2226mz.12.5ada2389fIdDSp&from=btop`
       },
       other: {}
     });

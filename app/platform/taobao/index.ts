@@ -427,8 +427,8 @@ export class Taobao extends AutoShop {
         Referer
       }
     });
-    if (html.lastIndexOf("security-X5", html.indexOf("</title>"))) {
-      console.log("-------提交碰到验证拦截--------");
+    if (html.lastIndexOf("security-X5", html.indexOf("</title>")) > -1) {
+      console.log("-------进入订单结算页碰到验证拦截--------");
       this.logFile(html, "订单提交验证拦截");
       return;
     }

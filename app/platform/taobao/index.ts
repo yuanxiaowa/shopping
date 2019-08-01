@@ -531,6 +531,17 @@ export class Taobao extends AutoShop {
               common: linkage.common,
               signature: linkage.signature
             })
+          },
+          headers: {
+            Referer: addr_url,
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-User": "?1",
+            Accept:
+              "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
+            "Sec-Fetch-Site": "same-origin",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Language": "zh-CN,zh;q=0.9",
+            "Upgrade-Insecure-Requests": "1"
           }
         }
       );

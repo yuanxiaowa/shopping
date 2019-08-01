@@ -1052,8 +1052,10 @@ export async function seckillList(name: string) {
     } = await requestData(
       "mtop.tmall.kangaroo.core.service.route.PageRecommendService",
       {
+        // https://pages.tmall.com/wow/chaoshi/act/wupr?ut_sk=1.WkOnn8QgYxYDAC42U2ubIAfi_21380790_1564621722050.Copy.chaoshi_act_page_tb&acm=201903280.1003.2.6362801&spm=a3204.12691414.1996846437.dBrand1&disableNav=YES&wh_pid=act%2Fbtbt&pos=1&wh_biz=tm&disableAB=true&suid=F566F29F-EC9D-41E1-94D3-C01BE8CAF17A&sourceType=other&utparam=%7B%22ranger_buckets%22%3A%223042%22%7D&scm=1003.2.201903280.OTHER_1564295073903_6362801&ttid=201200%40taobao_iphone_8.8.0&un=35fb12d24e9c47d946e6040d6f65052e&share_crt_v=1&sp_tk=77+lME0wOFlSV29jemLvv6U=&cpp=1&shareurl=true&short_name=h.eiq3Ce6&sm=4fb1c6&app=chrome
+        // https://pages.tmall.com/wow/chaoshi/act/wupr?ut_sk=1.WkOnn8QgYxYDAC42U2ubIAfi_21380790_1563192248243.Copy.chaoshi_act_page_tb&__share__id__=1&share_crt_v=1&disableNav=YES&wh_pid=act%2Fxsj23874&tkFlag=1&disableAB=true&suid=1031708C-2844-47E2-B140-3CF358C1BD43&type=2&sp_tk=77%2BlelYxOVlob1FlTkrvv6U%3D&sourceType=other&tk_cps_param=127911237&un=04ec1ab5583d2c369eedd86203cf18d8&utparam=%7B%22ranger_buckets%22%3A%223042%22%7D&e=PlboetXBlJK4bXDJ8jCpJrfVFcC6KYAblz9f5x7nqEUPJTSplvxzY6R06N4nt-6t_nNM24L0rnGF2sp581q3i4RqxKSGsgCT8sviUM61dt2gxEj7ajbEb4gLMZYNRhg2HXKHH0u77i-I6M_vqqSeLITsM14S2xgDx9iN37b51zJw2qH-L52L1aTWVSTo88aBYOGm2rjvgGhaQJhxUPUeEtKYMBXg69krrlYyo_QbwE_DG_1N5hlzNg&ttid=201200%40taobao_iphone_8.8.0&cpp=1&shareurl=true&spm=a313p.22.kp.1050196516672&short_name=h.eS0ZZuy&sm=933952&app=chrome
         url:
-          "https://pages.tmall.com/wow/chaoshi/act/wupr?ut_sk=1.WkOnn8QgYxYDAC42U2ubIAfi_21380790_1563192248243.Copy.chaoshi_act_page_tb&__share__id__=1&share_crt_v=1&disableNav=YES&wh_pid=act%2Fxsj23874&tkFlag=1&disableAB=true&suid=1031708C-2844-47E2-B140-3CF358C1BD43&type=2&sp_tk=77%2BlelYxOVlob1FlTkrvv6U%3D&sourceType=other&tk_cps_param=127911237&un=04ec1ab5583d2c369eedd86203cf18d8&utparam=%7B%22ranger_buckets%22%3A%223042%22%7D&e=PlboetXBlJK4bXDJ8jCpJrfVFcC6KYAblz9f5x7nqEUPJTSplvxzY6R06N4nt-6t_nNM24L0rnGF2sp581q3i4RqxKSGsgCT8sviUM61dt2gxEj7ajbEb4gLMZYNRhg2HXKHH0u77i-I6M_vqqSeLITsM14S2xgDx9iN37b51zJw2qH-L52L1aTWVSTo88aBYOGm2rjvgGhaQJhxUPUeEtKYMBXg69krrlYyo_QbwE_DG_1N5hlzNg&ttid=201200%40taobao_iphone_8.8.0&cpp=1&shareurl=true&spm=a313p.22.kp.1050196516672&short_name=h.eS0ZZuy&sm=933952&app=chrome",
+          "https://pages.tmall.com/wow/chaoshi/act/wupr?ut_sk=1.WkOnn8QgYxYDAC42U2ubIAfi_21380790_1564621722050.Copy.chaoshi_act_page_tb&acm=201903280.1003.2.6362801&spm=a3204.12691414.1996846437.dBrand1&disableNav=YES&wh_pid=act%2Fbtbt&pos=1&wh_biz=tm&disableAB=true&suid=F566F29F-EC9D-41E1-94D3-C01BE8CAF17A&sourceType=other&utparam=%7B%22ranger_buckets%22%3A%223042%22%7D&scm=1003.2.201903280.OTHER_1564295073903_6362801&ttid=201200%40taobao_iphone_8.8.0&un=35fb12d24e9c47d946e6040d6f65052e&share_crt_v=1&sp_tk=77+lME0wOFlSV29jemLvv6U=&cpp=1&shareurl=true&short_name=h.eiq3Ce6&sm=4fb1c6&app=chrome",
         cookie: "sm4=320506;hng=CN|zh-CN|CNY|156",
         device: "phone",
         backupParams: "device"
@@ -1229,6 +1231,51 @@ export async function sixtyCourseList() {
     key => /actId=(\w+)/.exec(areas[key].data.href)![1]
   );
   return Promise.all(actIds.map(getSixtyCourse));
+}
+
+export async function checkLogin() {
+  try {
+    await requestData("mtop.user.getUserSimple", {}, "get", "1.0");
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * 检测是否已关注
+ * @param data
+ */
+export async function checkFollowRelation(data: {
+  targetId: string;
+  followTag: string;
+  source: string;
+  bizName: string;
+}) {
+  var { followResult } = await requestData(
+    "mtop.tmall.caitlin.relation.common.follow",
+    data,
+    "get",
+    "1.0"
+  );
+  return followResult === "true";
+}
+
+/**
+ * 打开邀请函
+ * @param data
+ */
+export async function openInvitation(data: {
+  sellerId: string;
+  actId: string;
+  token: string;
+}) {
+  var res3 = await requestData(
+    "mtop.tmall.fansparty.fansday.superfansinvation.openinvitation",
+    data,
+    "get",
+    "1.0"
+  );
 }
 
 export async function sixtyCourseReply({

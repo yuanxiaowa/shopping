@@ -545,8 +545,15 @@ export async function getFanliCoupon(url: string) {
         platform: null,
         skuId: searchParams.get("skuId"),
         type: searchParams.get("type"),
-        activityId: searchParams.get("activityId"),
-        pageClickKey: "coupon_icon2?platform=androidgoods17get2"
+        activityId: searchParams.get("activityId") || "",
+        pageClickKey: `"coupon_icon${searchParams.get(
+          "couponIndex"
+        )}goods${searchParams.get("goodIndex")}get2"`
+      },
+      headers: {
+        Referer: url
+        // "user-agent":
+        // "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3835.0 Safari/537.36"
       }
     }
   );

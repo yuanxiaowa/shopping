@@ -2,6 +2,7 @@ import AutoShop from "../auto-shop";
 import { getCookie, createTimerExcuter, delay } from "../../../utils/tools";
 import { getPcCartInfo } from "./pc";
 import { Page } from "puppeteer";
+import iconv = require("iconv-lite");
 import taobaoHandlers from "./handlers";
 import taobaoCouponHandlers from "./coupon-handlers";
 import { resolveTaokouling, resolveUrl } from "./tools";
@@ -21,7 +22,8 @@ import {
   getChaoshiGoodsList,
   getCoupons,
   getGoodsList,
-  getGoodsListCoudan
+  getGoodsListCoudan,
+  checkLogin
 } from "./goods";
 import { newPage } from "../../../utils/page";
 import { readJSONSync } from "fs-extra";
@@ -54,6 +56,7 @@ export class Taobao extends AutoShop {
     );
     var text: string = await res.text();
     return !text.includes("FAIL_SYS_SESSION_EXPIRED::SESSION失效");
+    // return checkLogin();
   }
   resolveUrl = resolveUrl;
   async resolveUrls(text: string): Promise<string[]> {
@@ -511,22 +514,27 @@ export class Taobao extends AutoShop {
             hierarchy: JSON.stringify({
               structure
             }),
-            data: JSON.stringify(
-              Object.keys(data).reduce((state: any, name) => {
-                var item = data[name];
-                if (item.submit) {
-                  if (item.tag === "submitOrder") {
-                    if (item.fields) {
-                      if (ua_log) {
-                        item.fields.ua = ua_log;
+            data: iconv
+              .encode(
+                JSON.stringify(
+                  Object.keys(data).reduce((state: any, name) => {
+                    var item = data[name];
+                    if (item.submit) {
+                      if (item.tag === "submitOrder") {
+                        if (item.fields) {
+                          if (ua_log) {
+                            item.fields.ua = ua_log;
+                          }
+                        }
                       }
+                      state[name] = item;
                     }
-                  }
-                  state[name] = item;
-                }
-                return state;
-              }, {})
-            ),
+                    return state;
+                  }, {})
+                ),
+                "gbk"
+              )
+              .toString(),
             linkage: JSON.stringify({
               common: linkage.common,
               signature: linkage.signature
@@ -554,6 +562,7 @@ export class Taobao extends AutoShop {
       console.log("-----订单提交成功，等待付款----");
     } catch (e) {
       console.trace(e);
+      console.log("重试中");
       return this.submitOrderFromPc(args);
     }
   }

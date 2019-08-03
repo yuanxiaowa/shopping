@@ -259,8 +259,13 @@ export async function obtainFloorCoupon(data: { key: string; level: string }) {
  */
 export async function queryActivityCoupons(url: string) {
   let html: string = await req.get(url);
-  let text = /window.dataHub\d+=(.*);/.exec(html)![1];
-  let data = JSON.parse(text);
+  let arr = /window.(dataHub\d+|__react_data__)\s*=(.*);?/.exec(html)!;
+  let key = arr[1];
+  let data = JSON.parse(arr[2]);
+  if (key === "__react_data__") {
+    data = data.activityData.floorList;
+  }
+  let activityId = /active\/(\w+)/.exec(url)![1];
   let ret: {
     cpId: string;
     args: string;
@@ -276,7 +281,11 @@ export async function queryActivityCoupons(url: string) {
     limit: string;
   }[][] = Object.keys(data)
     .filter(key => data[key].couponList)
-    .map(key => data[key].couponList);
+    .map(key =>
+      data[key].couponList.map(item =>
+        Object.assign({ activityId, actKey: item.cpId }, item)
+      )
+    );
   return ret;
 }
 
@@ -292,6 +301,7 @@ export async function obtainActivityCoupon(data: {
     {
       form: {
         body: JSON.stringify({
+          actKey: data.actKey,
           activityId: data.activityId,
           from: "H5node",
           scene: data.scene,

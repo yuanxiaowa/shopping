@@ -7,7 +7,8 @@ import {
   getCouponSingle,
   getShopCoupons,
   getFanliCoupon,
-  obtainGoodsCoupon
+  obtainGoodsCoupon,
+  getCouponZeus
 } from "./goods";
 import { newPage } from "../../../utils/page";
 import { delay } from "../../../utils/tools";
@@ -96,8 +97,12 @@ const jingdongCouponHandlers = {
     }
   },
   quanpinByPhone: {
-    test: startsWith("https://h5.m.jd.com/babelDiy/Zeus"),
+    test: startsWith("https://h5.m.jd.com/dev/"),
     handler: getQuanpinCoupon
+  },
+  couponZeus: {
+    test: startsWith("https://h5.m.jd.com/babelDiy/Zeus"),
+    handler: getCouponZeus
   },
   shop: {
     test: startsWith("https://shop.m.jd.com/?"),

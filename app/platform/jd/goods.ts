@@ -329,32 +329,29 @@ async function requestData(
   body: any,
   {
     functionId,
-    isApi = true
+    api = "api"
   }: {
     functionId: string;
-    isApi?: boolean;
+    api?: string;
   }
 ) {
-  var text: string = await req.get(
-    "https://api.m.jd.com/" + (isApi ? "api" : ""),
-    {
-      qs: {
-        client: "wh5",
-        clientVersion: "2.0.0",
-        agent:
-          "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.90 Safari/537.36",
-        lang: "zh_CN",
-        networkType: "4g",
-        eid,
-        fp,
-        functionId,
-        body: JSON.stringify(body),
-        jsonp: "cb",
-        loginType: 2,
-        _: Date.now()
-      }
+  var text: string = await req.get("https://api.m.jd.com/" + api, {
+    qs: {
+      client: "wh5",
+      clientVersion: "2.0.0",
+      agent:
+        "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.90 Safari/537.36",
+      lang: "zh_CN",
+      networkType: "4g",
+      eid,
+      fp,
+      functionId,
+      body: JSON.stringify(body),
+      jsonp: "cb",
+      loginType: 2,
+      _: Date.now()
     }
-  );
+  });
   var res = getJsonpData(text);
   let { data, code, msg } = res;
   if (code !== 0) {
@@ -386,7 +383,7 @@ export async function getQuanpinCoupon(url: string, phone = "18605126843") {
     },
     {
       functionId: "activityLongPage",
-      isApi: false
+      api: ""
     }
   );
   let {
@@ -406,6 +403,80 @@ export async function getQuanpinCoupon(url: string, phone = "18605126843") {
     url: activityUrl,
     msg: minorTitle
   };
+}
+
+/**
+ *
+ * @param url
+ * @example https://h5.m.jd.com/babelDiy/Zeus/qYwUMpSiiovLbsS5Lw4XNf8u58r/index.html?lng=104.758990&cu=true&un_area=12_911_914_51563&sid=e14edc99d2ab2581774bbbd84f47296w&_ts=1564765855849&utm_user=plusmember&ad_od=share&cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=f693db4b94cd4620afcb394dcff92bdf
+ */
+export async function getCouponZeus(url: string) {
+  // var { searchParams } = new URL(url);
+  var { bankCoupons, normalCoupons } = await requestData(
+    {
+      activityId: "00461561",
+      pageId: "1044474",
+      qryParam: JSON.stringify([
+        {
+          type: "advertGroup",
+          id: "03590654",
+          mapTo: "normalCoupons",
+          next: [
+            {
+              type: "plusCoupon",
+              subType: "material",
+              mapKey: "comment[0]",
+              mapTo: "cate"
+            }
+          ]
+        },
+        {
+          type: "advertGroup",
+          id: "03592688",
+          mapTo: "bankCoupons",
+          next: [{ type: "jrCoupon", mapKey: "extension.key", mapTo: "cate" }]
+        },
+        {
+          type: "productGroup",
+          id: "09963245",
+          mapTo: "giftskus",
+          diversityFilter: "1,5,9,13,17",
+          dupliRemovalFlag: 1
+        },
+        { type: "advertGroup", id: "03602534", mapTo: "loveListDataGirl" },
+        { type: "advertGroup", id: "03602977", mapTo: "loveListDataBoy" },
+        { type: "advertGroup", id: "03607171", mapTo: "loveListDataSingle" },
+        { type: "advertGroup", id: "03603919", mapTo: "rankTab" },
+        {
+          type: "productGroup",
+          id: "09965963",
+          mapTo: "more",
+          diversityFilter: "1,5,9,13,17"
+        }
+      ])
+    },
+    {
+      functionId: "qryCompositeMaterials",
+      api: "client.action"
+    }
+  );
+  return Promise.all(
+    bankCoupons.list.concat(normalCoupons.list).map(item =>
+      executer(() =>
+        requestData(
+          {
+            scene: 3,
+            actKey: item.link,
+            activityId: /Zeus\/(\w+)/.exec(url)![1]
+          },
+          {
+            functionId: "newBabelAwardCollection",
+            api: "client.action"
+          }
+        )
+      )
+    )
+  );
 }
 
 /**
@@ -1433,6 +1504,59 @@ export async function calcPrice({
   return R.uniqBy<any, any>(item => item.num)(
     ret.sort((item1, item2) => item1.price - item2.price)
   );
+}
+
+export async function getShopCollection(args: any) {
+  var text: string = await req.get(
+    "https://wq.jd.com/fav/shop/QueryShopFavList",
+    {
+      qs: {
+        cp: args.page || 1,
+        pageSize: "10",
+        lastlogintime: "0",
+        _: Date.now(),
+        sceneval: "2",
+        g_login_type: "1",
+        callback: "jsonpCBKA",
+        g_ty: "ls"
+      },
+      headers: {
+        Referer:
+          "https://wqs.jd.com/my/fav/shop_fav.shtml?ptag=7155.1.9&sceneval=2"
+      }
+    }
+  );
+  var { data, totalPage } = getJsonpData(text);
+  var items = data.map(item => {
+    return {
+      id: item.shopId,
+      title: item.shopName,
+      img: item.shopUrl,
+      url: `https://shop.m.jd.com/?shopId=${item.shopId}`
+    };
+  });
+  return {
+    page: args.page,
+    items,
+    more: Number(args.page) < Number(totalPage)
+  };
+}
+
+export async function deleteShop(items: any[]) {
+  var text = await req.get("https://wq.jd.com/fav/shop/batchunfollow", {
+    qs: {
+      shopId: items.map(({ id }) => id).join(","),
+      _: Date.now(),
+      sceneval: "2",
+      g_login_type: "1",
+      callback: "jsonpCBKF",
+      g_ty: "ls"
+    }
+  });
+  var { iRet, errMsg } = getJsonpData(text);
+  if (iRet !== "0") {
+    throw new Error(errMsg);
+  }
 }
 
 export function getGoodsUrl(skuId: string) {

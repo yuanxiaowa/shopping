@@ -14,7 +14,9 @@ import {
   updateCartQuantity,
   calcPrice,
   getGoodsInfo,
-  getSkuId
+  getSkuId,
+  getShopCollection,
+  deleteShop
 } from "./goods";
 import jingdongHandlers from "./handlers";
 import jingdongCouponHandlers from "./coupon-handlers";
@@ -22,6 +24,7 @@ import { resolveUrl } from "./tools";
 import { config } from "../../common/config";
 import { delay, getCookie, createTimerExcuter } from "../../../utils/tools";
 import qs = require("querystring");
+import cheerio = require("cheerio");
 import { ArgBuyDirect, ArgOrder } from "../struct";
 const user = require("../../../.data/user.json").jingdong;
 
@@ -122,9 +125,42 @@ export class Jingdong extends AutoShop {
   async comment(data: any): Promise<any> {
     return Promise.all(data.orderIds.map(addComment));
   }
-  commentList(data: { page: number; type: number }): Promise<any> {
+  async commentList(data: { page: number; type: number }): Promise<any> {
     // 2:待收货 3:全部 5:已取消 6:已完成 7:有效订单 8:待评价
-    return getCommentList(data.type, data.page);
+    // return getCommentList(data.type, data.page);
+    var page = await newPage();
+    await page.goto("https://club.jd.com/myJdcomments/myJdcomment.action");
+    var text = await page.content();
+    page.close();
+    /* var text = await this.req.get(
+      "https://club.jd.com/myJdcomments/myJdcomment.action"
+    ); */
+    var $ = cheerio.load(text);
+    var items = $(".tr-bd")
+      .map((i, ele) => {
+        var $ele = $(ele);
+        var img = $ele.find("img").attr("src");
+        var $a = $ele.find(".p-name a");
+        var id = /ruleid=(\w+)/.exec($ele.find(".btn-def").attr("href"))![1];
+        return {
+          id,
+          items: [
+            {
+              id,
+              title: $a.text().trim(),
+              img,
+              url: $a.attr("href")
+            }
+          ]
+        };
+      })
+      .get();
+    var $cur = $(".ui-page-curr");
+    return {
+      page: data.page,
+      items,
+      more: $cur.next().attr("href") !== "#none"
+    };
   }
 
   async buyDirect(args: ArgBuyDirect, p?: Promise<void>): Promise<any> {
@@ -266,6 +302,9 @@ export class Jingdong extends AutoShop {
     await page.waitForNavigation();
     await page.close();
   }
+
+  getShopCollection = getShopCollection;
+  deleteShop = deleteShop;
 
   async start() {
     await super.start();

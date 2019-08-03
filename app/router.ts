@@ -23,6 +23,9 @@ export default (app: Application) => {
   router.get("/coupons", controller.shop.coupons);
   router.get("/calc/price", controller.shop.calcPrice);
 
+  router.get("/shop", controller.shop.shopCollection);
+  router.post("/shop/del", controller.shop.shopDelete);
+
   router.get("/check/status", controller.shop.checkStatus);
 
   router.get("/sixty-course/list", controller.shop.sixtyCourseList);

@@ -150,6 +150,17 @@ export default class ShopController extends Controller {
     var { platform } = ctx.query;
     ctx.body = await handle(app[platform].coupons(ctx.query));
   }
+  public async shopCollection() {
+    const { ctx, app } = this;
+    var { platform } = ctx.query;
+    ctx.body = await handle(app[platform].getShopCollection(ctx.query));
+  }
+  public async shopDelete() {
+    const { ctx, app } = this;
+    var { platform } = ctx.query;
+    var { data } = ctx.request.body;
+    ctx.body = await handle(app[platform].deleteShop(data));
+  }
   public async commentList() {
     const { ctx, app } = this;
     var { platform } = ctx.query;

@@ -29,6 +29,8 @@ import { newPage } from "../../../utils/page";
 import { readJSONSync } from "fs-extra";
 import { ArgOrder, ArgBuyDirect } from "../struct";
 import { config } from "../../common/config";
+import cheerio = require("cheerio");
+import { RequestPromise } from "request-promise-native";
 const user = require("../../../.data/user.json").taobao;
 
 export class Taobao extends AutoShop {
@@ -499,7 +501,7 @@ export class Taobao extends AutoShop {
     }
     delete linkage.common.queryParams;
     try {
-      var ret: string = await this.req.post(
+      let p = this.req.post(
         `https://buy.tmall.com${confirmOrder_1.fields.pcSubmitUrl}`,
         {
           qs: {
@@ -550,14 +552,23 @@ export class Taobao extends AutoShop {
             "Accept-Encoding": "gzip, deflate, br",
             "Accept-Language": "zh-CN,zh;q=0.9",
             "Upgrade-Insecure-Requests": "1"
-          }
+          },
+          followAllRedirects: true,
+          encoding: null
         }
       );
+      let ret: string = await p;
+      if (p.path.startsWith("/auction/order/TmallConfirmOrderError.htm")) {
+        let msg = /<h2 class="sub-title">([^>]*)/.exec(ret)![1];
+        console.log(msg);
+        throw new Error(msg);
+      }
       if (ret.indexOf("security-X5") > -1) {
         console.log("-------提交碰到验证拦截--------");
         this.logFile(ret, "订单提交验证拦截");
         return;
       }
+      // /auction/confirm_order.htm
       this.logFile(ret, "订单已提交");
       console.log("-----订单提交成功，等待付款----");
     } catch (e) {
@@ -638,5 +649,73 @@ export class Taobao extends AutoShop {
     var text = /var firstData = (.*);}catch \(e\)/.exec(html)![1];
     var res_data = JSON.parse(text);
     return getPcCartInfo(res_data);
+  }
+
+  async getShopCollection(args: any) {
+    var fhtml = await this.req(
+      "https://shoucang.taobao.com/shop_collect_list_n.htm?spm=a1z0k.7386009.1997992801.3.46381019lOtNMa"
+    );
+    var token = /_tb_token_:\s*'([^']+)'/.exec(fhtml)![1];
+    var html: string = await this.req.get(
+      "https://shoucang.taobao.com/nodejs/shop_collect_list_chunk.htm?spm=a1z0k.7386009.1997992801.3.46381019lOtNMa",
+      {
+        qs: {
+          ifAllTag: "0",
+          tab: "0",
+          categoryCount: "0",
+          tagName: "",
+          type: "0",
+          categoryName: "",
+          needNav: "false",
+          startRow: args.page - 1,
+          t: Date.now()
+        }
+      }
+    );
+    var $ = cheerio.load(html);
+    var items = $(".shop-card")
+      .map((i, ele) => {
+        var $ele = $(ele);
+        var $a = $ele.find(".shop-name-link");
+        var img = $ele.find(".logo-img").attr("src");
+        var url = $a.attr("href");
+        return {
+          id: /shop_id=(\d+)/.exec(url)![1],
+          title: $a.text().trim(),
+          img,
+          url,
+          token
+        };
+      })
+      .get();
+    return {
+      page: args.page,
+      items,
+      more: items.length > 0
+    };
+  }
+
+  async deleteShop(items: { id: string; token: string }[]) {
+    var text: string = await this.req.post(
+      "https://shoucang.taobao.com/favorite/api/CollectOperating.htm",
+      {
+        form: {
+          _tb_token_: items[0].token,
+          _input_charset: "utf-8",
+          favType: 0,
+          "favIdArr[]": items.map(({ id }) => id),
+          operateType: "delete"
+        },
+        headers: {
+          "x-requested-with": "XMLHttpRequest",
+          referer:
+            "https://shoucang.taobao.com/shop_collect_list_n.htm?spm=a1z0k.7386009.1997992801.3.46381019lOtNMa"
+        }
+      }
+    );
+    var { errorMsg, success } = JSON.parse(text);
+    if (!success) {
+      throw new Error(errorMsg);
+    }
   }
 }

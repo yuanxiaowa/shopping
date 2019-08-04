@@ -564,6 +564,75 @@ export async function getPindaoCoupon(url: string) {
   await Promise.all([p1, p2]); */
 }
 
+/**
+ * 万券齐发
+ * @param url
+ * @example https://pages.tmall.com/wow/a/act/tmall/tmc/23149/wupr?ut_sk=1.XHjcj6bn6PYDABRjm1VuVqKG_21380790_1564927387752.TaoPassword-QQ.2688&ali_trackid=2%3Amm_127911237_497650034_108804550008%3A1564927778_209_148695274&tkFlag=0&tdsourcetag=s_pctim_aiomsg&cpp=1&sm=e0dc72&share_crt_v=1&e=GCUi9AOIB5blXTPXQzkfM4E_09Tyz3Sm5acU9otCs85q-XojkTwRIqY52dVwxnwDP8zggt9XAKJ61Q5N5T-gmOfOhNFpYanTFqSBVzqLUMNomLjE96MgeJ5h_3IkxzXgV5ELjWu7uEocAT_VAGnapNrQvPRQrl_JdRPtJrnIoB45cI_t3MRA4hARmXVb0HgZYAtujJ0q93QGZ3PtzF1lKW8dib3c3EYWUDYWruCX3MoDRb1Etzp3Lw&tk_cps_ut=2&shareurl=true&short_name=h.eRi2IJf&tk_cps_param=127911237&ttid=201200%40taobao_iphone_8.8.0&spm=a211oj.13152405.7740155150.d00&wh_pid=marketing-165174&sourceType=other&sp_tk=77%2BlelFESllSQllUdFjvv6U%3D&type=2&suid=B447DA05-B9A4-41C9-B1B4-F4996E72AF6C&un=8b4b3af2c961913546e6040d6f65052e&app=chrome&ali_trackid=2:mm_130931909_605300319_109124700033:1564927915_267_918396271
+ */
+export async function getMulCoupons(url: string) {
+  var {
+    resultValue: { data, fri, sysInfo }
+  } = await requestData(
+    "mtop.tmall.kangaroo.core.service.route.PageRecommendService",
+    {
+      url,
+      cookie: "sm4=320500;hng=CN|zh-CN|CNY|156",
+      device: "phone",
+      backupParams: "device"
+    },
+    "get",
+    "1.0"
+  );
+  // 需要钱的券
+  var goodsCoupons: any[] = [];
+  var keys = Object.keys(data);
+  keys.forEach(key => {
+    if (data[key].coupons) {
+      goodsCoupons.push(...data[key].coupons);
+    }
+  });
+  var {
+    resultValue: { data }
+  } = await requestData(
+    "mtop.tmall.kangaroo.core.service.route.PageRecommendService",
+    {
+      url,
+      cookie: "sm4=320500;hng=CN|zh-CN|CNY|156",
+      pvuuid: sysInfo.serverTime,
+      fri: JSON.stringify(fri),
+      sequence: 2,
+      excludes: keys.join(";"),
+      device: "phone",
+      backupParams: "excludes,device"
+    },
+    "get",
+    "1.0"
+  );
+  return Object.keys(data).map(key => {
+    var { items, coupons } = data[key];
+    if (items) {
+      // 需要分享领的券
+    } else if (coupons) {
+      // 店铺券
+      return Promise.all(
+        coupons.map(item =>
+          requestData(
+            "mtop.alibaba.marketing.couponcenter.applycouponforchannel",
+            {
+              activityId: /activityId=(\w+)/.exec(item.couponUrl)![1],
+              sellerId: item.sellerId,
+              ua: "",
+              asac: "1A17718T967KGL79J6T03W"
+            },
+            "get",
+            "1.0"
+          ).catch(e => e)
+        )
+      );
+    }
+  });
+}
+
 export async function getChaoshiGoodsList(args) {
   var q = args.keyword;
   delete args.keyword;

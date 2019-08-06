@@ -14,8 +14,11 @@ import {
   getHealthInsuredInfo,
   getHealthInsured,
   get618Hongbao,
-  setReq
-} from "./jinrong";
+  setReq,
+  getRightCenterLucky,
+  getRightCenterCoupons,
+  receiveCoupon
+} from "./jingrong";
 import {
   timer,
   timerCondition,
@@ -26,6 +29,7 @@ import {
 import { Page } from "puppeteer";
 import { newPage, getPageCookie } from "../../../utils/page";
 import cookieManager from "../../common/cookie-manager";
+import moment = require("moment");
 const user = require("../../../.data/user.json");
 
 export async function doWelfareActions() {
@@ -126,6 +130,23 @@ export async function do618Hongbao() {
   );
 }
 
+export async function doRightCenter() {
+  console.log("执行权益中心操作");
+  getRightCenterLucky();
+  var datas = await getRightCenterCoupons();
+  for (let { time, floorInfo } of datas) {
+    let diff = moment(time, "HH:mm").diff();
+    if (diff > 0) {
+      await delay(diff);
+      floorInfo.forEach(item => {
+        receiveCoupon(item.couponKey).then(data => {
+          console.log("权益中心抢券", data);
+        });
+      });
+    }
+  }
+}
+
 /* export async function doGift() {
   log("检查金融会员开礼盒");
   var { freeTimes } = await getGiftInfo();
@@ -150,7 +171,8 @@ export async function doAll() {
     doFanpai(),
     doLottery(),
     doHealthInsured(),
-    doAdJindou()
+    doAdJindou(),
+    do618Hongbao()
   ]);
 }
 

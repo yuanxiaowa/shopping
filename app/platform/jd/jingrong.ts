@@ -23,7 +23,14 @@ export function setReq() {
     },
     json: true,
     gzip: true,
-    transform({ resultCode, resultMsg, resultData }) {
+    transform(text: string) {
+      var data: any;
+      if (/^\w/.test(text)) {
+        data = getJsonpData(text);
+      } else {
+        data = JSON.parse(text);
+      }
+      var { resultCode, resultMsg, resultData } = data;
       if (resultCode !== 0) {
         throw new Error(resultMsg);
       }
@@ -416,12 +423,11 @@ export function getJinguoDayWork() {
 }
 
 async function requestJsonp<T>(url: string, qs: any, form?: any) {
-  var text = await req.post(url, {
+  var data = await req.post(url, {
     qs: Object.assign({ _: Date.now(), callback: "cb" }, qs),
     transform: R.identity,
     form
   });
-  var data = getJsonpData(text);
   if (Array.isArray(data)) {
     return <T>data[0];
   }
@@ -714,19 +720,11 @@ async function requestDataJd(
       reqData: JSON.stringify(body)
     };
   }
-  var text: string = await req(
-    `https://ms.jr.jd.com/gw/generic/jrm/h5/m/${api}`,
-    {
-      method,
-      qs,
-      form
-    }
-  );
-  var { resultCode, resultData, resultMsg } = JSON.parse(text);
-  if (resultCode !== 0) {
-    throw new Error(resultMsg);
-  }
-  return resultData;
+  return req(`https://ms.jr.jd.com/gw/generic/jrm/h5/m/${api}`, {
+    method,
+    qs,
+    form
+  });
 }
 
 export async function get618Hongbao(url: string) {
@@ -762,4 +760,78 @@ export async function get618Hongbao(url: string) {
       console.log(res1.msg);
     }
   }
+}
+
+/**
+ * 权益中心抽奖
+ * @example https://m.jr.jd.com/member/rightsCenter/?cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_1001480949_&utm_term=f98f43e6c88142d580bc8e2f15a39e5f#/
+ */
+export async function getRightCenterLucky() {
+  var { drawNum, floorInfo } = await req.get(
+    "https://ms.jr.jd.com/gw/generic/bt/h5/m/queryLuckyInfo?t=0.05648720433022447&callback=__jp4"
+  );
+  for (let i = 0; i < drawNum; i++) {
+    let { couponsDetailVo } = await requestData(
+      "https://ms.jr.jd.com/gw/generic/bt/h5/m/luckyDraw",
+      {
+        activeId: floorInfo[0].activeId,
+        t: Math.random()
+      }
+    );
+    console.log("获取到", couponsDetailVo.remark);
+  }
+}
+
+/**
+ * 权益中心定时抢券
+ */
+export async function getRightCenterCoupons() {
+  var {
+    limitedResult
+  }: {
+    limitedResult: {
+      time: string;
+      floorInfo: {
+        classTag: string;
+        company: string;
+        couponKey: string;
+        // 2:可抢 5:已抢光
+        couponStatus: number;
+        number: string;
+        text1: string;
+        text2: string;
+      }[];
+    }[];
+  } = await req.get(
+    "https://ms.jr.jd.com/gw/generic/bt/h5/m/queryLimitedInfo?callback=__jp5"
+  );
+  return limitedResult.map(item => {
+    item.floorInfo = item.floorInfo.filter(item => item.text1 === "白条立减券");
+    return item;
+  });
+}
+
+export async function receiveCoupon(couponKey: string) {
+  var data = requestData(
+    "https://ms.jr.jd.com/gw/generic/bt/h5/m/receiveCoupons",
+    {
+      couponKey: "023847ff1e90ac853e82a91816bf8e21",
+      eid: JSON.stringify({
+        eid:
+          "TNNEVY6UM2645G3OEU4WPA5OIB7A4MZSUPXMQVREJQ2P5IZKD5RUIEF7AXO6RA5W5SMDN3LPMAPSKAOKQWLD4ADVGU",
+        ma: "",
+        im: "",
+        os: "Mac OS X",
+        ip: "114.217.10.249",
+        ia: "",
+        uu: "",
+        at: "5",
+        fp: "9f1cc52fcecf870674e0e12ce4f64a9b",
+        token:
+          "2SDF3G2DR6O6EQBMBZDJLIE32QSRXRJUMXFBJEGCFT65HL4ASHBFG5FYDSWP7X2NWMCEJUCAYKYNS"
+      }),
+      t: Math.random()
+    }
+  );
+  return data;
 }

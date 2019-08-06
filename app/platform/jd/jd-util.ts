@@ -1,4 +1,9 @@
-import { getSignStatus, signIn, getZhuanpanInfo, getZhuanpan } from "./jindong";
+import {
+  getSignStatus,
+  signIn,
+  getZhuanpanInfo,
+  getZhuanpan
+} from "./jingdong";
 import { log, logReq, delay } from "../../../utils/tools";
 
 export async function doSign() {

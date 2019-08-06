@@ -9,7 +9,7 @@ import {
   getHealthInsuredInfo,
   getHealthInsured,
   getGiftInfo
-} from "../app/platform/jd/jinrong";
+} from "../app/platform/jd/jingrong";
 
 const log = p => p.then(console.log, console.error);
 

@@ -1,8 +1,8 @@
 import { doAll as doJdAll } from "./jd-util";
 import { doAll as doJrAll } from "./jr-util";
-import { getSignJRInfo, getSignAwardJR, onInitJingrong } from "./jinrong";
+import { getSignJRInfo, getSignAwardJR, onInitJingrong } from "./jingrong";
 import bus_global from "../../common/bus";
-import { onInitJingdong } from "./jindong";
+import { onInitJingdong } from "./jingdong";
 
 export function bootstrapJingdongTasks() {
   return Promise.all([doJdAll(), doJrAll()])

@@ -55,17 +55,6 @@ export default abstract class AutoShop implements AutoShopOptions {
     Object.assign(this, data);
     this.init();
   }
-  async logFile(content: string, label: string) {
-    writeFile(
-      `.data/${this.name}/${label}-${new Date()
-        .toLocaleString()
-        .replace(/(:|\/|,|\s)/g, "_")}` +
-        Math.random()
-          .toString()
-          .substring(2, 6),
-      content
-    );
-  }
   setCookie(cookie: string) {
     this.cookie = cookie;
     var opts: RequestPromiseOptions = {

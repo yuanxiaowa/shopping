@@ -76,12 +76,8 @@ const jingdongCouponHandlers = {
     test: test(
       /^https?:\/\/(item\.m\.jd.com\/product\/|item\.jd\.com\/\d+\.html)/
     ),
-    async handler(url) {
-      await getGoodsCoupons(/\d+/.exec(url)![0]);
-      return {
-        success: true,
-        url
-      };
+    handler(url) {
+      return getGoodsCoupons(/\d+/.exec(url)![0]);
     }
   },
   floor: {

@@ -13,7 +13,8 @@ import {
   getLottery,
   getHealthInsuredInfo,
   getHealthInsured,
-  get618Hongbao
+  get618Hongbao,
+  setReq
 } from "./jinrong";
 import {
   timer,
@@ -24,7 +25,7 @@ import {
 } from "../../../utils/tools";
 import { Page } from "puppeteer";
 import { newPage, getPageCookie } from "../../../utils/page";
-import { setReq } from "../taobao/goods";
+import cookieManager from "../../common/cookie-manager";
 const user = require("../../../.data/user.json");
 
 export async function doWelfareActions() {
@@ -138,8 +139,8 @@ export async function doAll() {
   if (!b) {
     let page = await newPage();
     await login(page);
-
-    setReq(await getPageCookie(page));
+    cookieManager.jinrong.set(await getPageCookie(page));
+    setReq();
     page.close();
   }
   return Promise.all([

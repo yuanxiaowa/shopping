@@ -1,13 +1,5 @@
-import request = require("request-promise-native");
 import iconv = require("iconv-lite");
-import signData from "./h";
-import {
-  getCookie,
-  logFileWrapper,
-  getJsonpData,
-  delay,
-  createScheduler
-} from "../../../utils/tools";
+import { getJsonpData, createScheduler } from "../../../utils/tools";
 import {
   transformMobileGoodsInfo,
   getMobileCartList
@@ -17,44 +9,15 @@ import { config } from "../../common/config";
 import { ArgOrder } from "../struct";
 import cheerio = require("cheerio");
 import qs = require("querystring");
-import { newPage } from "../../../utils/page";
 import { getComment } from "../comment-tpl";
+import { getReq, getItemId, requestData, logFile } from "./tools";
 
-var req: request.RequestPromiseAPI;
-var cookie = "";
-var logFile = logFileWrapper("taobao");
-var mteeInfo = {
-  mteeAsac: "1A19322J4Z3PLXO583LRB6",
-  mteeType: "sdk",
-  mteeUa:
-    "118#ZVWZzwoQWZOMce1AcZ2C2ZZTZeeh2Z3PZe2x1zqTzHRzZyCZXoTSOE2zZCmQVHR4Zg2ZOzqTzfQZZZZZyUTctZxv2ic2vggVZZZuusqhzeWZZZZ/VoTXlZ2Z2Z+hyGeaZZZ1ZsiTzeWzZgFZVoqaYH2zZZ+TXHWVZgZZZsqTzeRzZZZ/Voq4zeZzZewiXHWVZgYmZzqXugQzAgZ+13uiEMgZAYuKXd/OqQHJZCuD2VjFDmBX0C2chjPmY26t+uqvOHMh/9AaugZCmrDtKHZzhSb7VjJOheZTtBs5MfQ16oArfK5BsYqKD1184zinpXcsW+SGYAuaz67WTu+xQWzBUeNthJxTVO/OdITR/qhhsVAK6bw7pmnFRiO2gto4LFW+L6qXg47/ENel0VQN2kE03NZgMMrQdmdvraOVFlk/H2HpbwVQtqir2dohTjEvB9R6Ke2BApCluW8SVnqQqQFp2xph96B2ffyd4OrysMsMvaNRAh7Rh1Sa5+a0n7h9Nq90SSJJq+YI+T2kuCiQ7mmvJWLvo2xzhUd0K2p5By38syqGNJPF9LOEJavnVIqe/8vFhIAcEsG/QN2qlDCWkp3h6VsVuWKjRi2I8foq4tVGNBxffzAoWqfQTDFijzCZXp5uv1WDulAqQjqe1oAhqhUa0B7uSMz4q1upLZr7EEZYrKffq9dE8fLod9cybaR9cEZ6oyDBCttgvsSGY1OlOakcl/Y++eMWwgNoCC3Wg8XnO6eWvoTX6oqIJ0ODfQhK1phwmcLs8g/YoUFi7eVWWYWvNtb9LJlXBO4On7HiWAbH/rcED1sjC63hfNEJTK9ePmoZs0hFZNJvzFhznsV/C70C0DjCBOV+WCJTTDpYoP/LEfQbRpRHAB5UfZIRSFZgYAKd6djO3hfSolSenQ1WDpuC1WfJMpoSNa4jj4fL6tvWG36B0ql/kG4TID1KKPiI9r8KoRdgkI/U3n4IUVGgHJXC5A+eZh5RmjYo5kJppMDWQ6YuJtNqSFRZLXMwKdEtUjpl2nAs1PD4JuIOAGSpzJOw/rmeFEmWoWs4CmWiG+Y5VtIu3z9VqChym6YYTdeQ6R7e1c8ednj7ppetA0XuL8XNXz/AB0uCr7yGYdYPs3gjWx+wNK+wfEGxJRW0lsF64B0iFw++ciqIKhqt2EbaqMNzLiV3FHwLwy0VF8OegMIcX46igQkn5xfkrwO4kTF4c+F4QZKlJGC55aeKpKAkMsGFqQ+wFlRLZn4I+mFkJKoBN4HE+mNkasj+r7WFsQ3voJklRjLYyyNtjfTFnz9xW1FerxD/yOwx8Kc5rmWlKFSv7V5980z9kw5aHedoaX/vrILcugZSvLxTD/4RVTK7b70JB0PCJh5pOLPsrBaUs8mup/zbO1GwVD+ckUJlyBVQHFJn4IAh3SMRQhvZCHPYwCcww5Llswe1ziLEUMUHZEKQaRTN31MZwcj/R5GISZk+t7sFIW3WriuoIRPUW+owiEHU4zti8Zs9dctB2Vg5yE5Um/ujdjAaau28rzm+OCJwn+1J9UfCQj5mk3FccKwLFM6fSqUQrKU6UINbSZZUv7cXq3B3L2fT8WRCvsXTABH3/VkF2vENTW2rGkeon+l5ifriuammRyitrbI36s1Dkxv/2p+I6ZQQi+ybrcdBIOOZptSDHNkZZrNUkVpAVeU+pTQq5gqwM2oS4lO63qSfmll4Jwnv15cZH4S34R6WG8a8LHFFk4muSDjEFlCbAWdRPdr6PJXqoEiPu9h8HUd8ZGpfLuya3R7qw6++LAO6WfC93+8r9TXB58dqpgf2g2thao3311tinHBhzniQWTQLpab1TmsHEYRwr2WODuLwNnSHHcBlTVaGUziBRMWN0UEOGlFWDRiovNGNEFujZsggZpomiNbGaOS+fpVAxxVwedPoUlcV",
-  ulandSrc: "201_11.230.188.217_8942114_1563529853358",
-  umidToken: "T1B909C1008F917EC23F10509E607EFB7EF74F21A9C621A9A956FAEDC63"
-};
 // https://h5api.m.tmall.com/h5/com.taobao.mtop.deliver.getaddresslist/2.0/?jsv=2.4.0&appKey=12574478&t=1563378313960&sign=f0e97945748477d409a623c2cf6cad16&api=com.taobao.mtop.deliver.getAddressList&v=2.0&ecode=1&type=jsonp&dataType=jsonp&callback=mtopjsonp1&data=%7B%22addrOption%22%3A%220%22%2C%22sortType%22%3A%220%22%7D
-
-export function setReq(_cookie: string) {
-  cookie = _cookie;
-  req = request.defaults({
-    jar: true,
-    headers: {
-      cookie: _cookie,
-      "user-agent":
-        '"Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1"'
-    }
-  });
-}
 
 export function getGoodsUrl(itemId: string) {
   return `https://detail.m.tmall.com/item.htm?id=${itemId}`;
 }
 
-export function getItemId(url: string) {
-  return /id=(\d+)/.exec(url)![1];
-}
-
-const appKey = "12574478";
-const spm = "a222m.7628550.0.0";
 const request_tags = {
   agencyPay: true,
   coupon: true,
@@ -66,577 +29,11 @@ const request_tags = {
   redEnvelope: true,
   postageInsurance: true
 };
-async function requestData(
-  api: string,
-  data: any,
-  method: "get" | "post" = "get",
-  version = "6.0",
-  ttid = "#b#ad##_h5"
-) {
-  var t = Date.now();
-  var data_str = JSON.stringify(data);
-  var form: any;
-  var token = getCookie("_m_h5_tk", cookie);
-  token = token && token.split("_")![0];
-  var qs: any = {
-    jsv: "2.4.7",
-    appKey,
-    api,
-    v: version,
-    type: "originaljson",
-    ecode: 1,
-    dataType: "json",
-    t,
-    ttid,
-    AntiFlood: true,
-    LoginRequest: true,
-    H5Request: true
-  };
-  var sign = signData([token, t, appKey, data_str].join("&"));
-  qs.sign = sign;
-  if (method === "get") {
-    qs.data = data_str;
-  } else {
-    form = {
-      data: data_str
-    };
-  }
-  var text: string = await req(
-    `https://h5api.m.taobao.com/h5/${api}/${version}/`,
-    {
-      method,
-      qs,
-      form
-    }
-  );
-  var { data, ret } = JSON.parse(text);
-  var arr_msg = ret[ret.length - 1].split("::");
-  var code = arr_msg[0];
-  var msg = arr_msg[arr_msg.length - 1];
-  if (code !== "SUCCESS") {
-    let err = new Error(msg);
-    err.name = code;
-    logFile(text, "_err-" + api);
-    throw err;
-  }
-  return data;
-}
-
-export async function getTaolijin(url: string) {
-  var { searchParams } = new URL(url);
-  var success = true;
-  var msg = "";
-  var eh = searchParams.get("eh");
-  var resdata: {
-    coupon: {
-      // 0:可领取 6:已失效 9:已领过
-      couponStatus: "0" | "6" | "9";
-      couponKey: string;
-    };
-    couponItem: {
-      itemId: string;
-      clickUrl: string;
-    };
-    rightsInstance: {
-      //  0:可以领 5:已领过 3:已发完
-      rightsStatus: string;
-      pid: string;
-      // 红包金额
-      rightsFace: string;
-    };
-  } = await requestData(
-    "mtop.alimama.vegas.center.flb.coupon.query",
-    {
-      eh,
-      activityId: searchParams.get("activityId"),
-      isMobile: true
-    },
-    "get",
-    "1.0"
-  );
-  let {
-    coupon: {
-      // string 0:可领取 6:已失效
-      couponStatus,
-      couponKey
-    },
-    couponItem: { itemId, clickUrl },
-    rightsInstance
-  } = resdata;
-  logFile(resdata, "淘礼金");
-  let promises: Promise<any>[] = [];
-  var _couponStatus = Number(couponStatus);
-  if (_couponStatus === 0) {
-    promises.push(
-      (async () => {
-        var res = await requestData(
-          "mtop.alimama.union.hsf.app.coupon.apply",
-          Object.assign(
-            {
-              couponKey
-            },
-            mteeInfo
-          ),
-          "get",
-          "1.0"
-        );
-        var coupon: {
-          code: string;
-          // 0:成功 1:买家领取单张券的限制:APPLY_SINGLE_COUPON_COUNT_EXCEED_LIMIT 5:优惠券失效或过期:COUPON_NOT_EXISTS
-          retStatus: string;
-          msg: string;
-        } = res.result.coupon;
-        logFile(coupon, "淘礼金-领优惠券");
-        msg += "," + coupon.msg;
-        if (coupon.retStatus !== "0") {
-          if (coupon.retStatus !== "1") {
-            success = false;
-          }
-        }
-      })()
-    );
-  } else {
-    success = _couponStatus === 9;
-  }
-  var _rightsStatus = Number(rightsInstance.rightsStatus);
-  if (_rightsStatus === 0) {
-    promises.push(
-      (async () => {
-        var res: {
-          // 6:你已领过该奖励
-          drawRetCode: string;
-          drawRetDesc: string;
-          drawRetSubCode: "19";
-        } = await requestData(
-          "mtop.alimama.vegas.draw",
-          {
-            eh,
-            pid: rightsInstance.pid || "",
-            asac: "1A18912HD87JTTJQQI1QKJ",
-            extend: JSON.stringify({
-              e: encodeURIComponent(new URL(clickUrl).searchParams.get("e")!),
-              itemId,
-              rightsFace: rightsInstance.rightsFace,
-              scence: "wap",
-              unid: searchParams.get("activityId"),
-              relationId: searchParams.get("activityId"),
-              activityId: searchParams.get("activityId"),
-              from: searchParams.get("activityId")
-            })
-          },
-          "get",
-          "1.0"
-        );
-        logFile(res, "淘礼金-领礼金");
-        msg += "," + res.drawRetDesc;
-        if (res.drawRetCode !== "0") {
-          success = false;
-        }
-      })()
-    );
-  } else if (_rightsStatus !== 5) {
-    success = false;
-  }
-  if (promises.length > 0) {
-    await Promise.all(promises);
-  }
-  return {
-    success,
-    url: getGoodsUrl(itemId),
-    msg
-  };
-}
-
-export async function getCouponEdetail(url: string) {
-  var { searchParams } = new URL(url);
-  var pid = searchParams.get("pid");
-  var res = await requestData(
-    "mtop.alimama.union.xt.en.api.entry",
-    {
-      floorId: 13193,
-      variableMap: JSON.stringify({
-        e: searchParams.get("e"),
-        activityId: searchParams.get("activityId"),
-        pid,
-        type: "nBuy"
-      })
-    },
-    "get",
-    "1.0"
-  );
-  var [data] = res[res.meta.resultListPath];
-  var { couponActivityId, itemId, couponKey, retStatus } = data;
-  var res = await requestData(
-    "mtop.alimama.union.xt.en.api.entry",
-    {
-      variableMap: JSON.stringify(
-        Object.assign(
-          {
-            couponKey,
-            af: "1",
-            pid,
-            st: "39",
-            ulandSrc: "201_11.1.228.74_6456882_1563377267124",
-            itemId,
-            mteeAsac: "1A19322J4Z3PLXO583LRB6",
-            mteeType: "sdk"
-          },
-          mteeInfo
-        )
-      ),
-      floorId: "13352"
-    },
-    "get",
-    "1.0"
-  );
-  var {
-    applyCoupon,
-    recommend: {
-      resultList: [
-        {
-          coupon: {
-            // 0:成功 4:抽风 1:买家领取单张券限制
-            retStatus,
-            msg
-          }
-        }
-      ]
-    }
-  } = res;
-  logFile(res, "领取uland-优惠券");
-  return {
-    success: retStatus === 0 || retStatus === 1,
-    url: getGoodsUrl(itemId),
-    msg,
-    manual: retStatus === 4
-  };
-}
-
-/**
- * 领取店铺优惠券
- * @param url
- * @example https://market.m.taobao.com/apps/aliyx/coupon/detail.html?ut_sk=1.WkOnn8QgYxYDAC42U2ubIAfi_21380790_1563435732217.TaoPassword-QQ.windvane&wh_weex=false&activityId=34f80bd9595147348085dc75746beef6&ttid=201200%40taobao_iphone_8.8.0&suid=63C1E7D7-3592-4A0D-9A1C-2FB51A7333D1&spm=a2141.7631565.designer_21267326940._0_0&sellerId=2139378753&disableAB=true&utparam=%7B%22ranger_buckets%22%3A%222503%22%7D&sourceType=other&un=35fb12d24e9c47d946e6040d6f65052e&share_crt_v=1&sp_tk=77+lQUlETllTNWNBMUzvv6U=&cpp=1&shareurl=true&short_name=h.eSEEEfs&sm=1b3fe8&app=macos_safari
- */
-export async function getMarketCoupon(url: string) {
-  var { searchParams } = new URL(url);
-  var uuid = searchParams.get("activityId");
-  var sellerId = searchParams.get("sellerId");
-  /* var {} = await requestData(
-    "mtop.taobao.couponMtopReadService.findShopBonusActivitys",
-    {
-      uuid,
-      sellerId,
-      queryShop: true,
-      originalSellerId: "",
-      marketPlace: ""
-    }
-  ); */
-  var res: {
-    error: "true" | "false";
-    module: {
-      couponInstance: {
-        // 1: 成功
-        status: string;
-      };
-    };
-  } = await requestData(
-    "mtop.taobao.buyerResourceMtopWriteService.applyCoupon",
-    {
-      uuid,
-      shortName: searchParams.get("short_name"),
-      supplierId: sellerId,
-      originalSellerId: "",
-      marketPlace: ""
-    },
-    "get",
-    "3.0"
-  );
-  logFile(res, "领取店铺优惠券");
-  return {
-    url: `https://shop.m.taobao.com/shop/shop_index.htm?user_id=${sellerId}&spm=a212db.index.dt_5.i2`,
-    store: true,
-    success: res.error === "true"
-  };
-}
-
-/**
- * 领取内部店铺券
- * @param url
- * @example https://uland.taobao.com/quan/detail?ut_sk=1.XSfi5EEpzUIDAD46j6ev8P7T_21380790_1563514793271.TaoPassword-QQ.windvane&imsi=460011598911726&__share__id__=1&share_crt_v=1&sellerId=2200827691658&xi=592229907275&sourceType=other&suid=BFEA8241-BCCD-4A63-BA5E-77CE930312AC&activityId=d48fc2fa5da44d7e9ff7d81fc0784f7d&sp_tk=77%20lTTZJbVlTUXF5dGbvv6U%3D&imei=861997040593290&un=04ec1ab5583d2c369eedd86203cf18d8&ttid=10005934%40taobao_android_8.7.0
- */
-export async function getInnerStoreCoupon(url: string) {
-  /*
-    获取状态
-    mtop.alimama.union.hsf.mama.coupon.get
-    {"sellerId":"2200827691658","activityId":"d48fc2fa5da44d7e9ff7d81fc0784f7d","pid":"mm_33231688_7050284_23466709"}
-    {
-      "message": "",
-      "result": {
-        "msgInfo": "coupon status not valid",
-        // 0:可领 12:失效
-        "retStatus": "12",
-        "shopLogo": "//img.alicdn.com/bao/uploaded//d7/2d/TB1QtptRQvoK1RjSZFNSuwxMVXa.jpg",
-        "shopName": "鸿星尔克outlets店",
-        "shopUrl": "https://s.click.taobao.com/t?e=m%3D2%26s%3DcDhKoND6PJFw4vFB6t2Z2jAVflQIoZeptCNrm84%2FxJjdZa3YWKemDUTN71Q0pd8s2FYyuHGhGgg%2FmLO%2F5foB9eoryUtqIh4%2B4jMnl1H7sduZ4Y8JljmSnsn1Peil2YWXl0Ey3zWanW1TqyIhDoGSFVum7ZfZdxsPxBB%2F012F9lkSPClEt413j5jZQFcAPNl6"
-      },
-      "success": "true"
-    }
-   */
-
-  var { searchParams } = new URL(url);
-  var res = await requestData(
-    "mtop.alimama.union.hsf.mama.coupon.apply",
-    Object.assign(
-      {
-        sellerId: searchParams.get("sellerId"),
-        activityId: searchParams.get("activityId"),
-        pid: searchParams.get("pid") || "mm_33231688_7050284_23466709"
-      },
-      mteeInfo
-    ),
-    "get",
-    "1.0"
-  );
-  logFile(res, "内部店铺优惠券");
-  var success = res.success;
-  var msg = "领取成功";
-  var manual;
-  if (!success) {
-    msg = res.message;
-  } else {
-    let { retStatus, msgInfo } = res.result;
-    retStatus = Number(retStatus);
-    if (retStatus === 4) {
-      manual = true;
-    }
-    success = retStatus === 0;
-    msg = msgInfo;
-  }
-  return {
-    success,
-    msg,
-    manual
-  };
-}
-
-export async function getStoreCoupon(arg: {
-  sellerId: string;
-  itemId: string;
-}) {
-  var {
-    coupons
-  }: {
-    coupons: {
-      couponList: {
-        uuid: string;
-      }[];
-      title: string;
-      // 1:店铺优惠券
-      type: string;
-    }[];
-  } = await requestData(
-    "mtop.tmall.detail.couponpage",
-    { itemId: arg.itemId, source: "tmallH5" },
-    "get",
-    "1.0"
-  );
-  return Promise.all(
-    coupons.map(({ couponList, type }) => {
-      return Promise.all(
-        couponList.map(async coupon => {
-          var res: {
-            applyDo: {
-              enabled: boolean;
-              needNewPoint: boolean;
-              success: boolean;
-              // 20
-              title: string;
-              // 满199元可用
-              subtitles: string[];
-            };
-            success: boolean;
-          } = await requestData(
-            "mtop.tmall.detail.applycoupon",
-            {
-              couponType: type,
-              sellerId: arg.sellerId,
-              uuid: coupon.uuid,
-              ua:
-                "118#ZVWZz2pR2uwIReLCJeA1ZYquZYT4zHWzZgC2Voq4mrjZ/U8TyHRVPgZuusqhzeWZZZZZXoqVzeAuZZZh0HWWGcb/ZzqTqhZzZgZCcfq4zH2ZZZChXHWVZgZZusqhzeWZZgCuTOq4zH2ZZZY6yHW4Zg2ZZV/TzeWzZgYWxHzCADu2U0mVCEBFptEI+7Mf2wJCdvtiugZCmrDtKHZzhwA7Vtw29gZTtW+haPBAl/BlbHRdUYmEVK1Eg9gc2/1dkFwk6guLdTXIq5Rg5hwEQ1E9Evq10sgdHfZrSy1k9aEiZrHjWE8/W8qOohkD7I14yLZGALdlJ24WWeDoHuwP2lmkMzOET6Ai2zAitNWP3nMs6xwOVdey4GS2zEnPzxQAE+h1tYTahMtFIbPhD2oUeBpJViXgK7Jdkn89hYOHC9P9LVxGEQG0XNbZsr4NbT+q2qj9Iz+NH4ecUhNvmCLWwEtOL0ydW9BCLOFWEWV4gfPOV+irmvRr1MNSKF0s+Y8dyE2P6yd0iMqI+6B0EP9zdFNHCntF/WF6VjUvfADYEmkic0a6ZTBs1LuPSU0+sO0K5wAuJ4LqrO/T36EFrmCspxjxoJaytbr4xm/yHEZwleKV5edMxnv+EvpWwmF3gO6/g1UKMUIc1Brq+b3vV6+04j1rPIAo1C4gcMrMZ+XSjP1QeZYypBPGxPaGErHSutn9HWoqTFSUXGN2gyihRu93Ojc9fBgX6pykMgnbAJORjWbXMIhnBOjh3CEhufAbLlHoV6tKnqrOoCJH1vepOlUU1kWeLl4WZXkOGPismG5ASNExKq+K8NBpMDYtwpkGD40CCfdsx0oLGZBJL7yQCNHNb/5anAzdpYjJDVr5HSGLuwp3gnN6GoxjCT4mgW4twNHHKV6WaZ3rSFlNZCRknirCS6jWYWYwxiHqIti5ZWE/2zMiD8McODvLMNBNEVoVP5CsqF2km0X9feWlFGdEO9mpttlwOzbxkStbFs1zKP9cEYGarto9B0hMZbr9ZrSdY3tTE8CsiDm/VENyra9cQ5PaCrOTRjNIAKFRLTxV0t2AT7JC6X7flV2rwbnSavxUTX7BdTlyr3qzBQSbUeeLexW/DwqllrUL/RcvV8eNepRfILWDYMO6C6Xweq5O2qAyKOPtg7xeXS9FTNmD9bCvWddktsYyoRNRW/Slb2J359JmoL/YO3r8OfC67LY9x4yC8XJeoZUzvQgAcgfC9JvcnpX6PNUw5sgblCodCVBGf9AbNpZgejQLsdr6WiCYJ0ocJCqBjEp6shkYclBPpvY3vr5Te23oQ87PgCGZUoZxjfw7BvErEBPn8LWbG+F+Fkx0MdxEs70FwQTqgYWItaAIaDFkTe1ngHg6wzCOcjXJ9MCvPaaHpwkE+6W1w8nVU+ufP+VxPBxSdj25OqIEacgN7cHwWEBQZTQioVJLLduEXquhF8eASv35eiT4e0ZlmKQVXSvdA4YEW59KWDE/7PRO5CSrnSNj7Iz9OEvIwIQPgWjIABUunQ3VTqKdDDOQClunc2XI/VZJCV0d83lER7FkkDn8HxCzRB61q7LAktCwEeC6UnK9n9jYjFc8cr2JRHVS1SGqplwqEJ1Gc0xcX05tfWP71oz9S3/ZFv/Ptzhj0qJTTNmorJaRx6MZe0RPAoNToQFWOEwhAEUdI+Sz2fe6lBDdQr2ND5u1JYcEi+WFI4HTSJYjtCPXiRWJOECmop1fmHGcDYO7gBGhx9elEc3fxBcHoINoene7ZROerNiiSjGGNLok4uk3lXl0ZW5bxURKAcC3tDQ5wBTQXmLiOlFlC/okNN26yowyXlQ=",
-              asac: "",
-              lotteryId: "",
-              source: "tmallH5"
-            },
-            "get",
-            "1.0"
-          );
-        })
-      );
-    })
-  );
-}
-
-export async function getChaoshiCoupon(url: string) {
-  await req.get(
-    "https://pages.tmall.com/wow/chaoshi/act/wupr?__share__id__=1&share_crt_v=1&disableNav=YES&clickid=I220_12934752281563334657389832&wh_pid=act%2Falipay-fddew&%3A1562722996_273_1814643204=&tkFlag=1&tk_cps_param=118770447&sourceType=other&sp_tk=77%2BlYTZJbFk2a0k5YlTvv6U%3D&type=2&suid=D4896C7D-775F-4FD1-83AE-CA02284E20B0&wh_biz=tm&utparam=%7B%22ranger_buckets%22%3A%223042%22%7D&e=5G5jofRaROzKHwXYt0GK7-GCrBUXRDJ7JMc6T-9QrFVy1_NmXSnu4K3G98p2zSm3QsD6q6f1XPUJnFZ9u4P0mYRqxKSGsgCT8sviUM61dt2zZ2XZRKAfeid9H6GwqKYA8lo6HDoeVZpDcdFQGwqrO5njwOJxMd6Sd6vbaT_nXo_U4vk3CD6EfpnjwOJxMd6SYXwZ6GyZXXd4MCjxSJNmpBFGSN27hbJORRq7BkT9HWmiZ-QMlGz6FQ&disableAB=true&un=dbd409acd9cb28554c6e4bed9157ce66&eRedirect=1&ttid=201200%40taobao_iphone_8.8.0&cpp=1&shareurl=true&app=chrome&ali_trackid=&tk_cps_ut=2&sourceType=other&suid=7ff09f5d-b67d-41f7-86be-cbc26ea29ace&ut_sk=1.XK%2BQ06Gx8KwDAHyGAUJXIrJu_21646297_1563378089122.Copy.chaoshi_act_page_tb&ali_trackid=2:mm_130931909_559550329_109023950193:1563379429_121_861011236"
-  );
-}
-
-/**
- * 频道优惠券
- * @param url
- * @example https://pages.tmall.com/wow/heihe/act/shuizhc?wh_biz=tm&ttid=201200%40taobao_iphone_8.8.0&acm=lb-zebra-388386-6780630.1003.4.6235143&pagefrom=oneshare&scm=1003.4.lb-zebra-388386-6780630.OTHER_15615208738601_6235143&spm=a21123.11972687.9691253925.1&suid=0FFFDFE8-924F-4E9B-AFC2-1521D96CF32B&sourceType=other&un=d6aaf44ab3ac122d132b0f6991806569&share_crt_v=1&sp_tk=77%20lSFV5MFlTQXcwaG%2Fvv6U%3D&cpp=1&shareurl=true&short_name=h.e7FfZnA&sm=344f29&app=chrome&ali_trackid=&e=zBTlKRBSJZzBd_r_ai1-KGpBaNgt-RghPtiOPDZF-tECwK-xSj3q_Kii75CDSRjIKSB1w8nO61xBoMXtbrXD7nUMqDuuQbYO2Hyr0OpOG9Kuhyokdt7R7vrAyWozvChN0PoPs5PAFJrAXhOyyTJuFuSKgrBmYEx8WedverPZWVri72Vq2GG5v2oTnmcQ2mGGZR8yJRJeVBdar-lV7wZHDN7qciEKDAUlh_WaoNwutL4O4Hi3kiJ34g&type=2&tk_cps_param=127911237&tkFlag=0&tk_cps_ut=2&sourceType=other&suid=9cdd01dd-80b7-4b4b-83eb-27040a65a533&ut_sk=1.XK%2BQ06Gx8KwDAHyGAUJXIrJu_21646297_1563880055513.Copy.2688
- */
-export async function getPindaoCoupon(url: string) {
-  // https://h5api.m.tmall.com/h5/mtop.latour2.strategy.show/1.0/?jsv=2.4.16&appKey=12574478&t=1563887122704&sign=22ba1a070d08f48bc14533c5965a668a&api=mtop.latour2.strategy.show&v=1.0&isSec=1&secType=2&timeout=5000&interval=300&mock=SkBTJf68N&jsonpIncPrefix=marketingUtils&useTes=true&type=jsonp&dataType=jsonp&callback=mtopjsonpmarketingUtils3&data=%7B%22filterCrowd%22%3A%22true%22%2C%22currentPage%22%3A1%2C%22pageSize%22%3A20%2C%22strategyCode%22%3A%221fb93af846af4545a464b32da1ca8163%22%2C%22channel%22%3A%22lafite_tmallfood%22%2C%22withItem%22%3A%22false%22%2C%22filterEmptyInventory%22%3A%22false%22%2C%22withIncrement%22%3A%22true%22%7D
-  var page = await newPage();
-  await page.setUserAgent(
-    "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3835.0 Mobile Safari/537.36"
-  );
-  await page.goto(url);
-  let h = 0;
-  let now_h = new Date().getHours();
-  for (let i of [10, 15, 20, 24]) {
-    if (now_h < i) {
-      h = i;
-      break;
-    }
-  }
-  await delay(moment(h, "h").diff() - 100);
-  await page.reload();
-  var eles = await page.$$(".svelte-1k4joht.c39");
-  eles.forEach(ele => {
-    ele.click();
-  });
-  getPindaoCoupon(url);
-  /* var p1 = req.post(
-    "https://wgo.mmstat.com/tmall_interaction.fotocoupon.lottery",
-    {
-      json: {
-        gmkey: "CLK",
-        gokey: encodeURIComponent(
-          qs.stringify({
-            module: "fotocoupon",
-            ownerId: "2200611788315",
-            actId: "12750",
-            playMethodId: "1549",
-            action: "join",
-            _hng: "CN%7Czh-CN%7CCNY%7C156",
-            jsver: "aplus_wap",
-            lver: "8.6.10",
-            pver: "undefined",
-            cache: "864846f",
-            _slog: "0"
-          })
-        ),
-        cna: "Zx73FIp3JVUCAXLYX3jF+aoY",
-        "spm-cnt": "a21123.13070534.0.0.6c5531bbJZ8lO1",
-        logtype: "2"
-      }
-    }
-  );
-  var p2 = req.post(
-    "https://wgo.mmstat.com/bp_get_coupon.bp_get_coupon.bp_get_coupon",
-    {
-      json: {
-        gmkey: "EXP",
-        gokey: encodeURIComponent(
-          qs.stringify({
-            benefitId: "undefined",
-            itemIds: "",
-            channel: "lafite_tmallfood",
-            scm: "undefined",
-            pvid: "undefined",
-            _hng: "CN%7Czh-CN%7CCNY%7",
-            jsver: "aplus_wap",
-            lver: "8.6.10",
-            pver: "undefined",
-            cache: "96618aa",
-            _slog: "0"
-          })
-        ),
-        cna: "Zx73FIp3JVUCAXLYX3jF+aoY",
-        "spm-cnt": "a21123.13070534.0.0.6c5531bbJZ8lO1",
-        logtype: "2"
-      }
-    }
-  );
-  await Promise.all([p1, p2]); */
-}
-
-/**
- * 万券齐发
- * @param url
- * @example https://pages.tmall.com/wow/a/act/tmall/tmc/23149/wupr?ut_sk=1.XHjcj6bn6PYDABRjm1VuVqKG_21380790_1564927387752.TaoPassword-QQ.2688&ali_trackid=2%3Amm_127911237_497650034_108804550008%3A1564927778_209_148695274&tkFlag=0&tdsourcetag=s_pctim_aiomsg&cpp=1&sm=e0dc72&share_crt_v=1&e=GCUi9AOIB5blXTPXQzkfM4E_09Tyz3Sm5acU9otCs85q-XojkTwRIqY52dVwxnwDP8zggt9XAKJ61Q5N5T-gmOfOhNFpYanTFqSBVzqLUMNomLjE96MgeJ5h_3IkxzXgV5ELjWu7uEocAT_VAGnapNrQvPRQrl_JdRPtJrnIoB45cI_t3MRA4hARmXVb0HgZYAtujJ0q93QGZ3PtzF1lKW8dib3c3EYWUDYWruCX3MoDRb1Etzp3Lw&tk_cps_ut=2&shareurl=true&short_name=h.eRi2IJf&tk_cps_param=127911237&ttid=201200%40taobao_iphone_8.8.0&spm=a211oj.13152405.7740155150.d00&wh_pid=marketing-165174&sourceType=other&sp_tk=77%2BlelFESllSQllUdFjvv6U%3D&type=2&suid=B447DA05-B9A4-41C9-B1B4-F4996E72AF6C&un=8b4b3af2c961913546e6040d6f65052e&app=chrome&ali_trackid=2:mm_130931909_605300319_109124700033:1564927915_267_918396271
- */
-export async function getMulCoupons(url: string) {
-  var {
-    resultValue: { data, fri, sysInfo }
-  } = await requestData(
-    "mtop.tmall.kangaroo.core.service.route.PageRecommendService",
-    {
-      url,
-      cookie: "sm4=320500;hng=CN|zh-CN|CNY|156",
-      device: "phone",
-      backupParams: "device"
-    },
-    "get",
-    "1.0"
-  );
-  // 需要钱的券
-  var goodsCoupons: any[] = [];
-  var keys = Object.keys(data);
-  keys.forEach(key => {
-    if (data[key].coupons) {
-      goodsCoupons.push(...data[key].coupons);
-    }
-  });
-  var {
-    resultValue: { data }
-  } = await requestData(
-    "mtop.tmall.kangaroo.core.service.route.PageRecommendService",
-    {
-      url,
-      cookie: "sm4=320500;hng=CN|zh-CN|CNY|156",
-      pvuuid: sysInfo.serverTime,
-      fri: JSON.stringify(fri),
-      sequence: 2,
-      excludes: keys.join(";"),
-      device: "phone",
-      backupParams: "excludes,device"
-    },
-    "get",
-    "1.0"
-  );
-  return Object.keys(data).map(key => {
-    var { items, coupons } = data[key];
-    if (items) {
-      // 需要分享领的券
-    } else if (coupons) {
-      // 店铺券
-      return Promise.all(
-        coupons.map(item =>
-          requestData(
-            "mtop.alibaba.marketing.couponcenter.applycouponforchannel",
-            {
-              activityId: /activityId=(\w+)/.exec(item.couponUrl)![1],
-              sellerId: item.sellerId,
-              ua: "",
-              asac: "1A17718T967KGL79J6T03W"
-            },
-            "get",
-            "1.0"
-          ).catch(e => e)
-        )
-      );
-    }
-  });
-}
 
 export async function getChaoshiGoodsList(args) {
   var q = args.keyword;
   delete args.keyword;
-  var buf = await req.get("https://list.tmall.com/chaoshi_data.htm", {
+  var buf = await getReq().get("https://list.tmall.com/chaoshi_data.htm", {
     qs: Object.assign(
       {
         p: 1,
@@ -662,7 +59,7 @@ export async function getChaoshiGoodsList(args) {
   throw new Error("出错了");
 }
 
-export async function getGoodsList(data: any) {}
+export async function getGoodsList(args: any) {}
 
 export async function getGoodsListCoudan(data: any) {
   var page = data.page;
@@ -679,7 +76,7 @@ export async function getGoodsListCoudan(data: any) {
     },
     data
   );
-  var text: string = await req.get(
+  var text: string = await getReq().get(
     "https://list.tmall.com/m/search_items.htm",
     {
       // page_size=20&sort=s&page_no=1&spm=a3113.8229484.coupon-list.7.BmOFw0&g_couponFrom=mycoupon_pc&g_m=couponuse&g_couponId=2995448186&g_couponGroupId=121250001&callback=jsonp_90716703
@@ -718,6 +115,7 @@ export async function getGoodsInfo(url: string, skus?: number[]) {
   return transformMobileGoodsInfo(data, skus);
 }
 
+const spm = "a222m.7628550.0.0";
 export async function getRawCartList() {
   return requestData(
     "mtop.trade.querybag",
@@ -833,7 +231,7 @@ export async function updateCart({ items }, action: string) {
   return cartId;
 }
 
-export async function cartToggle(data: { items: any; checked: boolean }) {
+export async function cartToggle() {
   // const page = await newPage();
   // await page.goto("https://cart.taobao.com/cart.htm");
   // // await page.waitForSelector("#J_Go");
@@ -964,50 +362,6 @@ function transformOrderData(orderdata: any, args: ArgOrder<any>) {
     ua
   };
   return postdata;
-}
-
-function getTransformData(data: any) {
-  function sortObj(obj) {
-    return Object.keys(obj)
-      .sort()
-      .reduce((state, key) => {
-        var item = obj[key];
-        if (typeof item === "object") {
-          item = sortObj(item);
-        }
-        state[key] = item;
-        return state;
-      }, {});
-  }
-  var params = JSON.parse(data.params);
-  Object.keys(params).forEach(key => {
-    var item = JSON.parse(params[key]);
-    params[key] = Object.keys(item)
-      .sort()
-      .reduce((state, key) => {
-        state[key] = item[key];
-        return state;
-      }, {});
-  });
-  return JSON.stringify(sortObj(params), null, 2);
-}
-
-async function getPageData(args: ArgOrder<any>) {
-  const qs = require("querystring");
-  var page = await newPage();
-  await page.goto(
-    `https://buy.m.tmall.com/order/confirmOrderWap.htm?` +
-      qs.stringify(args.data)
-  );
-  await page.setOfflineMode(true);
-  page.click("span[title=提交订单]");
-  var req = await page.waitForRequest(req =>
-    req
-      .url()
-      .startsWith("https://h5api.m.tmall.com/h5/mtop.trade.createorder.h5/3.0")
-  );
-  var data = JSON.parse(qs.parse(req.postData()).data);
-  return data;
 }
 
 export async function submitOrder(args: ArgOrder<any>) {
@@ -1166,7 +520,7 @@ export async function seckillList(name: string) {
 }
 
 export async function getCoupons({ page }: { page: number }) {
-  var buf: Buffer = await req.get(
+  var buf: Buffer = await getReq().get(
     "https://taoquan.taobao.com/coupon/list_my_coupon.htm",
     {
       qs: {
@@ -1282,7 +636,7 @@ export async function getSixtyCourse(actId: string) {
 }
 
 export async function sixtyCourseList() {
-  var html: string = await req.get(
+  var html: string = await getReq().get(
     "https://pages.tmall.com/wow/fsp/act/60sclass?q=%E5%A4%A9%E7%8C%AB60%E7%A7%92%E8%AF%BE%E5%A0%82&isFull=true&pre_rn=c21dff5a538d1c77a9e5c29674eefe94&scm=20140655.sc_c21dff5a538d1c77a9e5c29674eefe94"
   );
   var r = /<textarea style="display: none" class="vue-comp-data">(.*)<\/textarea>/g;
@@ -1334,18 +688,7 @@ export async function checkFollowRelation(data: {
  * 打开邀请函
  * @param data
  */
-export async function openInvitation(data: {
-  sellerId: string;
-  actId: string;
-  token: string;
-}) {
-  var res3 = await requestData(
-    "mtop.tmall.fansparty.fansday.superfansinvation.openinvitation",
-    data,
-    "get",
-    "1.0"
-  );
-}
+export async function openInvitation() {}
 
 export async function sixtyCourseReply({
   actId,
@@ -1384,27 +727,6 @@ export async function sixtyCourseReply({
     "1.0"
   );
   var token = data.result;
-  var res1 = await requestData(
-    "mtop.tmall.fansparty.fansday.superfansinvation.getinvitation",
-    {
-      sellerId,
-      actId,
-      token
-    },
-    "get",
-    "1.0"
-  );
-  var res2 = await requestData(
-    "mtop.tmall.caitlin.relation.common.follow",
-    {
-      targetId: sellerId,
-      followTag: "fans-lucky-draw",
-      source: "fans-lucky-draw",
-      bizName: "fansparty"
-    },
-    "get",
-    "1.0"
-  );
   var res3 = await requestData(
     "mtop.tmall.fansparty.fansday.superfansinvation.openinvitation",
     {
@@ -1419,7 +741,7 @@ export async function sixtyCourseReply({
   return awards;
 }
 
-export async function commentList(type: number, page = 1) {
+export async function commentList(page = 1) {
   var {
     data: { group, meta }
   } = await requestData(
@@ -1464,10 +786,7 @@ export async function commentList(type: number, page = 1) {
 const executer = createScheduler();
 
 export async function commentOrder(orderId: string) {
-  var {
-    mainOrderRateInfo: { saleConsignmentScore, serviceQualityScore },
-    subOrderRateInfos
-  } = await requestData(
+  var { subOrderRateInfos } = await requestData(
     "mtop.order.getOrderRateInfo",
     {
       orderId

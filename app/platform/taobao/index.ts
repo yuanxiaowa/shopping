@@ -4,11 +4,9 @@ import { getPcCartInfo } from "./pc";
 import { Page } from "puppeteer";
 import iconv = require("iconv-lite");
 import taobaoHandlers from "./handlers";
-import taobaoCouponHandlers from "./coupon-handlers";
-import { resolveTaokouling, resolveUrl } from "./tools";
+import { resolveTaokouling, resolveUrl, logFile } from "./tools";
 import {
   getGoodsInfo,
-  setReq,
   addCart,
   getCartList,
   updateCart,
@@ -31,6 +29,8 @@ import { ArgOrder, ArgBuyDirect } from "../struct";
 import { config } from "../../common/config";
 import cheerio = require("cheerio");
 import { RequestPromise } from "request-promise-native";
+import taobaoCouponHandlers from "./coupon-map";
+import bus_global from "../../common/bus";
 const user = require("../../../.data/user.json").taobao;
 
 export class Taobao extends AutoShop {
@@ -49,15 +49,21 @@ export class Taobao extends AutoShop {
 
   async checkUrl(url: string, page: Page) {
     page.goto(url);
-    var res = await page.waitForResponse(res =>
-      res
-        .url()
-        .startsWith(
-          "https://h5api.m.taobao.com/h5/mtop.user.getusersimple/1.0/"
-        )
+    var res = await page.waitForResponse(
+      res =>
+        res
+          .url()
+          .startsWith(
+            "https://h5api.m.taobao.com/h5/mtop.user.getusersimple/1.0/"
+          ) ||
+        res
+          .url()
+          .startsWith(
+            "https://h5api.m.taobao.com/h5/mtop.taobao.mclaren.index.data.get.h5/1.0"
+          )
     );
     var text: string = await res.text();
-    return !text.includes("FAIL_SYS_SESSION_EXPIRED::SESSION失效");
+    return !text.includes("FAIL_SYS_SESSION_EXPIRED::");
     // return checkLogin();
   }
   resolveUrl = resolveUrl;
@@ -97,7 +103,7 @@ export class Taobao extends AutoShop {
   }
   comment = comment;
   commentList(args) {
-    return commentList(args.type, args.page);
+    return commentList(/* args.type,  */ args.page);
   }
   buyDirect(data: ArgBuyDirect, p?: Promise<void>): Promise<any> {
     if (data.from_pc) {
@@ -261,7 +267,7 @@ export class Taobao extends AutoShop {
   }
 
   onAfterLogin() {
-    setReq(this.cookie);
+    bus_global.emit("taobao:cookie", this.cookie);
     this.spm = `a1z0d.6639537.1997196601.${(Math.random() * 100) >>
       0}.412f7484UFYI5e`;
   }
@@ -301,11 +307,11 @@ export class Taobao extends AutoShop {
         }
       }
     );
-    this.logFile(url + "\n" + html, "直接购买-商品详情");
+    logFile(url + "\n" + html, "直接购买-商品详情");
     var text = /TShop.Setup\(\s*(.*)\s*\);/.exec(html)![1];
     // detail.isHiddenShopAction
     var { itemDO, valItemInfo, tradeConfig } = JSON.parse(text);
-    if (!itemDO.isOnline) {
+    if (!p && !itemDO.isOnline) {
       throw new Error("商品已下架");
     }
     let form_str = /<form id="J_FrmBid"[^>]*>([\s\S]*?)<\/form>/.exec(html)![1];
@@ -318,7 +324,7 @@ export class Taobao extends AutoShop {
       form.buyer_from = "ecity";
     }
     let skuId = "0";
-    if (valItemInfo) {
+    if (itemDO.hasSku) {
       let { skuList, skuMap } = valItemInfo;
       let skuItem = skuList.find(
         (item: any) => skuMap[`;${item.pvs};`].stock > 0
@@ -408,7 +414,7 @@ export class Taobao extends AutoShop {
         form,
         qs: qs_data
       }); */
-      console.log(ret);
+      return ret;
     } catch (e) {
       console.error("订单提交出错", e);
     }
@@ -425,7 +431,7 @@ export class Taobao extends AutoShop {
       data: { form, addr_url, Referer }
     } = args;
     console.log("准备进入订单结算页");
-    this.logFile(addr_url + "\n" + JSON.stringify(form), "准备进入订单结算页");
+    logFile(addr_url + "\n" + JSON.stringify(form), "pc-准备进入订单结算页");
     var html: string = await this.req.post(addr_url, {
       form,
       headers: {
@@ -435,10 +441,10 @@ export class Taobao extends AutoShop {
     if (html.lastIndexOf("security-X5", html.indexOf("</title>")) > -1) {
       let msg = "进入订单结算页碰到验证拦截";
       console.log(`-------${msg}--------`);
-      this.logFile(html, "订单提交验证拦截");
+      logFile(html, "pc-订单提交验证拦截");
       throw new Error(msg);
     }
-    this.logFile(addr_url + "\n" + html, "订单结算页");
+    logFile(addr_url + "\n" + html, "pc-订单结算页");
     var text = /var orderData = (.*);/.exec(html)![1];
     var {
       data,
@@ -565,11 +571,11 @@ export class Taobao extends AutoShop {
       }
       if (ret.indexOf("security-X5") > -1) {
         console.log("-------提交碰到验证拦截--------");
-        this.logFile(ret, "订单提交验证拦截");
+        logFile(ret, "pc-订单提交验证拦截");
         return;
       }
       // /auction/confirm_order.htm
-      this.logFile(ret, "订单已提交");
+      logFile(ret, "pc-订单已提交");
       console.log("-----订单提交成功，等待付款----");
     } catch (e) {
       console.trace(e);

@@ -32,7 +32,7 @@ export async function getGoodsCoupons(skuId: string) {
   return wrapItems(
     Promise.all(
       coupons
-        .filter(item => item.owned)
+        .filter(item => !item.owned)
         .map(item =>
           executer(() =>
             obtainGoodsCoupon({

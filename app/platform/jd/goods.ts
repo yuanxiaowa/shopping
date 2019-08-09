@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-07-01 09:10:22
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-08-09 17:57:29
+ */
 import request = require("request-promise-native");
 import {
   delayRun,
@@ -12,6 +18,7 @@ import R = require("ramda");
 import cheerio = require("cheerio");
 import qs = require("querystring");
 import moment = require("moment");
+import { ArgSearch } from "../struct";
 
 const logFile = logFileWrapper("jingdong");
 
@@ -48,6 +55,7 @@ export async function getGoodsInfo(skuId: string) {
         op: number;
         tpp?: number;
       };
+      miao?: any;
       stock: {
         // 0：京东
         isJDexpress: string;
@@ -75,6 +83,45 @@ export async function getGoodsInfo(skuId: string) {
     ).item;
   }
   return res;
+}
+
+export async function getGoodsList(args: ArgSearch): Promise<any> {
+  var html: string = await req.get(
+    "https://so.m.jd.com/list/couponSearch.action",
+    {
+      qs: {
+        couponbatch: args.couponbatch,
+        coupon_shopid: args.coupon_shopid,
+        coupon_kind: args.couponKind || "3",
+        key: args.keyword,
+        page: args.page,
+        sort_type: "sort_dredisprice_asc",
+        filt_type: `dredisprice,L${args.end_price ||
+          100000000}M${args.start_price || 0}`,
+        coupon_aggregation: "yes",
+        area_ids: "12,988,47821"
+      }
+    }
+  );
+  var text = /_sfpageinit\((.*)\);/.exec(html)![1];
+  var data = JSON.parse(text);
+  var items = data.searchm.Paragraph.map(item => {
+    let id = item.showlog_new.split(",")[0];
+    return Object.assign(
+      {
+        id,
+        url: `https://item.m.jd.com/product/${id}.html`,
+        title: item.Content.warename,
+        price: item.dredisprice
+      },
+      item
+    );
+  });
+  return {
+    more: true,
+    items,
+    page: args.page
+  };
 }
 
 export async function queryGoodsCoupon(data: {

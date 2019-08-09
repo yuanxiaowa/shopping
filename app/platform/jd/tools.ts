@@ -29,7 +29,7 @@ export async function getGoodsCoupons(skuId: string) {
     vid: item.venderID,
     cid: item.category[item.category.length - 1]
   });
-  return wrapItems(
+  var data = wrapItems(
     Promise.all(
       coupons
         .filter(item => !item.owned)
@@ -43,6 +43,11 @@ export async function getGoodsCoupons(skuId: string) {
         )
     )
   );
+  return {
+    success: true,
+    res: data,
+    url: `https://item.jd.com/${skuId}.html`
+  };
 }
 
 export async function getFloorCoupons(url: string) {

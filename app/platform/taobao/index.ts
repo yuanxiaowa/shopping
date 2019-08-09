@@ -20,7 +20,6 @@ import {
   getChaoshiGoodsList,
   getCoupons,
   getGoodsList,
-  getGoodsListCoudan,
   checkLogin
 } from "./goods";
 import { newPage } from "../../../utils/page";
@@ -214,9 +213,6 @@ export class Taobao extends AutoShop {
   async goodsList(args) {
     if (args.name === "chaoshi") {
       return getChaoshiGoodsList(args);
-    }
-    if (args.type === "coudan") {
-      return getGoodsListCoudan(args);
     }
     return getGoodsList(args);
   }

@@ -18,3 +18,11 @@ export interface ArgOrder<T> {
 export interface ArgCartBuy {
   items: any[];
 }
+
+export type ArgSearch = {
+  name: string;
+  page: number;
+  keyword: string;
+  start_price?: string;
+  coupon_tag_id?: string;
+} & Record<string, any>;

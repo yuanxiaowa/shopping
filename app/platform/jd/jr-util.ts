@@ -30,6 +30,7 @@ import { Page } from "puppeteer";
 import { newPage, getPageCookie } from "../../../utils/page";
 import cookieManager from "../../common/cookie-manager";
 import moment = require("moment");
+import { executer } from "./tools";
 const user = require("../../../.data/user.json");
 
 export async function doWelfareActions() {
@@ -137,13 +138,17 @@ export async function doRightCenter() {
   for (let { time, floorInfo } of datas) {
     let diff = moment(time, "HH:mm").diff();
     if (diff > 0) {
+      console.log(time + "开抢", floorInfo);
       await delay(diff);
       floorInfo.forEach(item => {
-        receiveCoupon(item.couponKey).then(data => {
-          console.log("权益中心抢券", data);
-        });
+        executer(() =>
+          receiveCoupon(item.couponKey).then(data => {
+            console.log("权益中心抢券", data);
+          })
+        );
       });
     }
+    break;
   }
 }
 
@@ -172,7 +177,8 @@ export async function doAll() {
     doLottery(),
     doHealthInsured(),
     doAdJindou(),
-    do618Hongbao()
+    do618Hongbao(),
+    doRightCenter()
   ]);
 }
 

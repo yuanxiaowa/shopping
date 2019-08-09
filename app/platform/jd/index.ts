@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-07-01 09:10:22
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-08-09 13:56:44
+ */
 import { newPage } from "../../../utils/page";
 import { Page } from "puppeteer";
 import AutoShop from "../auto-shop";
@@ -16,7 +22,8 @@ import {
   getGoodsInfo,
   getSkuId,
   getShopCollection,
-  deleteShop
+  deleteShop,
+  getGoodsList
 } from "./goods";
 import jingdongHandlers from "./handlers";
 import jingdongCouponHandlers from "./coupon-handlers";
@@ -25,7 +32,7 @@ import { config } from "../../common/config";
 import { delay, getCookie, createTimerExcuter } from "../../../utils/tools";
 import qs = require("querystring");
 import cheerio = require("cheerio");
-import { ArgBuyDirect, ArgOrder } from "../struct";
+import { ArgBuyDirect, ArgOrder, ArgSearch } from "../struct";
 const user = require("../../../.data/user.json").jingdong;
 
 export async function buy(page: Page) {
@@ -136,22 +143,27 @@ export class Jingdong extends AutoShop {
       "https://club.jd.com/myJdcomments/myJdcomment.action"
     ); */
     var $ = cheerio.load(text);
-    var items = $(".tr-bd")
+    var items = $(".tr-th")
       .map((i, ele) => {
-        var $ele = $(ele);
-        var img = $ele.find("img").attr("src");
-        var $a = $ele.find(".p-name a");
-        var id = /ruleid=(\w+)/.exec($ele.find(".btn-def").attr("href"))![1];
-        return {
-          id,
-          items: [
-            {
-              id,
+        var $tbody = $(ele).parent();
+        var items = $tbody
+          .find(".tr-bd")
+          .map((i, ele) => {
+            var $ele = $(ele);
+            var img = $ele.find("img").attr("src");
+            var $a = $ele.find("a");
+            return {
+              id: /(\d+)/.exec($a.attr("href"))![1],
               title: $a.text().trim(),
               img,
               url: $a.attr("href")
-            }
-          ]
+            };
+          })
+          .get();
+        var id = /ruleid=(\w+)/.exec($tbody.find(".btn-def").attr("href"))![1];
+        return {
+          id,
+          items
         };
       })
       .get();
@@ -165,9 +177,11 @@ export class Jingdong extends AutoShop {
 
   async buyDirect(args: ArgBuyDirect, p?: Promise<void>): Promise<any> {
     if (args.jianlou) {
+      let isSeckill = false;
       createTimerExcuter(async () => {
         let data = await getGoodsInfo(getSkuId(args.url));
         let success = data.stock.StockState !== 34;
+        isSeckill = data.miao;
         if (success) {
           if (data.stock.rn > -1) {
             success = data.stock.rn >= args.quantity;
@@ -181,7 +195,8 @@ export class Jingdong extends AutoShop {
         console.log("有库存了，去下单");
         var res = this.getNextDataByGoodsInfo(
           { skuId: getSkuId(args.url) },
-          args.quantity
+          args.quantity,
+          isSeckill
         );
         return this.submitOrder(
           Object.assign(
@@ -194,9 +209,11 @@ export class Jingdong extends AutoShop {
       });
       return;
     }
-    var res = this.getNextDataByGoodsInfo(
+    let data = await getGoodsInfo(getSkuId(args.url));
+    let res = this.getNextDataByGoodsInfo(
       { skuId: getSkuId(args.url) },
-      args.quantity
+      args.quantity,
+      data.miao
     );
     if (p) {
       await p;
@@ -226,6 +243,8 @@ export class Jingdong extends AutoShop {
     };
   }
 
+  goodsList = getGoodsList;
+
   async calcPrice(args: { url: string }) {
     return calcPrice({
       skuId: getSkuId(args.url),
@@ -233,9 +252,11 @@ export class Jingdong extends AutoShop {
     });
   }
 
-  getNextDataByGoodsInfo({ skuId }: any, quantity: number) {
+  getNextDataByGoodsInfo({ skuId }: any, quantity: number, isSeckill = false) {
     var submit_url =
-      "https://wq.jd.com/deal/confirmorder/main?" +
+      (isSeckill
+        ? "https://wqs.jd.com/order/s_confirm_miao.shtml?"
+        : "https://wq.jd.com/deal/confirmorder/main?") +
       qs.stringify({
         sceneval: "2",
         bid: "",

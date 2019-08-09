@@ -6,7 +6,7 @@ import { Page } from "puppeteer";
 import { newPage, getPageCookie } from "../../utils/page";
 import iconv = require("iconv-lite");
 import cookieManager, { Cookie } from "../common/cookie-manager";
-import { ArgBuyDirect, ArgOrder, ArgCartBuy } from "./struct";
+import { ArgBuyDirect, ArgOrder, ArgCartBuy, ArgSearch } from "./struct";
 
 interface AutoShopOptions {
   name: string;
@@ -107,7 +107,7 @@ export default abstract class AutoShop implements AutoShopOptions {
   abstract getNextDataByGoodsInfo(data: any, quantity: number): any;
   abstract submitOrder(data: ArgOrder<any>): Promise<any>;
   async seckillList(name: string): Promise<any> {}
-  async goodsList(args: { name: string; keyword: string }): Promise<any> {}
+  abstract goodsList(args: ArgSearch): Promise<any>;
   async testOrder(args: { file: string }): Promise<any> {}
   async coupons(args: { page: number }): Promise<any> {}
   async calcPrice(args: { url: string }): Promise<any> {}

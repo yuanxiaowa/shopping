@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-07-18 09:21:14
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-08-09 17:42:42
+ */
 import iconv = require("iconv-lite");
 import { getJsonpData, createScheduler } from "../../../utils/tools";
 import {
@@ -6,7 +12,7 @@ import {
 } from "./mobile-data-transform";
 import moment = require("moment");
 import { config } from "../../common/config";
-import { ArgOrder } from "../struct";
+import { ArgOrder, ArgSearch } from "../struct";
 import cheerio = require("cheerio");
 import qs = require("querystring");
 import { getComment } from "../comment-tpl";
@@ -59,20 +65,24 @@ export async function getChaoshiGoodsList(args) {
   throw new Error("出错了");
 }
 
-export async function getGoodsList(args: any) {}
-
-export async function getGoodsListCoudan(data: any) {
+/**
+ * 搜索商品
+ * @param data
+ */
+export async function getGoodsList(data: ArgSearch) {
   var page = data.page;
   var q = data.keyword;
   delete data.page;
   delete data.keyword;
   var qs = Object.assign(
     {
-      page_size: "20",
+      page_size: 20,
       sort: "p",
+      type: "p",
       q,
       page_no: page,
-      callback: "jsonp_20135"
+      spm: "a220m.6910245.a2227oh.d100",
+      from: "mallfp..m_1_searchbutton"
     },
     data
   );
@@ -86,11 +96,15 @@ export async function getGoodsListCoudan(data: any) {
       }
     }
   );
-  var { total_page, item } = getJsonpData(text);
+  var { total_page, item } = JSON.parse(text);
   return {
     total: total_page,
     page,
-    items: item
+    items: item.map(item =>
+      Object.assign(item, {
+        url: "https:" + item.url
+      })
+    )
   };
 }
 

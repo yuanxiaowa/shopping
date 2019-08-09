@@ -28,7 +28,11 @@ export function setReq() {
       if (/^\w/.test(text)) {
         data = getJsonpData(text);
       } else {
-        data = JSON.parse(text);
+        try {
+          data = JSON.parse(text);
+        } catch (error) {
+          data = text;
+        }
       }
       var { resultCode, resultMsg, resultData } = data;
       if (resultCode !== 0) {
@@ -778,7 +782,7 @@ export async function getRightCenterLucky() {
         t: Math.random()
       }
     );
-    console.log("获取到", couponsDetailVo.remark);
+    console.log("权益中心抽奖获取到", couponsDetailVo.remark);
   }
 }
 
@@ -806,7 +810,9 @@ export async function getRightCenterCoupons() {
     "https://ms.jr.jd.com/gw/generic/bt/h5/m/queryLimitedInfo?callback=__jp5"
   );
   return limitedResult.map(item => {
-    item.floorInfo = item.floorInfo.filter(item => item.text1 === "白条立减券");
+    item.floorInfo = item.floorInfo.filter(item =>
+      item.text1.includes("白条立减")
+    );
     return item;
   });
 }

@@ -45,6 +45,9 @@ export var mteeInfo = {
 };
 
 export function getItemId(url: string) {
+  if (url.startsWith("https://a.m.taobao.com")) {
+    return /(\d+)\.htm/.exec(url)![1];
+  }
   return /id=(\d+)/.exec(url)![1];
 }
 

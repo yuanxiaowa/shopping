@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-09 17:57:29
+ * @LastEditTime: 2019-08-09 20:20:05
  */
 import request = require("request-promise-native");
 import {
@@ -104,7 +104,7 @@ export async function getGoodsList(args: ArgSearch): Promise<any> {
     }
   );
   var text = /_sfpageinit\((.*)\);/.exec(html)![1];
-  var data = JSON.parse(text);
+  var { data } = eval(`(${text})`);
   var items = data.searchm.Paragraph.map(item => {
     let id = item.showlog_new.split(",")[0];
     return Object.assign(
@@ -112,7 +112,8 @@ export async function getGoodsList(args: ArgSearch): Promise<any> {
         id,
         url: `https://item.m.jd.com/product/${id}.html`,
         title: item.Content.warename,
-        price: item.dredisprice
+        price: item.dredisprice,
+        img: "//img12.360buyimg.com/mobilecms/s455x455_" + item.Content.imageurl
       },
       item
     );
@@ -123,7 +124,6 @@ export async function getGoodsList(args: ArgSearch): Promise<any> {
     page: args.page
   };
 }
-
 export async function queryGoodsCoupon(data: {
   skuId: string;
   vid: number;

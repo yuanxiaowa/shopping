@@ -127,6 +127,9 @@ export function getUuid() {
 }
 
 export function getSkuId(url: string) {
+  if (/wareId=(\d+)/.test(url)) {
+    return RegExp.$1;
+  }
   return /(\d+)\.html/.exec(url)![1];
 }
 

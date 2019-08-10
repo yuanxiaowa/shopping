@@ -27,7 +27,12 @@ import jingdongHandlers from "./handlers";
 import jingdongCouponHandlers from "./coupon-map";
 import { resolveUrl, getSkuId, setReq } from "./tools";
 import { config } from "../../common/config";
-import { delay, getCookie, createTimerExcuter } from "../../../utils/tools";
+import {
+  delay,
+  getCookie,
+  createTimerExcuter,
+  getJsonpData
+} from "../../../utils/tools";
 import qs = require("querystring");
 import cheerio = require("cheerio");
 import { ArgBuyDirect, ArgOrder, ArgSearch } from "../struct";
@@ -283,18 +288,33 @@ export class Jingdong extends AutoShop {
     }>
   ): Promise<any> {
     var page = await newPage();
-    await page.goto(args.data.submit_url);
+    page.setRequestInterception(true);
+    page.on("request", request => {
+      var type = request.resourceType();
+      if (type === "image" || type === "stylesheet") {
+        request.respond({
+          body: ""
+        });
+      } else {
+        request.continue();
+      }
+    });
+    page.goto(args.data.submit_url);
+    let text_userasset = await page
+      .waitForResponse(res => res.url().includes("userasset"))
+      .then(res => res.text());
     if (typeof args.expectedPrice === "number") {
-      let total = await page.evaluate(() =>
-        Number(
-          document
-            .querySelector<HTMLElement>("#pageTotalPrice")!
-            .getAttribute("price")
-        )
-      );
-      if (args.expectedPrice < total) {
+      let {
+        order: {
+          orderprice: { totalPrice }
+        }
+      } = JSON.parse(/\((.*)\)\}catch/.exec(text_userasset)![1]);
+      totalPrice = totalPrice / 100;
+      if (args.expectedPrice < totalPrice) {
         page.close();
-        throw new Error("太贵了");
+        throw new Error(
+          `太贵了，期望价格:${args.expectedPrice}, 实际价格：${totalPrice}`
+        );
       }
     }
     if (!config.isSubmitOrder) {

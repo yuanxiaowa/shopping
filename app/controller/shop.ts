@@ -85,7 +85,7 @@ export default class ShopController extends Controller {
     var data = ctx.request.body;
     ctx.body = await handle(app[platform].cartUpdateQuantity(data), "更新成功");
   }
-  public async buyDirect() {
+  public async buyDirect(args: any) {
     const { ctx, app } = this;
     var { platform, t } = ctx.query;
     var data = ctx.request.body;
@@ -94,7 +94,8 @@ export default class ShopController extends Controller {
       let id = await ins.cartAdd(data);
       let items: any[] = await ins.goodsList({
         name: "chaoshi",
-        keyword: ""
+        keyword: "",
+        page: 1
       });
       let i = items.findIndex(item => Number(item.price) > 0.01);
       let ids: string[] = [id];

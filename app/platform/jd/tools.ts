@@ -1,18 +1,134 @@
 import request = require("request-promise-native");
 
 import {
-  getGoodsInfo,
   queryGoodsCoupon,
   obtainGoodsCoupon,
   queryFloorCoupons,
   obtainFloorCoupon,
   queryActivityCoupons,
-  obtainActivityCoupon,
-  goGetCookie
-} from "./goods";
-import { delay, createScheduler } from "../../../utils/tools";
+  obtainActivityCoupon
+} from "./coupon-handlers";
+import {
+  delay,
+  createScheduler,
+  logFileWrapper,
+  getJsonpData
+} from "../../../utils/tools";
+import { RequestAPI, RequiredUriUrl } from "request";
+import { getGoodsInfo } from "./goods";
 
 export const executer = createScheduler(3000);
+
+export const logFile = logFileWrapper("jingdong");
+
+var req: RequestAPI<
+  request.RequestPromise<any>,
+  request.RequestPromiseOptions,
+  RequiredUriUrl
+>;
+var eid = "";
+var fp = "0a2d744505998993736ee93c5880c826";
+var cookie = "";
+
+export function getReq() {
+  return req;
+}
+
+export async function requestData(
+  body: any,
+  {
+    functionId,
+    api = "api"
+  }: {
+    functionId: string;
+    api?: string;
+  }
+) {
+  var text: string = await req.get("https://api.m.jd.com/" + api, {
+    qs: {
+      client: "wh5",
+      clientVersion: "2.0.0",
+      agent:
+        "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.90 Safari/537.36",
+      lang: "zh_CN",
+      networkType: "4g",
+      eid,
+      fp,
+      functionId,
+      body: JSON.stringify(body),
+      jsonp: "cb",
+      loginType: 2,
+      _: Date.now()
+    }
+  });
+  var res = getJsonpData(text);
+  let { data, code, msg } = res;
+  if (code !== 0) {
+    let err = new Error(msg);
+    throw err;
+  }
+  return data;
+}
+
+export function getBaseData() {
+  return {
+    eid,
+    fp
+  };
+}
+
+export function setReq(
+  _req: RequestAPI<
+    request.RequestPromise<any>,
+    request.RequestPromiseOptions,
+    RequiredUriUrl
+  >,
+  _cookie: string
+) {
+  cookie = _cookie;
+  eid = getCookie("3AB9D23F7A4B3C9B");
+  req = _req;
+}
+
+export function goGetCookie(url: string) {
+  return req.get("https://wq.jd.com/mlogin/mpage/Login", {
+    qs: {
+      rurl: url
+    }
+  });
+}
+
+export function time33(str: string) {
+  for (var i = 0, len = str.length, hash = 5381; i < len; ++i) {
+    hash += (hash << 5) + str.charAt(i).charCodeAt(0);
+  }
+  return hash & 0x7fffffff;
+}
+export function getCookie(name: string) {
+  var reg = new RegExp("(^| )" + name + "(?:=([^;]*))?(;|$)"),
+    val = cookie.match(reg);
+  if (!val || !val[2]) {
+    return "";
+  }
+  var res = val[2];
+  try {
+    if (/(%[0-9A-F]{2}){2,}/.test(res)) {
+      return decodeURIComponent(res);
+    } else {
+      return unescape(res);
+    }
+  } catch (e) {
+    return unescape(res);
+  }
+}
+
+export function getUuid() {
+  return getCookie("mba_muid");
+}
+
+export function getSkuId(url: string) {
+  return /(\d+)\.html/.exec(url)![1];
+}
 
 async function wrapItems(p: Promise<any[]>) {
   var res = await p;

@@ -8,7 +8,6 @@ import { newPage } from "../../../utils/page";
 import { Page } from "puppeteer";
 import AutoShop from "../auto-shop";
 import {
-  setReq,
   toggleCartChecked,
   getShopJindou,
   getVideoHongbao,
@@ -20,14 +19,13 @@ import {
   updateCartQuantity,
   calcPrice,
   getGoodsInfo,
-  getSkuId,
   getShopCollection,
   deleteShop,
   getGoodsList
 } from "./goods";
 import jingdongHandlers from "./handlers";
-import jingdongCouponHandlers from "./coupon-handlers";
-import { resolveUrl } from "./tools";
+import jingdongCouponHandlers from "./coupon-map";
+import { resolveUrl, getSkuId, setReq } from "./tools";
 import { config } from "../../common/config";
 import { delay, getCookie, createTimerExcuter } from "../../../utils/tools";
 import qs = require("querystring");

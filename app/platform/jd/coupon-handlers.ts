@@ -1,131 +1,540 @@
-import { getActivityCoupons, getGoodsCoupons, getFloorCoupons } from "./tools";
-import { startsWith, test } from "ramda";
 import {
-  obtainFloorCoupon,
-  getQuanpinCoupon,
-  getJingfen,
-  getCouponSingle,
-  getShopCoupons,
-  getFanliCoupon,
-  obtainGoodsCoupon,
-  getCouponZeus
-} from "./goods";
-import { newPage } from "../../../utils/page";
-import { delay } from "../../../utils/tools";
+  logFile,
+  getBaseData,
+  getReq,
+  getCookie,
+  executer,
+  requestData
+} from "./tools";
+import { getJsonpData } from "../../../utils/tools";
+import { getGoodsUrl } from "./goods";
+import moment = require("moment");
 
-const jingdongCouponHandlers = {
-  wq: {
-    // https://wq.jd.com/webportal/event/25842?cu=true&cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=4b1871b719e94013a1e77bb69fee767e&scpos=#st=460
-    // https://wq.jd.com/webportal/event/25842?cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=c39350c2555145809ef3f4c05465cdf0&scpos=#st=376
-    test: startsWith("https://wq.jd.com/webportal/event/"),
-    handler: async url => {
-      // @ts-ignore
-      var html: string = await this.req.get(url);
-      var text = /window._componentConfig\s*=\s*(.*);/.exec(html)![1];
-      var items = JSON.parse(text).filter(({ name }: any) => name === "coupon");
-      var now = Date.now();
-      items.forEach(({ data: { list } }: any) => {
-        list.forEach(({ begin, end, key, level }: any) => {
-          if (
-            new Date(begin).getTime() < now &&
-            new Date(end).getTime() > now
-          ) {
-            obtainFloorCoupon({
-              key,
-              level
-            });
-          }
-        });
-      });
-      /* var page = await newPage();
-      await page.goto(url);
-      await page.evaluate(() => {
-        Array.from(
-          document.querySelectorAll<HTMLDivElement>(
-            ".atmosphere_coupon_1600_591_skin_ft_cloud:not(.disabled)"
-          )
-        ).forEach(ele => {
-          ele.click();
-        });
-        Array.from(
-          document.querySelectorAll<HTMLDivElement>(
-            ".coupon_2030_294_item"
-          )
-        ).forEach(ele => ele.click());
-      });
-      return page; */
-    }
-  },
-  couponCenter: {
-    test: startsWith("https://coupon.m.jd.com/center/getCouponCenter.action"),
-    async handler(url) {
-      var page = await newPage();
-      await page.goto(url);
-      await page.evaluate(() => {
-        Array.from(
-          document.querySelectorAll<HTMLDivElement>(".coupon_btn")
-        ).forEach(ele => ele.click());
-      });
-    }
-  },
-  jingfen: {
-    test: startsWith("https://jingfen.jd.com/item.html"),
-    handler: getJingfen
-  },
-  goods: {
-    test: test(
-      /^https?:\/\/(item\.m\.jd.com\/product\/|item\.jd\.com\/\d+\.html)/
-    ),
-    handler(url) {
-      return getGoodsCoupons(/\d+/.exec(url)![0]);
-    }
-  },
-  floor: {
-    // https://wqs.jd.com/event/promote/mobile8/index.shtml?ptag=17036.106.1&ad_od=4&cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=e653d855fd454bfe86b29fa2bf38fdb2&scpos=#st=592
-    test: startsWith("https://wqs.jd.com/event/promote"),
-    handler: getFloorCoupons
-  },
-  activity: {
-    // https://pro.m.jd.com/mall/active/2fJDHSrZhhDcNKg9ahyKkbny5r4X/index.html?jd_pop=29588686-c925-471d-b9f2-49696e154408&abt=0&jd_pop=be4dd5ce-8a22-4e00-a791-b00f4c114ab6&abt=0&cu=true&cu=true&cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=d1dc38952a544e00879cf4a4f4b871b6
-    test: test(/^https:\/\/pro(\.m)?\.jd\.com\/mall\/active/),
-    async handler(url) {
-      return getActivityCoupons(url);
-    }
-  },
-  quanpinByPhone: {
-    test: startsWith("https://h5.m.jd.com/dev/"),
-    handler: getQuanpinCoupon
-  },
-  couponZeus: {
-    test: startsWith("https://h5.m.jd.com/babelDiy/Zeus"),
-    handler: getCouponZeus
-  },
-  shop: {
-    test: startsWith("https://shop.m.jd.com/?"),
-    async handler(url: string) {
-      var { urls, coupons } = await getShopCoupons(url);
-      try {
-        await Promise.all(
-          urls
-            .map(getCouponSingle)
-            .concat(<any[]>coupons.map(obtainGoodsCoupon))
-        );
-        return {
-          success: true
-        };
-      } catch (e) {
-        return e;
+export async function queryGoodsCoupon(data: {
+  skuId: string;
+  vid: number;
+  cid: string;
+}) {
+  var text: string = await getReq().post(
+    `https://wq.jd.com/mjgj/fans/queryusegetcoupon`,
+    {
+      qs: {
+        callback: "getCouponListCBA",
+        platform: 3,
+        cid: data.cid,
+        sku: data.skuId,
+        popId: data.vid,
+        t: Math.random(),
+        // g_tk: time33(getCookie("wq_skey")),
+        g_ty: "ls"
       }
     }
-  },
-  couponSingle: {
-    test: startsWith("https://coupon.m.jd.com/coupons/show.action"),
-    handler: getCouponSingle
-  },
-  shop2: {
-    test: startsWith("https://ifanli.m.jd.com/rebate/couponMiddle.html"),
-    handler: getFanliCoupon
+  );
+  interface T {
+    key: string;
+    roleId: number;
+    owned?: boolean;
+    name: string;
+    // 0:满减 1:打折
+    couponType: number;
+    discount: number;
+    quota: number;
+    discountdesc: {
+      // 最高减多少
+      high: string;
+      info: {
+        // 满多少减
+        quota: string;
+        // 多少折
+        discount: string;
+      }[];
+    };
   }
-};
+  var { coupons, use_coupons } = getJsonpData<{
+    coupons: T[];
+    use_coupons: {
+      id: number;
+      type: number;
+      quota: string;
+      parValue: string;
+      // 0：不展示 1：展示
+      couponKind: number;
+      name: string;
+    }[];
+  }>(text);
+  return <T[]>[
+    ...coupons,
+    ...use_coupons
+      .filter(item => item.type === 1)
+      .map(item => ({
+        owned: true,
+        name: item.name,
+        id: item.id,
+        quota: +item.quota,
+        discount: +item.parValue,
+        couponType: item.type
+      }))
+  ];
+}
 
-export default jingdongCouponHandlers;
+export async function obtainGoodsCoupon(data: { roleId: number; key: string }) {
+  var text: string = await getReq().get(
+    `https://wq.jd.com/activeapi/obtainjdshopfreecouponv2`,
+    {
+      qs: {
+        sceneval: "2",
+        callback: "ObtainJdShopFreeCouponCallBackA",
+        scene: "2",
+        key: data.key,
+        roleid: data.roleId,
+        t: Math.random(),
+        // g_tk: time33(getCookie("wq_skey")),
+        g_ty: "ls"
+      },
+      headers: {
+        Referer: "https://item.m.jd.com/product/36850022644.html"
+      }
+    }
+  );
+  logFile(text, "商品下方领券");
+  return getJsonpData<{
+    batchid: string;
+    code: number;
+    couponid: string;
+    message: string;
+  }>(text);
+}
+
+/**
+ * 查询楼层优惠券
+ * @param url
+ * @example https://wqs.jd.com/event/promote/game11/index.shtml?cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=3f8d9f58aed14a30a581d169f573ced2
+ * @example https://wqs.jd.com/event/promote/zdm18/index.shtml?cu=true&sid=b3234f60d61e8b4e3b5a8e703c321b0w&un_area=19_1601_50258_50374&_ts=1557200825024&ad_od=share&scpos=#st=6455&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=c842a3cb81d948899b818c0602bd9b8d
+ */
+export async function queryFloorCoupons(url: string) {
+  let html: string = await getReq().get(url);
+  let text = /window\._componentConfig=(.*);/.exec(html)![1];
+  let items: {
+    name: string;
+    data: {
+      list: {
+        key: string;
+        gate: string;
+        price: string;
+        // 1
+        type: number;
+        level: string;
+        name: string;
+        // 0:已领 1:可领 2:已领光
+        // status: string;
+        begin: string;
+        end: string;
+      }[];
+    };
+  }[] = JSON.parse(text);
+  let coupon_items = items.filter(({ name }) => name === "coupon");
+  // 校验状态，暂时不需要
+  // https://wq.jd.com/active/querybingo?callback=cb_quan_daogou06A&active=daogou06&g_tk=1461522350&g_ty=ls
+  // Referer: https://wqs.jd.com/event/promote/game11/index.shtml
+  let now = Date.now();
+  return coupon_items.map(({ data: { list } }) =>
+    list.filter(
+      ({ begin, end }) =>
+        now >= new Date(begin).getTime() && now < new Date(end).getTime()
+    )
+  );
+}
+
+export async function obtainFloorCoupon(data: { key: string; level: string }) {
+  /* let g_pt_tk: any = getCookie("pt_key") || undefined;
+  if (g_pt_tk) {
+    g_pt_tk = time33(g_pt_tk);
+  } */
+  var ret: string = await getReq().get("https://wq.jd.com/active/active_draw", {
+    qs: {
+      active: data.key,
+      level: data.level,
+      _: Date.now(),
+      g_login_type: "0",
+      callback: "jsonpCBKE",
+      // g_tk: time33(getCookie("wq_skey")),
+      // g_pt_tk,
+      g_ty: "ls"
+    },
+    headers: {
+      Referer: "https://wqs.jd.com/event/promote/mobile8/index.shtml"
+    }
+  });
+  /* try{ jsonpCBKA(
+{
+   "active" : "daogou06",
+   "award" : {
+      "awardcode" : "",
+      "awardmsg" : "",
+      "awardret" : 2
+   },
+   "bingo" : {
+      "bingolevel" : 0,
+      "bingomsg" : "",
+      "bingoret" : 2
+   },
+   "ret" : 2,
+   "retmsg" : "未登录"
+}
+);}catch(e){} */
+  return getJsonpData(ret);
+}
+
+/**
+ * 查询活动主题优惠券
+ * @param url
+ * @example https://pro.m.jd.com/mall/active/4FziapEprFVTPwjVx19WRDMTbbbF/index.html?utm_source=pdappwakeupup_20170001&utm_user=plusmember&ad_od=share&utm_source=androidapp&utm_medium=appshare&utm_campaign=t_335139774&utm_term=CopyURL
+ */
+export async function queryActivityCoupons(url: string) {
+  let html: string = await getReq().get(url);
+  let arr = /window.(dataHub\d+|__react_data__)\s*=(.*);?/.exec(html)!;
+  let key = arr[1];
+  let data = JSON.parse(arr[2]);
+  if (key === "__react_data__") {
+    data = data.activityData.floorList;
+  }
+  let activityId = /active\/(\w+)/.exec(url)![1];
+  let ret: {
+    cpId: string;
+    args: string;
+    srv: string;
+    jsonSrv: string;
+    // 0:满减 2:白条
+    status: string;
+    // 1
+    scene: string;
+    beginPeriod?: string;
+    endPeriod?: string;
+    scope: string;
+    limit: string;
+  }[][] = Object.keys(data)
+    .filter(key => data[key].couponList)
+    .map(key =>
+      data[key].couponList.map(item =>
+        Object.assign({ activityId, actKey: item.cpId }, item)
+      )
+    );
+  return ret;
+}
+
+export async function obtainActivityCoupon(data: {
+  activityId: string;
+  args: string;
+  scene: string;
+  childActivityUrl: string;
+  actKey: string;
+}) {
+  var ret: string = await getReq().post(
+    `https://api.m.jd.com/client.action?functionId=newBabelAwardCollection`,
+    {
+      form: {
+        body: JSON.stringify({
+          actKey: data.actKey,
+          activityId: data.activityId,
+          from: "H5node",
+          scene: data.scene,
+          args: data.args,
+          platform: "3",
+          orgType: "2",
+          openId: "-1",
+          pageClickKey: "Babel_Coupon",
+          shshshfp: getCookie("shshshfp"),
+          shshshfpa: getCookie("shshshfpa"),
+          shshshfpb: getCookie("shshshfpb"),
+          childActivityUrl: data.childActivityUrl,
+          mitemAddrId: "",
+          geo: { lng: "", lat: "" },
+          addressId: "",
+          posLng: "",
+          posLat: "",
+          focus: "",
+          innerAnchor: "",
+          ...getBaseData()
+        }),
+        client: "wh5",
+        clientVersion: "1.0.0",
+        sid: "",
+        uuid: "15617018266251592388825",
+        area: ""
+      }
+    }
+  );
+  return ret;
+}
+
+/**
+ * 领取全品券
+ * @param url
+ * @param phone
+ * @example https://h5.m.jd.com/dev/2tvoNZVsTZ9R1aF1T4fDthhd6bm1/index.html?type=out_station&id=f128d673441d4afa9fa52b2f61818591&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=d88e8a25670040f38f3d0dfc8f9542b9
+ */
+export async function getQuanpinCoupon(url: string, phone = "18605126843") {
+  var { searchParams } = new URL(url);
+  var data = await requestData(
+    {
+      actId: searchParams.get("id"),
+      phone,
+      code: "",
+      country: "cn",
+      platform: "3",
+      pageClickKey: "-1",
+      userArea: "",
+      ...getBaseData()
+    },
+    {
+      functionId: "activityLongPage",
+      api: ""
+    }
+  );
+  let {
+    returnStatus,
+    status: { minorTitle, activityUrl }
+  }: {
+    // 1:已抢光 3:没领到
+    returnStatus: number;
+    status: {
+      minorTitle: string;
+      activityUrl: string;
+    };
+  } = data;
+  logFile(data, "手机号领取全品券");
+  return {
+    success: returnStatus !== 1 && returnStatus !== 3,
+    url: activityUrl,
+    msg: minorTitle
+  };
+}
+
+/**
+ *
+ * @param url
+ * @example https://h5.m.jd.com/babelDiy/Zeus/qYwUMpSiiovLbsS5Lw4XNf8u58r/index.html?lng=104.758990&cu=true&un_area=12_911_914_51563&sid=e14edc99d2ab2581774bbbd84f47296w&_ts=1564765855849&utm_user=plusmember&ad_od=share&cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=f693db4b94cd4620afcb394dcff92bdf
+ */
+export async function getCouponZeus(url: string) {
+  // var { searchParams } = new URL(url);
+  var { bankCoupons, normalCoupons } = await requestData(
+    {
+      activityId: "00461561",
+      pageId: "1044474",
+      qryParam: JSON.stringify([
+        {
+          type: "advertGroup",
+          id: "03590654",
+          mapTo: "normalCoupons",
+          next: [
+            {
+              type: "plusCoupon",
+              subType: "material",
+              mapKey: "comment[0]",
+              mapTo: "cate"
+            }
+          ]
+        },
+        {
+          type: "advertGroup",
+          id: "03592688",
+          mapTo: "bankCoupons",
+          next: [{ type: "jrCoupon", mapKey: "extension.key", mapTo: "cate" }]
+        },
+        {
+          type: "productGroup",
+          id: "09963245",
+          mapTo: "giftskus",
+          diversityFilter: "1,5,9,13,17",
+          dupliRemovalFlag: 1
+        },
+        { type: "advertGroup", id: "03602534", mapTo: "loveListDataGirl" },
+        { type: "advertGroup", id: "03602977", mapTo: "loveListDataBoy" },
+        { type: "advertGroup", id: "03607171", mapTo: "loveListDataSingle" },
+        { type: "advertGroup", id: "03603919", mapTo: "rankTab" },
+        {
+          type: "productGroup",
+          id: "09965963",
+          mapTo: "more",
+          diversityFilter: "1,5,9,13,17"
+        }
+      ])
+    },
+    {
+      functionId: "qryCompositeMaterials",
+      api: "client.action"
+    }
+  );
+  return Promise.all(
+    bankCoupons.list.concat(normalCoupons.list).map(item =>
+      executer(() =>
+        requestData(
+          {
+            scene: 3,
+            actKey: item.link,
+            activityId: /Zeus\/(\w+)/.exec(url)![1]
+          },
+          {
+            functionId: "newBabelAwardCollection",
+            api: "client.action"
+          }
+        )
+      )
+    )
+  );
+}
+
+/**
+ * 领取单张优惠券
+ * @param url
+ * @example https://coupon.m.jd.com/coupons/show.action?key=95f6d76c6af84f61b6431c128938a9a6&roleId=20962745&to=https://pro.m.jd.com/mall/active/VfaRyNj2vtwfoWgUEFoqGzF4B1Z/index.html&sceneval=2&time=1563640816871
+ */
+export async function getCouponSingle(url: string) {
+  var { searchParams } = new URL(url);
+  var text: string = await getReq().get(
+    "https://s.m.jd.com/activemcenter/mfreecoupon/getcoupon",
+    {
+      qs: {
+        key: searchParams.get("key"),
+        roleId: searchParams.get("roleId"),
+        to: searchParams.get("to"),
+        verifycode: "",
+        verifysession: "",
+        _: Date.now(),
+        sceneval: searchParams.get("sceneval"),
+        g_login_type: "1",
+        callback: "jsonpCBKA",
+        g_ty: "ls"
+      },
+      headers: {
+        Referer: url
+      }
+    }
+  );
+  var { ret, errmsg } = getJsonpData(text);
+  // 145:提交频繁 16:已抢完
+  return {
+    success: ret === 0,
+    msg: errmsg
+  };
+}
+
+export async function getShopCoupons(url: string) {
+  var html: string = await getReq().get(url);
+  var text = /window.SHOP_COUPONS\s*=\s*(\[[\s\S]*?\])\s*;/.exec(html)![1];
+  var now = Date.now();
+  var coupons: any[] = JSON.parse(text).filter(
+    item =>
+      moment(item.beginTime, "yyyy.MM.DD").valueOf() <= now &&
+      now < moment(item.endTime, "yyyy.MM.DD").valueOf()
+  );
+  var urls: string[] =
+    html.match(
+      /https?:\/\/coupon\.m\.jd\.com\/coupons\/show\.action\?[^"']+/g
+    ) || [];
+  return { urls, coupons };
+}
+
+/**
+ * 领取内部优惠券
+ * @param url
+ * @example https://jingfen.jd.com/item.html?sku=46004095519&q=FXYTFBFuGHUWFRxfEHYQFRVsQCNGExRpFXQVFhxoE3cTFkZtESEUQBY/FiUiFhRrEHkaExFfVyVNQEAsfgZzBxI8GXAWE0M8FXQbExE/QyEbFR1pESUSRxE/EHIaFRJtIHERFxVvFnUQEQ==&d=9GSoGc&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_1001480949_&utm_term=ba3d0b36811c4075bece3cc17c6a3e56
+ */
+export async function getJingfen(url: string) {
+  var { searchParams } = new URL(url);
+  var sku = searchParams.get("sku")!;
+  var q = searchParams.get("q");
+  /* var { status }:{
+    // 0:可领取 1:领取限制
+    status: number
+    // 1:优惠券
+    couponType: number
+  } = await requestData(
+    {
+      sku,
+      q,
+      eid: "-1",
+      fp: "-1",
+      shshshfp: "-1",
+      shshshfpa: "-1",
+      shshshfpb: "-1",
+      referUrl: url,
+      childActivityUrl: url,
+      pageClickKey: "MJDAlliance_CheckDetail"
+    },
+    {
+      functionId: "skuWithCoupon"
+    }
+  );
+  var success = status === 0 */
+  var success = true;
+  var msg = "";
+  try {
+    await requestData(
+      {
+        sku,
+        q,
+        wxtoken: "",
+        shshshfp: getCookie("shshshfp"),
+        shshshfpa: getCookie("shshshfpa"),
+        shshshfpb: getCookie("shshshfpb"),
+        referUrl: url,
+        childActivityUrl: url,
+        pageClickKey: "MJDAlliance_CheckDetail",
+        ...getBaseData()
+      },
+      {
+        functionId: "jingfenCoupon"
+      }
+    );
+  } catch (e) {
+    msg = e.message;
+    success = msg === "您今天已经参加过此活动，别太贪心哟，明天再来~";
+  }
+  return {
+    success,
+    url: getGoodsUrl(sku),
+    msg
+  };
+}
+
+export async function getFanliCoupon(url: string) {
+  var { searchParams } = new URL(url);
+  /* 
+  var text = await req.get("https://ifanli.m.jd.com/rebate/act/getCouponSkuDetail", {
+    qs: {
+      platform: searchParams.get("platform"),
+      skuId: searchParams.get("skuId"),
+      type: searchParams.get("type"),
+      activityId: searchParams.get("activityId")
+    }
+  });
+  var {content,code,msg} = JSON.parse(text)
+  if (code !== 1) {
+    throw new Error(msg)
+  } */
+  var text = await getReq().get(
+    "https://ifanli.m.jd.com/rebate/userCenter/takeCoupon",
+    {
+      qs: {
+        platform: null,
+        skuId: searchParams.get("skuId"),
+        type: searchParams.get("type"),
+        activityId: searchParams.get("activityId") || "",
+        pageClickKey: `"coupon_icon${searchParams.get(
+          "couponIndex"
+        )}goods${searchParams.get("goodIndex")}get2"`
+      },
+      headers: {
+        Referer: url
+        // "user-agent":
+        // "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3835.0 Safari/537.36"
+      }
+    }
+  );
+  var { content, code, msg } = JSON.parse(text);
+  if (code !== 1) {
+    throw new Error(msg);
+  }
+  return content;
+}

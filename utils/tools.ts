@@ -234,3 +234,22 @@ export function createScheduler(t = 1500) {
     return p;
   };
 }
+
+export async function createDailyTask(handler: () => any, hours?: number[]) {
+  if (!hours) {
+    await handler();
+  } else {
+    for (let hour of hours) {
+      if (new Date().getHours() < hour) {
+        await delay(moment(hour, "HH").diff(moment()));
+        await handler();
+      }
+    }
+  }
+  await delay(
+    moment("00", "HH")
+      .add("d", 1)
+      .diff(moment())
+  );
+  return createDailyTask(handler, hours);
+}

@@ -841,3 +841,65 @@ export async function receiveCoupon(couponKey: string) {
   );
   return data;
 }
+
+export async function getProductJingdouInfo() {
+  return requestData(
+    "https://ms.jr.jd.com/gw/generic/syh_yxmx/h5/m/canGetReward",
+    {
+      clientType: "sms",
+      userDeviceInfo: {
+        eid:
+          "TNNEVY6UM2645G3OEU4WPA5OIB7A4MZSUPXMQVREJQ2P5IZKD5RUIEF7AXO6RA5W5SMDN3LPMAPSKAOKQWLD4ADVGU",
+        ma: "",
+        im: "",
+        os: "Mac OS X",
+        ip: "114.216.93.33",
+        ia: "",
+        uu: "",
+        at: "5",
+        fp: "00298405c9256e9b0721fcff560f19ba",
+        token:
+          "6E63LFJ2PFYFHMYHRNM6SQNBI7Y67T4D3X4XIBWBYTENREYG7PIRUAIW6UGBUII466PY5IGTOCNJC",
+        macAddress: "",
+        imei: "",
+        uuid: "",
+        appType: "5",
+        optType:
+          "https://jddx.jd.com/m/reward/product-list.html?cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_1001480949_&utm_term=0baf286b8c69423fa1e6ea8f26f5050c"
+      },
+      clientVersion: "11.0"
+    },
+    true
+  );
+}
+
+export async function getProductJingdou() {
+  return requestData(
+    "https://ms.jr.jd.com/gw/generic/syh_yxmx/h5/m/sendReward",
+    {
+      deviceInfoParam: {
+        eid:
+          "TNNEVY6UM2645G3OEU4WPA5OIB7A4MZSUPXMQVREJQ2P5IZKD5RUIEF7AXO6RA5W5SMDN3LPMAPSKAOKQWLD4ADVGU",
+        ma: "",
+        im: "",
+        os: "Mac OS X",
+        ip: "114.216.93.33",
+        ia: "",
+        uu: "",
+        at: "5",
+        fp: "00298405c9256e9b0721fcff560f19ba",
+        token:
+          "LSQFENNGHIJRZ5YCZIBKYXBNDKMPRH6IRTJIVKQHZOYFNJN5GG5GRCWIAXVLMQWELVJQVMFV2XNO4",
+        macAddress: "",
+        imei: "",
+        uuid: "",
+        appType: "5",
+        optType:
+          "https://jddx.jd.com/m/reward/product-list.html?cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_1001480949_&utm_term=0baf286b8c69423fa1e6ea8f26f5050c"
+      },
+      clientType: "sms",
+      clientVersion: "11.0"
+    },
+    true
+  );
+}

@@ -17,7 +17,9 @@ import {
   setReq,
   getRightCenterLucky,
   getRightCenterCoupons,
-  receiveCoupon
+  receiveCoupon,
+  getProductJingdouInfo,
+  getProductJingdou
 } from "./jingrong";
 import {
   timer,
@@ -63,7 +65,6 @@ export const doAdJindou = () =>
 
 export async function doJinguo() {
   log("检查金果");
-  timer(1000 * 60 * 10)(() => logReq("开始收获金果", harvestJinguo));
   handler();
   var [signData, shareData] = await getJinguoDayWork();
   if (signData.workStatus === 0) {
@@ -152,6 +153,14 @@ export async function doRightCenter() {
   }
 }
 
+export async function doProductJingdou() {
+  console.log("浏览产品得京豆");
+  await getProductJingdouInfo();
+  while (true) {
+    await getProductJingdou();
+  }
+}
+
 /* export async function doGift() {
   log("检查金融会员开礼盒");
   var { freeTimes } = await getGiftInfo();
@@ -178,8 +187,13 @@ export async function doAll() {
     doHealthInsured(),
     doAdJindou(),
     do618Hongbao(),
-    doRightCenter()
+    doRightCenter(),
+    doProductJingdou()
   ]);
+}
+
+export function doAllTimer() {
+  timer(1000 * 60 * 10)(() => logReq("开始收获金果", harvestJinguo));
 }
 
 export async function check() {

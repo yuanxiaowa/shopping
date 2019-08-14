@@ -146,7 +146,7 @@ export function logFileWrapper(name: string) {
   };
 }
 
-export async function sysTime() {
+export async function sysTaobaoTime() {
   function getDt(): Promise<{
     rtl: number;
     dt: number;

@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-09 13:56:44
+ * @LastEditTime: 2019-08-12 12:34:04
  */
 import { newPage } from "../../../utils/page";
 import { Page } from "puppeteer";
@@ -57,6 +57,7 @@ export async function addToCart(url: string, page: Page) {
 }
 
 export async function login(page: Page) {
+  console.log("京东登录");
   await page.goto("https://passport.jd.com/new/login.aspx");
   await page.click(".login-tab-r");
   await page.evaluate(() => {
@@ -68,6 +69,7 @@ export async function login(page: Page) {
   await page.waitForNavigation({
     timeout: 0
   });
+  console.log("京东登录成功");
 }
 
 export async function loginMobile(page: Page) {
@@ -365,6 +367,7 @@ export class Jingdong extends AutoShop {
   }
 
   async loginAction(page: Page) {
+    console.log("京东手机登录");
     await page.waitForNavigation({
       timeout: 0
     });

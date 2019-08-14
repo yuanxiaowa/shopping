@@ -5739,9 +5739,10 @@ puppeteer-core@^1.18.1:
     rimraf "^2.6.1"
     ws "^6.1.0"
 
-puppeteer@^1.18.0:
-  version "1.18.1"
-  resolved "https://registry.npm.taobao.org/puppeteer/download/puppeteer-1.18.1.tgz#4a66f3bdab01115ededf70443ec904c99917a815"
+puppeteer@^1.19.0:
+  version "1.19.0"
+  resolved "https://registry.npm.taobao.org/puppeteer/download/puppeteer-1.19.0.tgz#e3b7b448c2c97933517078d7a2c53687361bebea"
+  integrity sha1-47e0SMLJeTNRcHjXosU2hzYb6+o=
   dependencies:
     debug "^4.1.0"
     extract-zip "^1.6.6"

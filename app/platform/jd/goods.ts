@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-09 20:20:05
+ * @LastEditTime: 2019-08-12 20:10:54
  */
 import request = require("request-promise-native");
 import {
@@ -169,7 +169,7 @@ export async function getCartList() {
   var html: string = await getReq().get(
     "https://p.m.jd.com/cart/cart.action?sceneval=2"
   );
-  var text = /window.cartData =([\s\S]*)if \(window._MCart\) {/.exec(html)![1];
+  var text = /window.cartData =([\s\S]*?)window\._/.exec(html)![1];
   var data: {
     traceId: string;
     areaId: string;

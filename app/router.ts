@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-07-11 17:44:17
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-08-13 11:13:20
+ */
 import { Application } from "egg";
 
 export default (app: Application) => {
@@ -36,4 +42,5 @@ export default (app: Application) => {
 
   router.get("/config", controller.common.getConfig);
   router.post("/config", controller.common.setConfig);
+  router.get("/sys/time", controller.shop.sysTime);
 };

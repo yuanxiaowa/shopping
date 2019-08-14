@@ -1,6 +1,12 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-07-11 18:00:06
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-08-13 11:10:12
+ */
 import { Controller } from "egg";
 import moment = require("moment");
-import { delay, sysTime } from "../../utils/tools";
+import { delay, sysTaobaoTime } from "../../utils/tools";
 
 async function handle(p: Promise<any>, msg?: string) {
   try {
@@ -18,14 +24,22 @@ async function handle(p: Promise<any>, msg?: string) {
   }
 }
 
-var DT = 0;
+var DT = {
+  taobao: 0,
+  jingdong: 0
+};
 
-console.log("开始同步时钟");
-sysTime().then(({ dt, rtl }) => {
-  console.log("同步时间", (dt > 0 ? "慢了" : "快了") + dt + "ms");
-  console.log("单程时间", rtl + "ms");
-  DT = dt + rtl;
-});
+async function sysTime(platform: string) {
+  var handler =
+    platform === "taobao" ? sysTaobaoTime : () => ({ dt: 0, rtl: 0 });
+  console.log(platform + "开始同步时钟");
+  var { dt, rtl } = await handler();
+  console.log(platform + "同步时间", (dt > 0 ? "慢了" : "快了") + dt + "ms");
+  console.log(platform + "单程时间", rtl + "ms");
+  DT[platform] = dt + rtl;
+}
+
+sysTime("taobao");
 
 export default class ShopController extends Controller {
   public async cartList() {
@@ -40,7 +54,7 @@ export default class ShopController extends Controller {
     const { ctx, app } = this;
     var { platform, t } = ctx.query;
     var data = ctx.request.body;
-    var dt = moment(t).diff(moment()) - DT;
+    var dt = moment(t).diff(moment()) - DT[platform];
     if (dt > 0) {
       (async () => {
         await delay(dt);
@@ -111,7 +125,7 @@ export default class ShopController extends Controller {
       ctx.body = await handle(ins.coudan(ids), "下单成功");
       return;
     }
-    var dt = moment(t).diff(moment()) - DT;
+    var dt = moment(t).diff(moment()) - DT[platform];
     if (dt > 0) {
       ins.buyDirect(data, delay(dt));
       ctx.body = {
@@ -132,7 +146,7 @@ export default class ShopController extends Controller {
     const { ctx, app } = this;
     var { platform, t } = ctx.query;
     var { data } = ctx.request.body;
-    var dt = moment(t).diff(moment()) - DT;
+    var dt = moment(t).diff(moment()) - DT[platform];
     if (dt > 0) {
       (async () => {
         await delay(dt);
@@ -226,5 +240,10 @@ export default class ShopController extends Controller {
   public async testOrder() {
     const { ctx, app } = this;
     ctx.body = await handle(app[ctx.query.platform].testOrder(ctx.query));
+  }
+
+  public async sysTime() {
+    const { ctx, app } = this;
+    ctx.body = await handle(sysTime(ctx.query.platform));
   }
 }

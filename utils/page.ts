@@ -1,18 +1,33 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-07-01 09:10:22
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-08-14 09:01:24
+ */
 import puppeteer = require("puppeteer");
 import { Browser, Page } from "puppeteer";
 import resolver = require("puppeteer-chromium-resolver");
+import fs = require("fs-extra");
+import path = require("path");
 
 var browser: Browser;
 var defaultPage: Page;
 
 export async function bootstrapBrowser() {
   var revisionInfo = await resolver();
+  var dataDir = process.cwd() + "/.data/data-dir";
   browser = await puppeteer.launch({
     headless: false,
-    userDataDir: ".data/data-dir",
+    userDataDir: dataDir,
     devtools: false,
     executablePath: revisionInfo.executablePath
   });
+  let shaderFolder = path.join(dataDir, "GrShaderCache");
+  if (await fs.pathExists(shaderFolder)) {
+    try {
+      await fs.remove(shaderFolder);
+    } catch (e) {}
+  }
   [defaultPage] = await browser.pages();
   // defaultPage.goto("http://localhost:8080/");
   defaultPage.exposeFunction("evalFunction", async (code: string) => {

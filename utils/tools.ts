@@ -253,3 +253,46 @@ export async function createDailyTask(handler: () => any, hours?: number[]) {
   );
   return createDailyTask(handler, hours);
 }
+
+export const taskManager: {
+  tasks: {
+    label: string;
+    group: string;
+    status: string;
+    time: string;
+    count: number;
+  }[];
+  register(data: {
+    label: string;
+    group: string;
+    t?: number[] | number;
+    handler: () => any;
+  });
+} = {
+  tasks: [],
+  register(data) {
+    var item = {
+      label: data.label,
+      group: data.group,
+      status: "等待处理",
+      time: moment().format(moment.defaultFormat),
+      count: 0
+    };
+    if (data.t) {
+      if (Array.isArray(data.t)) {
+        item.status = `定点任务 ${data.t}`;
+        createDailyTask(() => {
+          item.count++;
+          return data.handler();
+        }, data.t);
+      } else {
+        item.status = `定时任务 ${data.t}`;
+        timer(data.t)(() => {
+          item.count++;
+          return data.handler();
+        });
+      }
+    }
+    this.tasks.push(item);
+  }
+};

@@ -119,7 +119,12 @@ export default abstract class AutoShop implements AutoShopOptions {
       timeout: 0
     });
   }
+  is_prev_login = true;
   async login(page: Page, cb?: Function) {
+    if (!this.is_prev_login) {
+      return;
+    }
+    this.is_prev_login = false;
     page.goto(this.login_url);
     let p = this.loginAction(page);
     await page.waitForNavigation();
@@ -129,6 +134,7 @@ export default abstract class AutoShop implements AutoShopOptions {
       });
       await page.goto(this.state_url);
       cb && cb();
+      this.is_prev_login = true;
     })();
     return p;
   }

@@ -92,19 +92,37 @@ export async function getGoodsList(args: ArgSearch): Promise<any> {
     key: args.keyword,
     page: args.page,
     sort_type: "sort_dredisprice_asc",
-    filt_type: `dredisprice,L${args.end_price ||
-      100000000}M${args.start_price || 0}`,
+    filt_type: [
+      [
+        `dredisprice`,
+        `L${args.end_price || 100000000}M${args.start_price || 0}`
+      ].join(","),
+      ["redisstore", 1].join(",")
+    ].join(";"),
     coupon_aggregation: "yes",
+    neverpop: "yes",
+    datatype: 1,
+    callback: "jdSearchResultBkCbA",
+    pagesize: 50,
+    ext_attr: "no",
+    brand_col: "no",
+    price_col: "no",
+    color_col: "no",
+    size_col: "no",
+    ext_attr_sort: "no",
+    multi_suppliers: "yes",
+    rtapi: "no",
     area_ids: "12,988,47821"
   };
   var html: string = await getReq().get(
-    "https://so.m.jd.com/list/couponSearch.action",
+    "https://so.m.jd.com/list/couponSearch._m2wq_list",
     {
       qs: _qs
     }
   );
-  var text = /_sfpageinit\((.*)\);/.exec(html)![1];
-  var { data } = eval(`(${text})`);
+  // var text = /_sfpageinit\((.*)\);/.exec(html)![1];
+  // var { data } = eval(`(${text})`);
+  var { data } = getJsonpData(html);
   var items = data.searchm.Paragraph.map(item => {
     return Object.assign(
       {
@@ -117,7 +135,7 @@ export async function getGoodsList(args: ArgSearch): Promise<any> {
       item
     );
   });
-  text = await getReq().get("https://wq.jd.com/commodity/skudescribe/get", {
+  var text = await getReq().get("https://wq.jd.com/commodity/skudescribe/get", {
     qs: {
       callback: "reaStockAnPriceCbA",
       command: "3",

@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-07-12 15:20:58
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-08-15 17:44:13
+ */
 import { requestData, logFile, mteeInfo, getReq } from "./tools";
 import { getGoodsUrl } from "./goods";
 import { newPage } from "../../../utils/page";
@@ -378,7 +384,7 @@ export async function getPindaoCoupon(url: string) {
   await page.goto(url);
   let h = 0;
   let now_h = new Date().getHours();
-  for (let i of [10, 15, 20, 24]) {
+  for (let i of [10, 15, 18, 20, 24]) {
     if (now_h < i) {
       h = i;
       break;
@@ -386,7 +392,7 @@ export async function getPindaoCoupon(url: string) {
   }
   await delay(moment(h, "h").diff() - 100);
   await page.reload();
-  var eles = await page.$$(".svelte-1k4joht.c39");
+  var eles = await page.$$(".svelte-1k4joht.c39,.coupon");
   eles.forEach(ele => {
     ele.click();
   });

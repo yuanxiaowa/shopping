@@ -20,6 +20,7 @@ export interface ArgOrder<T> {
   other: Record<string, string>;
   expectedPrice?: number;
   noinvalid?: boolean;
+  seckill?: boolean;
 }
 
 export interface ArgCartBuy {

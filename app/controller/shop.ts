@@ -57,6 +57,7 @@ export default class ShopController extends Controller {
     var dt = moment(t).diff(moment()) - DT[platform];
     if (dt > 0) {
       (async () => {
+        data.seckill = true;
         await delay(dt);
         console.log(platform, "开始从购物车下单");
         await app[platform].cartBuy(data);
@@ -127,6 +128,7 @@ export default class ShopController extends Controller {
     }
     var dt = moment(t).diff(moment()) - DT[platform];
     if (dt > 0) {
+      data.seckill = true;
       ins.buyDirect(data, delay(dt));
       ctx.body = {
         code: 0,

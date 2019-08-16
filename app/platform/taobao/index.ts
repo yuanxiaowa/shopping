@@ -468,6 +468,7 @@ export class Taobao extends AutoShop {
             secretValue: string;
             sparam1: string;
             sparam2: string;
+            sourceTime: string;
           };
         };
       };
@@ -486,6 +487,13 @@ export class Taobao extends AutoShop {
     } = JSON.parse(text);
     console.log("-----进入订单结算页，准备提交订单----");
     var { confirmOrder_1 } = data;
+    if (args.seckill) {
+      let t = new Date(confirmOrder_1.fields.sourceTime);
+      let _s = t.getSeconds();
+      if (_s < 59 && _s > 56) {
+        return this.submitOrderFromPc(args);
+      }
+    }
     var formData = [
       "_tb_token_",
       "action",

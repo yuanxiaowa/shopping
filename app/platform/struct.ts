@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-07-22 08:53:50
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-08-16 10:34:23
+ */
 export interface ArgBuyDirect {
   url: string;
   quantity: number;
@@ -13,6 +19,7 @@ export interface ArgOrder<T> {
   data: T;
   other: Record<string, string>;
   expectedPrice?: number;
+  noinvalid?: boolean;
 }
 
 export interface ArgCartBuy {

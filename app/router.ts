@@ -43,4 +43,6 @@ export default (app: Application) => {
   router.get("/config", controller.common.getConfig);
   router.post("/config", controller.common.setConfig);
   router.get("/sys/time", controller.shop.sysTime);
+  router.get("/task/list", controller.shop.taskList);
+  router.get("/task/cancel", controller.shop.taskCancel);
 };

@@ -448,7 +448,7 @@ export class Taobao extends AutoShop {
       throw new Error(msg);
     }
     logFile(addr_url + "\n" + html, "pc-订单结算页");
-    var text = /var orderData = (.*);/.exec(html)![1];
+    var text = /var orderData\s*=(.*);/.exec(html)![1];
     var {
       data,
       linkage,

@@ -6,7 +6,7 @@
  */
 import { Controller } from "egg";
 import moment = require("moment");
-import { sysTaobaoTime } from "../../utils/tools";
+import { sysTaobaoTime, sysJingdongTime } from "../../utils/tools";
 
 var delayMap: Record<
   number,
@@ -70,11 +70,13 @@ var DT = {
 };
 
 async function sysTime(platform: string) {
-  var handler =
-    platform === "taobao" ? sysTaobaoTime : () => ({ dt: 0, rtl: 0 });
+  var handler = platform === "taobao" ? sysTaobaoTime : sysJingdongTime;
   console.log(platform + "开始同步时钟");
   var { dt, rtl } = await handler();
-  console.log(platform + "同步时间", (dt > 0 ? "慢了" : "快了") + dt + "ms");
+  console.log(
+    platform + "同步时间",
+    (dt > 0 ? "慢了" : "快了") + Math.abs(dt) + "ms"
+  );
   console.log(platform + "单程时间", rtl + "ms");
   DT[platform] = dt + rtl;
 }

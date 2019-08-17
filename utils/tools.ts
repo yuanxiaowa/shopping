@@ -145,47 +145,54 @@ export function logFileWrapper(name: string) {
   };
 }
 
-export async function sysTaobaoTime() {
-  var https = require("https");
-  function getDt(): Promise<{
-    rtl: number;
-    dt: number;
-  }> {
-    return new Promise(resolve => {
-      var start = Date.now();
-      https.get(
-        "https://api.m.taobao.com/rest/api3.do?api=mtop.common.getTimestamp",
-        res => {
+var https = require("https");
+
+export function getSysTime(url: string, transform: (data: any) => number) {
+  return async () => {
+    function getDt(): Promise<{
+      rtl: number;
+      dt: number;
+    }> {
+      return new Promise(resolve => {
+        var start = Date.now();
+        https.get(url, res => {
           var end = Date.now();
           var text = "";
           res.on("data", chunk => (text += chunk));
           res.on("end", () => {
             var rtl = (end - start) / 2;
-            var {
-              data: { t }
-            } = JSON.parse(text);
+            var t = transform(JSON.parse(text));
             resolve({
               dt: rtl - (end - t),
               rtl
             });
           });
-        }
-      );
-    });
-  }
-  var count = 100;
-  var total = 0;
-  var total_rtl = 0;
-  for (let i = 0; i < count; i++) {
-    var { rtl, dt } = await getDt();
-    total += dt;
-    total_rtl += rtl;
-  }
-  return {
-    dt: total / count,
-    rtl: total_rtl / count
+        });
+      });
+    }
+    var count = 100;
+    var total = 0;
+    var total_rtl = 0;
+    for (let i = 0; i < count; i++) {
+      var { rtl, dt } = await getDt();
+      total += dt;
+      total_rtl += rtl;
+    }
+    return {
+      dt: total / count,
+      rtl: total_rtl / count
+    };
   };
 }
+
+export const sysTaobaoTime = getSysTime(
+  "https://api.m.taobao.com/rest/api3.do?api=mtop.common.getTimestamp",
+  ({ data: { t } }) => t
+);
+export const sysJingdongTime = getSysTime(
+  "https://a.jd.com//ajax/queryServerData.html",
+  ({ serverTime }) => serverTime
+);
 
 export function createTimerExcuter<T = any>(
   func: Function,

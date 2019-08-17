@@ -2,7 +2,6 @@ import fs = require("fs-extra");
 import { join } from "path";
 import moment = require("moment");
 import { writeFile, writeJSON } from "fs-extra";
-import http = require("http");
 
 export function remain(h: number, m = 0) {
   var now = new Date();
@@ -147,14 +146,15 @@ export function logFileWrapper(name: string) {
 }
 
 export async function sysTaobaoTime() {
+  var https = require("https");
   function getDt(): Promise<{
     rtl: number;
     dt: number;
   }> {
     return new Promise(resolve => {
       var start = Date.now();
-      http.get(
-        "http://api.m.taobao.com/rest/api3.do?api=mtop.common.getTimestamp",
+      https.get(
+        "https://api.m.taobao.com/rest/api3.do?api=mtop.common.getTimestamp",
         res => {
           var end = Date.now();
           var text = "";

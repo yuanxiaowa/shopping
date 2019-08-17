@@ -6,6 +6,6 @@ export const taobao = new Taobao();
 export const jingdong = new Jingdong();
 
 bus_global.on("bootstrap", () => {
-  taobao.start();
+  // taobao.start();
   jingdong.start();
 });

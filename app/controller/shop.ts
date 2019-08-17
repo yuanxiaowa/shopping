@@ -6,9 +6,49 @@
  */
 import { Controller } from "egg";
 import moment = require("moment");
-import { delay, sysTaobaoTime } from "../../utils/tools";
+import { sysTaobaoTime } from "../../utils/tools";
 
-async function handle(p: Promise<any>, msg?: string) {
+var delayMap: Record<
+  number,
+  {
+    data: {
+      type: string;
+      time: string;
+      platform: string;
+      comment: string;
+    };
+    cancel(): void;
+  }
+> = {};
+
+var counter = 0;
+function delay(
+  t: number,
+  data: {
+    type: string;
+    time: string;
+    platform: string;
+    comment: string;
+  }
+) {
+  return new Promise<void>((resolve, reject) => {
+    var id = counter++;
+    var timerId = setTimeout(() => {
+      delete delayMap[id];
+      resolve();
+    }, t);
+    delayMap[id] = {
+      data,
+      cancel() {
+        reject(new Error("手动取消任务 " + data.type));
+        clearTimeout(timerId);
+        delete delayMap[id];
+      }
+    };
+  });
+}
+
+async function handle(p: any, msg?: string) {
   try {
     var data = await p;
     return {
@@ -54,17 +94,24 @@ export default class ShopController extends Controller {
     const { ctx, app } = this;
     var { platform, t } = ctx.query;
     var data = ctx.request.body;
-    var dt = moment(t).diff(moment()) - DT[platform];
+    var toTime = moment(t);
+    var dt = toTime.diff(moment()) - DT[platform];
     if (dt > 0) {
+      let p = delay(dt, {
+        type: `从购物车下单`,
+        time: t,
+        platform,
+        comment: data._comment
+      });
+      data.seckill = true;
       (async () => {
-        data.seckill = true;
-        await delay(dt);
+        await p;
         console.log(platform, "开始从购物车下单");
         await app[platform].cartBuy(data);
       })();
       ctx.body = {
         code: 0,
-        msg: moment(t || undefined).fromNow() + " 从购物车下单"
+        msg: toTime.fromNow() + " 从购物车下单"
       };
     } else {
       ctx.body = await handle(app[platform].cartBuy(data), "下单成功");
@@ -126,13 +173,20 @@ export default class ShopController extends Controller {
       ctx.body = await handle(ins.coudan(ids), "下单成功");
       return;
     }
-    var dt = moment(t).diff(moment()) - DT[platform];
+    var toTime = moment(t);
+    var dt = toTime.diff(moment()) - DT[platform];
     if (dt > 0) {
+      let p = delay(dt, {
+        type: `直接购买`,
+        time: t,
+        platform,
+        comment: data._comment
+      });
       data.seckill = true;
-      ins.buyDirect(data, delay(dt));
+      ins.buyDirect(data, p);
       ctx.body = {
         code: 0,
-        msg: moment(t || undefined).fromNow() + " 将直接下单"
+        msg: toTime.fromNow() + " 将直接下单"
       };
     } else {
       ctx.body = await handle(ins.buyDirect(data), "下单成功");
@@ -148,15 +202,22 @@ export default class ShopController extends Controller {
     const { ctx, app } = this;
     var { platform, t } = ctx.query;
     var { data } = ctx.request.body;
-    var dt = moment(t).diff(moment()) - DT[platform];
+    var toTime = moment(t || undefined);
+    var dt = toTime.diff(moment()) - DT[platform];
     if (dt > 0) {
+      let p = delay(dt, {
+        type: `抢券`,
+        time: t,
+        platform,
+        comment: data._comment
+      });
       (async () => {
-        await delay(dt);
+        await p;
         app[platform].qiangquan(data);
       })();
       ctx.body = {
         code: 0,
-        msg: moment(t || undefined).fromNow() + " 将直接抢券"
+        msg: toTime.fromNow() + " 将直接抢券"
       };
       return;
     }
@@ -247,5 +308,27 @@ export default class ShopController extends Controller {
   public async sysTime() {
     const { ctx, app } = this;
     ctx.body = await handle(sysTime(ctx.query.platform));
+  }
+
+  public async taskList() {
+    const { ctx } = this;
+    ctx.body = await handle(
+      Object.keys(delayMap)
+        .map(id => Object.assign({ id }, delayMap[id].data))
+        .sort((a, b) => moment(a.time).valueOf() - moment(b.time).valueOf())
+    );
+  }
+
+  public async taskCancel() {
+    const { ctx } = this;
+    var { id } = ctx.query;
+    if (!delayMap[id]) {
+      ctx.body = {
+        code: 1,
+        msg: "指定任务不存在"
+      };
+      return;
+    }
+    ctx.body = await handle(delayMap[id].cancel());
   }
 }

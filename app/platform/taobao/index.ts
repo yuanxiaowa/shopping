@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-16 11:11:38
+ * @LastEditTime: 2019-08-19 10:11:23
  */
 import AutoShop from "../auto-shop";
 import { getCookie, createTimerExcuter, delay } from "../../../utils/tools";
@@ -488,7 +488,7 @@ export class Taobao extends AutoShop {
     console.log("-----进入订单结算页，准备提交订单----");
     var { confirmOrder_1 } = data;
     if (args.seckill) {
-      let t = new Date(confirmOrder_1.fields.sourceTime);
+      let t = new Date(+confirmOrder_1.fields.sourceTime);
       let _s = t.getSeconds();
       if (_s < 59 && _s > 56) {
         return this.submitOrderFromPc(args);

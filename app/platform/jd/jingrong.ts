@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-08-06 21:38:21
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-08-19 09:15:18
+ */
 import request = require("request-promise-native");
 import * as R from "ramda";
 import { getJsonpData } from "../../../utils/tools";
@@ -317,6 +323,7 @@ export function getJinguoInfo() {
     treeInfo: TreeInfo & {
       coin: number;
     };
+    userInfo: string;
     sharePin: string;
     workerList: any[];
     avatar: string;
@@ -374,14 +381,14 @@ export function getJinguoInfo() {
 /**
  * 收获金果
  */
-export function harvestJinguo() {
+export function harvestJinguo(userId: string) {
   interface T {
     upgrade: boolean;
     treeInfo: TreeInfo;
   }
   return requestData<T>(
     `https://ms.jr.jd.com/gw/generic/uc/h5/m/harvest`,
-    { source: 2, sharePin: null },
+    { source: 2, sharePin: null, userId },
     true
   );
 }

@@ -1,33 +1,12 @@
+<!--
+ * @Author: oudingyin
+ * @Date: 2019-07-11 17:44:17
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-08-19 09:21:40
+ -->
+
 # hackernews-async-ts
 
-[Hacker News](https://news.ycombinator.com/) showcase using typescript && egg
+## api
 
-## QuickStart
-
-### Development
-
-```bash
-$ npm i
-$ npm run dev
-$ open http://localhost:7001/
-```
-
-Don't tsc compile at development mode, if you had run `tsc` then you need to `npm run clean` before `npm run dev`.
-
-### Deploy
-
-```bash
-$ npm run tsc
-$ npm start
-```
-
-### Npm Scripts
-
-- Use `npm run lint` to check code style
-- Use `npm test` to run unit test
-- se `npm run clean` to clean compiled js at development mode once
-
-### Requirement
-
-- Node.js 8.x
-- Typescript 2.8+
+- 京东获取 IP <https://jrmstatic.jd.com/d/ipaddress.action>

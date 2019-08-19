@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-07-01 09:10:22
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-07-01 09:10:22
+ */
 import {
   getWelfareList,
   doWelfareAction,
@@ -19,7 +25,8 @@ import {
   getRightCenterCoupons,
   receiveCoupon,
   getProductJingdouInfo,
-  getProductJingdou
+  getProductJingdou,
+  getJinguoInfo
 } from "./jingrong";
 import {
   timer,
@@ -192,8 +199,11 @@ export async function doAll() {
   ]);
 }
 
-export function doAllTimer() {
-  timer(1000 * 60 * 10)(() => logReq("开始收获金果", harvestJinguo));
+export async function doAllTimer() {
+  var { userInfo } = await getJinguoInfo();
+  timer(1000 * 60 * 10)(() =>
+    logReq("开始收获金果", () => harvestJinguo(userInfo))
+  );
 }
 
 export async function check() {

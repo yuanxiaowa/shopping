@@ -82,6 +82,7 @@ async function sysTime(platform: string) {
 }
 
 sysTime("taobao");
+sysTime("jingdong");
 
 export default class ShopController extends Controller {
   public async cartList() {

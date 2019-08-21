@@ -5,7 +5,12 @@
  * @LastEditTime: 2019-08-21 10:55:21
  */
 import AutoShop from "../auto-shop";
-import { getCookie, createTimerExcuter, delay } from "../../../utils/tools";
+import {
+  getCookie,
+  createTimerExcuter,
+  delay,
+  createScheduler
+} from "../../../utils/tools";
 import { getPcCartInfo } from "./pc";
 import { Page } from "puppeteer";
 import iconv = require("iconv-lite");
@@ -37,7 +42,9 @@ import { RequestPromise } from "request-promise-native";
 import taobaoCouponHandlers from "./coupon-map";
 import bus_global from "../../common/bus";
 import moment = require("moment");
-const user = require("../../../.data/user.json").taobao;
+// const user = require("../../../.data/user.json").taobao;
+
+const orderScheduler = createScheduler(0);
 
 export class Taobao extends AutoShop {
   mobile = true;
@@ -134,14 +141,16 @@ export class Taobao extends AutoShop {
   spm = "a222m.7628550.0.1";
 
   cartBuyFromMobile(args: { items: any[] }) {
-    return submitOrder({
-      data: {
-        buyNow: "false",
-        buyParam: args.items.map(({ settlement }) => settlement).join(","),
-        spm: this.spm
-      },
-      other: {}
-    });
+    return orderScheduler(() =>
+      submitOrder({
+        data: {
+          buyNow: "false",
+          buyParam: args.items.map(({ settlement }) => settlement).join(","),
+          spm: this.spm
+        },
+        other: {}
+      })
+    );
   }
 
   cartBuy(args: any) {
@@ -153,9 +162,9 @@ export class Taobao extends AutoShop {
 
   submitOrder(data) {
     if (data.from_pc) {
-      return this.submitOrderFromPc(data);
+      return orderScheduler(() => this.submitOrderFromPc(data));
     }
-    return submitOrder(data);
+    return orderScheduler(() => submitOrder(data));
   }
 
   getGoodsInfo = getGoodsInfo;
@@ -406,14 +415,16 @@ export class Taobao extends AutoShop {
       await p;
     }
     try {
-      var ret = await this.submitOrderFromPc({
-        data: {
-          form,
-          addr_url: "https:" + tradeConfig[2],
-          Referer: url
-        },
-        other: {}
-      });
+      var ret = await orderScheduler(() =>
+        this.submitOrderFromPc({
+          data: {
+            form,
+            addr_url: "https:" + tradeConfig[2],
+            Referer: url
+          },
+          other: {}
+        })
+      );
       /* var ret = await this.req.post("https:" + tradeConfig[2], {
         form,
         qs: qs_data
@@ -653,15 +664,17 @@ export class Taobao extends AutoShop {
       source_time: Date.now()
     };
     delete args.items;
-    await this.submitOrderFromPc({
-      data: {
-        form,
-        addr_url: `https://buy.tmall.com/order/confirm_order.htm?spm=aa1z0d.6639537.0.0.undefined`,
-        Referer: `https://cart.taobao.com/cart.htm?spm=a220o.1000855.a2226mz.12.5ada2389fIdDSp&from=btop`
-      },
-      other: {},
-      ...args
-    });
+    await orderScheduler(() =>
+      this.submitOrderFromPc({
+        data: {
+          form,
+          addr_url: `https://buy.tmall.com/order/confirm_order.htm?spm=aa1z0d.6639537.0.0.undefined`,
+          Referer: `https://cart.taobao.com/cart.htm?spm=a220o.1000855.a2226mz.12.5ada2389fIdDSp&from=btop`
+        },
+        other: {},
+        ...args
+      })
+    );
   }
 
   async cartListFromPc() {

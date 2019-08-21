@@ -503,7 +503,7 @@ export class Taobao extends AutoShop {
     } = JSON.parse(text);
     console.log("-----进入订单结算页，准备提交订单----");
     var { confirmOrder_1 } = data;
-    if (args.seckill && retryCount === 0) {
+    if (args.seckill && retryCount === 0 && confirmOrder_1.fields.sourceTime) {
       let t = moment(+confirmOrder_1.fields.sourceTime);
       let _s = t.second();
       if (_s < 59 && _s > 55) {

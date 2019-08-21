@@ -334,4 +334,17 @@ export default class ShopController extends Controller {
     }
     ctx.body = await handle(delayMap[id].cancel());
   }
+
+  public async getMyCoupons() {
+    this.ctx.body = await handle(this.app.jingdong.getMyCoupons());
+  }
+
+  public async getPlusQuanpinList() {
+    this.ctx.body = await handle(this.app.jingdong.getPlusQuanpinList());
+  }
+
+  public async getPlusQuanpin() {
+    var data = this.ctx.request.body;
+    this.ctx.body = await handle(this.app.jingdong.getPlusQuanpin(data));
+  }
 }

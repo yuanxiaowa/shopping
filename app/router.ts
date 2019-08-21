@@ -45,4 +45,8 @@ export default (app: Application) => {
   router.get("/sys/time", controller.shop.sysTime);
   router.get("/task/list", controller.shop.taskList);
   router.get("/task/cancel", controller.shop.taskCancel);
+
+  router.get("/my/coupons", controller.shop.getMyCoupons);
+  router.get("/quanpin/plus", controller.shop.getPlusQuanpinList);
+  router.post("/quanpin/plus/get", controller.shop.getPlusQuanpin);
 };

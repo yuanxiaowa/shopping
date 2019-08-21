@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-11 18:00:06
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-13 11:10:12
+ * @LastEditTime: 2019-08-21 15:58:20
  */
 import { Controller } from "egg";
 import moment = require("moment");
@@ -278,8 +278,8 @@ export default class ShopController extends Controller {
    */
   public async seckillList() {
     const { ctx, app } = this;
-    var { platform, name } = ctx.query;
-    ctx.body = await handle(app[platform].seckillList(name));
+    var { platform, url } = ctx.query;
+    ctx.body = await handle(app[platform].seckillList(url));
   }
 
   public async goodsList() {

@@ -2,9 +2,10 @@
  * @Author: oudingyin
  * @Date: 2019-07-18 09:21:14
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-09 17:42:42
+ * @LastEditTime: 2019-08-21 18:32:51
  */
 import iconv = require("iconv-lite");
+import R = require("ramda");
 import { getJsonpData, createScheduler } from "../../../utils/tools";
 import {
   transformMobileGoodsInfo,
@@ -482,10 +483,19 @@ export function comment(args: any): Promise<any> {
   return Promise.all(args.orderIds.map(commentOrder));
 }
 
-export async function seckillList(name: string) {
-  if (name === "chaoshi") {
+export async function seckillList(url: string) {
+  var items: {
+    id: string;
+    quantity: number;
+    title: string;
+    seckillPrice: number;
+    price: number;
+    time: string;
+    url: string;
+  }[] = [];
+  if (/\/wow\/chaoshi\/act\//.test(url)) {
     let {
-      resultValue: { data }
+      resultValue: { data, modules }
     } = await requestData(
       "mtop.tmall.kangaroo.core.service.route.PageRecommendService",
       {
@@ -500,37 +510,67 @@ export async function seckillList(name: string) {
       "get",
       "1.0"
     );
-    let key = Object.keys(data).find(key => data[key].secKillItems);
-    if (key) {
-      let secKillItems = data[key].secKillItems;
-      let mapping = {};
-      for (let item of secKillItems) {
-        let { secKillTime } = item;
-        let secKillTimeArr = secKillTime.split(",");
-        secKillTimeArr.forEach(t => {
-          var data = {
-            id: item.itemId,
-            quantity: item.itemNum,
-            title: item.itemTitle,
-            itemSecKillPrice: item.itemSecKillPrice,
-            price: item.itemTagPrice
-          };
-          if (!mapping[t]) {
-            mapping[t] = [data];
-          } else {
-            mapping[t].push(data);
-          }
-        });
-      }
-      return Object.keys(mapping)
-        .sort()
-        .map(time => ({
+    let { dataId } = modules.find(item =>
+      item.name.startsWith("pmod-zebra-act-ms")
+    );
+    let secKillItems = data[dataId].secKillItems;
+    for (let item of secKillItems) {
+      let { secKillTime } = item;
+      let secKillTimeArr = secKillTime.split(",");
+      secKillTimeArr.forEach(time => {
+        items.push({
+          id: item.itemId,
+          quantity: item.itemNum,
+          title: item.itemTitle,
+          seckillPrice: item.itemSecKillPrice,
+          price: item.itemTagPrice,
           time,
-          items: mapping[time]
-        }));
+          url: "https:" + item.itemUrl
+        });
+      });
     }
+  } else {
+    // https://pages.tmall.com/wow/heihe/act/0820try?wh_biz=tm&ali_trackid=&ttid=700407%40taobao_android_8.8.0&e=sAsX_E3tJPiE5IjwFinSo3L6giCjJea-weShZufnUyzEva656Um3Ys7jbpc07vXg_piy-bl83AJfnG9gZa3lEIRqxKSGsgCT8sviUM61dt2gxEj7ajbEb4gLMZYNRhg2HXKHH0u77i-I6M_vqqSeLITsM14S2xgD1l7GcW5FttZw2qH-L52L1aTWVSTo88aB5YQ_egZY-KdaQJhxUPUeEtKYMBXg69krrlYyo_QbwE_DG_1N5hlzNg&type=2&tk_cps_param=127911237&tkFlag=0&tk_cps_ut=2&sourceType=other&suid=97d48507-afd2-4516-aa0a-69ca4f3deafe&ut_sk=1.XK%2BQ06Gx8KwDAHyGAUJXIrJu_21646297_1566366482399.Copy.ushare1103&un=04ec1ab5583d2c369eedd86203cf18d8&share_crt_v=1&sp_tk=77+ldGxJUFk5VFdLM2Hvv6U=&ali_trackid=2:mm_130931909_605300319_109124700033:1566374448_118_919207070
+    let html = await getReq().get(url);
+    let text = /\{"pageInfo":.*/.exec(html)![0];
+    let { data, modules } = JSON.parse(text);
+    let { dataId } = modules.find(
+      item => item.name === "pmod-zebra-brand-on-time-wb"
+    );
+    let {
+      params: { itemIds }
+    } = data[dataId];
+    let res = await requestData(
+      "mtop.ju.seiya.selection.get",
+      {
+        param: JSON.stringify({
+          itemIds,
+          page: 1,
+          pageSize: 69,
+          showId: 251
+        })
+      },
+      "get",
+      "1.0"
+    );
+    items = res.data.result.data.map(item => ({
+      id: item.itemId,
+      title: item.title,
+      url: "https:" + item.itemDetailUrl,
+      quantity: item.totalStock,
+      price: item.origPrice,
+      seckillPrice: item.actPrice,
+      time: moment(item.secKillTime).format("YYYY-MM-DD HH:mm:ss")
+    }));
   }
-  return [];
+  var gitems = R.groupBy(({ time }) => time, items);
+  return Object.keys(gitems)
+    .sort()
+    .filter(time => moment().valueOf() < moment(time).valueOf())
+    .map(time => ({
+      time,
+      items: gitems[time]
+    }));
 }
 
 export async function getCoupons({ page }: { page: number }) {

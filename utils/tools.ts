@@ -228,7 +228,9 @@ export function createScheduler(t = 1500) {
     }
     pending = true;
     while (handlers.length > 0) {
-      await handlers.shift()!();
+      try {
+        await handlers.shift()!();
+      } catch (e) {}
       await delay(t);
     }
     pending = false;

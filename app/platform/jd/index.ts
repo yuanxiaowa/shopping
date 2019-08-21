@@ -291,6 +291,25 @@ export class Jingdong extends AutoShop {
     };
   }
 
+  getStock(ids: string[]) {
+    return this.req.post(
+      "https://trade.jd.com/shopping/order/getOrderInfo.action",
+      {
+        headers: {},
+        json: {
+          skuNumList: ids.map(skuId => ({ skuId, num: "1" })),
+          areaRequest: {
+            provinceId: "22",
+            cityId: "1930",
+            countyId: "50946",
+            townId: "52194"
+          },
+          coordnateRequest: { longtitude: "104.086731", latitude: "30.679346" }
+        }
+      }
+    );
+  }
+
   async submitOrder(
     args: ArgOrder<{
       submit_url: string;

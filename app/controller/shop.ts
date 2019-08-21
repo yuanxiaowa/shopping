@@ -347,4 +347,9 @@ export default class ShopController extends Controller {
     var data = this.ctx.request.body;
     this.ctx.body = await handle(this.app.jingdong.getPlusQuanpin(data));
   }
+
+  public async getStock() {
+    const { ctx, app } = this;
+    this.ctx.body = await handle(app.jingdong.getStock(ctx.request.body.ids));
+  }
 }

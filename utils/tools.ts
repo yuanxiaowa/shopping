@@ -237,7 +237,7 @@ export function createScheduler(t = 1500) {
   }
   return function(handler: () => any) {
     var p = new Promise(resolve => {
-      handlers.push(() => resolve(handler()));
+      handlers.push(() => handler().then(resolve));
     });
     start();
     return p;

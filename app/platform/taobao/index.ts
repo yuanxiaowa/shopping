@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-19 10:11:23
+ * @LastEditTime: 2019-08-21 10:55:21
  */
 import AutoShop from "../auto-shop";
 import { getCookie, createTimerExcuter, delay } from "../../../utils/tools";
@@ -36,6 +36,7 @@ import cheerio = require("cheerio");
 import { RequestPromise } from "request-promise-native";
 import taobaoCouponHandlers from "./coupon-map";
 import bus_global from "../../common/bus";
+import moment = require("moment");
 const user = require("../../../.data/user.json").taobao;
 
 export class Taobao extends AutoShop {
@@ -428,25 +429,29 @@ export class Taobao extends AutoShop {
       form: Record<string, any>;
       addr_url: string;
       Referer: string;
-    }>
+    }>,
+    retryCount = 0
   ): Promise<any> {
     var {
       data: { form, addr_url, Referer }
     } = args;
     console.log("准备进入订单结算页");
     logFile(addr_url + "\n" + JSON.stringify(form), "pc-准备进入订单结算页");
+    var start_time = Date.now();
     var html: string = await this.req.post(addr_url, {
       form,
       headers: {
         Referer
       }
     });
+    var time_diff = Date.now() - start_time;
     if (html.lastIndexOf("security-X5", html.indexOf("</title>")) > -1) {
       let msg = "进入订单结算页碰到验证拦截";
       console.log(`-------${msg}--------`);
       logFile(html, "pc-订单提交验证拦截");
       throw new Error(msg);
     }
+    console.log("进入订单结算页用时：" + time_diff);
     logFile(addr_url + "\n" + html, "pc-订单结算页");
     var text = /var orderData\s*=(.*);/.exec(html)![1];
     var {
@@ -487,11 +492,15 @@ export class Taobao extends AutoShop {
     } = JSON.parse(text);
     console.log("-----进入订单结算页，准备提交订单----");
     var { confirmOrder_1 } = data;
-    if (args.seckill) {
-      let t = new Date(+confirmOrder_1.fields.sourceTime);
-      let _s = t.getSeconds();
-      if (_s < 59 && _s > 56) {
-        return this.submitOrderFromPc(args);
+    if (args.seckill && retryCount === 0) {
+      let t = moment(+confirmOrder_1.fields.sourceTime);
+      let _s = t.second();
+      if (_s < 59 && _s > 55) {
+        let t_str = t.valueOf().toString();
+        let m = t_str.length - 4;
+        let delay_time = 10000 - Number(t_str.substring(m));
+        await delay(delay_time - time_diff);
+        return this.submitOrderFromPc(args, retryCount + 1);
       }
     }
     var formData = [
@@ -581,7 +590,7 @@ export class Taobao extends AutoShop {
         let msg = /<h2 class="sub-title">([^<]*)/.exec(ret)![1];
         console.log(msg);
         if (msg.includes("优惠信息变更")) {
-          return;
+          return console.error(msg);
         }
         throw new Error(msg);
       }
@@ -595,8 +604,11 @@ export class Taobao extends AutoShop {
       console.log("-----订单提交成功，等待付款----");
     } catch (e) {
       console.trace(e);
+      if (retryCount >= 3) {
+        return console.error("重试失败3次，放弃治疗");
+      }
       console.log("重试中");
-      return this.submitOrderFromPc(args);
+      return this.submitOrderFromPc(args, retryCount + 1);
     }
   }
 

@@ -207,8 +207,8 @@ export async function getCouponEdetail(url: string) {
  */
 export async function getMarketCoupon(url: string) {
   var { searchParams } = new URL(url);
-  var uuid = searchParams.get("activityId");
-  var sellerId = searchParams.get("sellerId");
+  var uuid = searchParams.get("activity_id") || searchParams.get("activityId");
+  var sellerId = searchParams.get("seller_id") || searchParams.get("sellerId");
   /* var {} = await requestData(
     "mtop.taobao.couponMtopReadService.findShopBonusActivitys",
     {

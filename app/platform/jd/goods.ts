@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-12 20:10:54
+ * @LastEditTime: 2019-08-22 18:42:47
  */
 import request = require("request-promise-native");
 import {
@@ -1093,6 +1093,34 @@ export async function deleteShop(items: any[]) {
   if (iRet !== "0") {
     throw new Error(errMsg);
   }
+}
+
+export async function getStock(
+  skuNumList: {
+    skuId: string;
+    num: string;
+  }[],
+  address: any
+) {
+  var { result } = await getReq().post(
+    "https://trade.jd.com/api/v1/batch/stock",
+    {
+      json: {
+        skuNumList,
+        areaRequest: {
+          provinceId: address.provId,
+          cityId: address.cityId,
+          countyId: address.countyId,
+          townId: address.townId
+        },
+        coordnateRequest: {
+          longtitude: address.longitude,
+          latitude: address.latitude
+        }
+      }
+    }
+  );
+  return result;
 }
 
 export function getGoodsUrl(skuId: string) {

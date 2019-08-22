@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-12 12:34:04
+ * @LastEditTime: 2019-08-22 18:35:37
  */
 import { newPage } from "../../../utils/page";
 import { Page } from "puppeteer";
@@ -21,7 +21,8 @@ import {
   getGoodsInfo,
   getShopCollection,
   deleteShop,
-  getGoodsList
+  getGoodsList,
+  getStock
 } from "./goods";
 import jingdongHandlers from "./handlers";
 import jingdongCouponHandlers from "./coupon-map";
@@ -331,10 +332,48 @@ export class Jingdong extends AutoShop {
     );
     var text = await res.text();
     console.log(text);
-    if (
-      text.includes("您要购买的商品无货了") ||
-      text.includes("多次提交过快，请稍后再试")
-    ) {
+    if (text.includes("您要购买的商品无货了")) {
+      console.log("开始刷库存");
+      let {
+        order: { address, venderCart }
+        // @ts-ignore
+      } = await page.evaluate(() => window.dealData);
+      var skulist: any[] = [];
+      venderCart.forEach(({ products }) => {
+        products.forEach(({ mainSku }) => {
+          skulist.push({
+            skuId: mainSku.id,
+            num: mainSku.num
+          });
+        });
+      });
+      let f = async () => {
+        var result = await getStock(skulist, address);
+        var n = Object.keys(result).find(key =>
+          result[key].status.includes("无货")
+        );
+        if (n) {
+          f();
+        } else {
+          await page.evaluate(pass => {
+            document.querySelector<HTMLInputElement>(
+              "#shortPassInput"
+            )!.value = pass;
+            document.querySelector<HTMLElement>("#btnPayOnLine")!.click();
+          }, user.paypass);
+          var res = await page.waitForResponse(res =>
+            res.url().startsWith("https://wqdeal.jd.com/deal/msubmit/confirm")
+          );
+          var text = await res.text();
+          if (text.includes("您要购买的商品无货了")) {
+            console.log("机会稍纵即逝，继续来");
+            f();
+          }
+        }
+      };
+      f();
+      return;
+    } else if (text.includes("多次提交过快，请稍后再试")) {
       await page.close();
       await delay(2000);
       console.log("retry");

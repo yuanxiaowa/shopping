@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-07-01 09:10:22
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-08-22 18:42:34
+ */
 import { RequestAPI, RequiredUriUrl, Response } from "request";
 import request = require("request-promise-native");
 import { RequestPromise, RequestPromiseOptions } from "request-promise-native";
@@ -75,7 +81,10 @@ export default abstract class AutoShop implements AutoShopOptions {
             return iconv.decode(body, RegExp.$1);
           }
         }
-        return String(body);
+        if (body instanceof Buffer) {
+          return String(body);
+        }
+        return body;
       },
       jar: request.jar()
     };

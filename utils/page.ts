@@ -19,7 +19,7 @@ export async function bootstrapBrowser() {
   browser = await puppeteer.launch({
     headless: false,
     userDataDir: dataDir,
-    devtools: false,
+    devtools: true,
     executablePath: revisionInfo.executablePath
   });
   let shaderFolder = path.join(dataDir, "GrShaderCache");

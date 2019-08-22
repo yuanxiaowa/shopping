@@ -5742,7 +5742,6 @@ puppeteer-core@^1.18.1:
 puppeteer@^1.19.0:
   version "1.19.0"
   resolved "https://registry.npm.taobao.org/puppeteer/download/puppeteer-1.19.0.tgz#e3b7b448c2c97933517078d7a2c53687361bebea"
-  integrity sha1-47e0SMLJeTNRcHjXosU2hzYb6+o=
   dependencies:
     debug "^4.1.0"
     extract-zip "^1.6.6"
@@ -6111,7 +6110,6 @@ sdk-base@^3.1.1, sdk-base@^3.5.0, sdk-base@^3.5.1:
 segment@^0.1.3:
   version "0.1.3"
   resolved "https://registry.npm.taobao.org/segment/download/segment-0.1.3.tgz#605f80fd6c7131c46e38103a17b1688f09efafa7"
-  integrity sha1-YF+A/WxxMcRuOBA6F7Fojwnvr6c=
 
 "semver@2 || 3 || 4 || 5", semver@^5.0.1, semver@^5.3.0, semver@^5.4.1, semver@^5.5.0, semver@^5.5.1, semver@^5.6.0, semver@^5.7.0:
   version "5.7.0"
@@ -6947,6 +6945,10 @@ verror@1.10.0:
     assert-plus "^1.0.0"
     core-util-is "1.0.2"
     extsprintf "^1.2.0"
+
+vue-router@^3.1.2:
+  version "3.1.2"
+  resolved "https://registry.npm.taobao.org/vue-router/download/vue-router-3.1.2.tgz#2e0904703545dabdd42b2b7a2e617f02f99a1969"
 
 w3c-hr-time@^1.0.1:
   version "1.0.1"

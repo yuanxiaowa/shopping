@@ -538,3 +538,119 @@ export async function getFanliCoupon(url: string) {
   }
   return content;
 }
+
+/**
+ * 领券中心可叠加券
+ * @param page
+ */
+export async function getCouponCenterQuanpinList(
+  page = 1
+): Promise<
+  {
+    key: string;
+  }[]
+> {
+  var text = await getReq().get(
+    "https://a.jd.com/indexAjax/getCouponListByCatalogId.html",
+    {
+      qs: {
+        callback: "jQuery6429763",
+        catalogId: 118,
+        page,
+        pageSize: 30
+      },
+      headers: {
+        "x-requested-with": "XMLHttpRequest",
+        referer: "https://a.jd.com/"
+      }
+    }
+  );
+  var { couponList } = getJsonpData(text);
+  console.log(couponList.length);
+  return couponList.filter(
+    item => item.overlying && item.limitStr.startsWith("全品类")
+  );
+}
+
+/**
+ * 领取领券中心优惠券
+ * @param key
+ */
+export async function getCouponCenterQuanpin(
+  key: string
+): Promise<{
+  /**
+   * 15:已参加过
+   * 22:此时排队领券的人太多，休息一会儿再试试吧
+   */
+  code: string;
+  message: string;
+}> {
+  var text = await getReq().get("https://a.jd.com/indexAjax/getCoupon.html", {
+    qs: {
+      callback: "jQuery4276212",
+      key,
+      type: 1
+    },
+    headers: {
+      "x-requested-with": "XMLHttpRequest",
+      referer: "https://a.jd.com/"
+    }
+  });
+  return getJsonpData(text);
+}
+
+/**
+ * 获取plus全品券
+ */
+export async function getPlusQuanpinList(): Promise<
+  {
+    batchId: string;
+    couponKey: string;
+    discount: number;
+  }[]
+> {
+  var text = await getReq().get(
+    "https://plus.jd.com/coupon/dayCoupons?locationCode=10006"
+  );
+  var {
+    result: { coupons }
+  } = JSON.parse(text);
+  return coupons;
+}
+
+/**
+ * 领取plus全品
+ * @param item
+ */
+export async function getPlusQuanpin(item: any) {
+  var text = await getReq().get("https://plus.jd.com/coupon/receiveDayCoupon", {
+    qs: {
+      couponKey: item.couponKey,
+      discount: item.discount,
+      locationCode: 10006,
+      platform: 0,
+      eventId: "plus2017|keycount|MonthlyCoupon|Get",
+      eid: -1,
+      fp: -1
+    }
+  });
+  return JSON.parse(text);
+}
+
+export async function getMyCoupons() {
+  var text = await getReq().get(
+    "https://wq.jd.com/activeapi/queryjdcouponlistwithfinance?state=3&wxadd=1&_=1566400385806&sceneval=2&g_login_type=1&callback=queryjdcouponcb3&g_ty=ls",
+    {
+      headers: {
+        Referer:
+          "https://wqs.jd.com/my/coupon/index.shtml?ptag=7155.1.18&sceneval=2"
+      }
+    }
+  );
+  var text2 = /\((.*)\);/.exec(text)![1];
+  var {
+    coupon: { useable }
+  } = JSON.parse(text2);
+  return useable;
+}

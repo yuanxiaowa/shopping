@@ -37,6 +37,13 @@ import {
 import qs = require("querystring");
 import cheerio = require("cheerio");
 import { ArgBuyDirect, ArgOrder, ArgSearch } from "../struct";
+import {
+  getCouponCenterQuanpinList,
+  getCouponCenterQuanpin,
+  getMyCoupons,
+  getPlusQuanpinList,
+  getPlusQuanpin
+} from "./coupon-handlers";
 const user = require("../../../.data/user.json").jingdong;
 
 export async function buy(page: Page) {
@@ -285,6 +292,25 @@ export class Jingdong extends AutoShop {
     };
   }
 
+  getStock(ids: string[]) {
+    return this.req.post(
+      "https://trade.jd.com/shopping/order/getOrderInfo.action",
+      {
+        headers: {},
+        json: {
+          skuNumList: ids.map(skuId => ({ skuId, num: "1" })),
+          areaRequest: {
+            provinceId: "22",
+            cityId: "1930",
+            countyId: "50946",
+            townId: "52194"
+          },
+          coordnateRequest: { longtitude: "104.086731", latitude: "30.679346" }
+        }
+      }
+    );
+  }
+
   async submitOrder(
     args: ArgOrder<{
       submit_url: string;
@@ -386,6 +412,10 @@ export class Jingdong extends AutoShop {
   getShopCollection = getShopCollection;
   deleteShop = deleteShop;
 
+  getMyCoupons = getMyCoupons;
+  getPlusQuanpinList = getPlusQuanpinList;
+  getPlusQuanpin = getPlusQuanpin;
+
   async start() {
     await super.start();
     await this.preservePcState();
@@ -419,6 +449,12 @@ export class Jingdong extends AutoShop {
     getShopJindou();
     // getVideoHongbao();
     this.req.get("https://vip.jd.com/sign/index");
+    getCouponCenterQuanpinList().then(async couponList => {
+      for (let item of couponList) {
+        await getCouponCenterQuanpin(item.key).then(console.log);
+        delay(1000);
+      }
+    });
   }
 
   onAfterLogin() {

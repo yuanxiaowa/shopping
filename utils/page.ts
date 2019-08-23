@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-14 09:01:24
+ * @LastEditTime: 2019-08-23 09:46:53
  */
 import puppeteer = require("puppeteer");
 import { Browser, Page } from "puppeteer";
@@ -19,7 +19,7 @@ export async function bootstrapBrowser() {
   browser = await puppeteer.launch({
     headless: false,
     userDataDir: dataDir,
-    devtools: true,
+    devtools: false,
     executablePath: revisionInfo.executablePath
   });
   let shaderFolder = path.join(dataDir, "GrShaderCache");

@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-11 17:44:17
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-13 11:13:20
+ * @LastEditTime: 2019-08-23 09:42:59
  */
 import { Application } from "egg";
 
@@ -49,4 +49,6 @@ export default (app: Application) => {
   router.get("/my/coupons", controller.shop.getMyCoupons);
   router.get("/quanpin/plus", controller.shop.getPlusQuanpinList);
   router.post("/quanpin/plus/get", controller.shop.getPlusQuanpin);
+
+  router.get("/miaosha", controller.shop.miaosha);
 };

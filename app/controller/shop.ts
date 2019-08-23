@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-11 18:00:06
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-21 15:58:20
+ * @LastEditTime: 2019-08-23 09:42:01
  */
 import { Controller } from "egg";
 import moment = require("moment");
@@ -351,5 +351,10 @@ export default class ShopController extends Controller {
   public async getStock() {
     const { ctx, app } = this;
     this.ctx.body = await handle(app.jingdong.getStock(ctx.request.body.ids));
+  }
+
+  public async miaosha() {
+    const { ctx, app } = this;
+    this.ctx.body = await handle(app.taobao.miaosha(ctx.query.url, DT.taobao));
   }
 }

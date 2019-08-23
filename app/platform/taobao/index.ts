@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-21 10:55:21
+ * @LastEditTime: 2019-08-23 09:46:30
  */
 import AutoShop from "../auto-shop";
 import {
@@ -766,5 +766,57 @@ export class Taobao extends AutoShop {
     if (!success) {
       throw new Error(errorMsg);
     }
+  }
+
+  async miaosha(url: string, _dt = 0) {
+    var page = await newPage();
+    var viewport = await page.evaluate(() => {
+      return {
+        width: window.outerWidth,
+        height: window.outerHeight
+      };
+    });
+    await page.setViewport(viewport);
+    await page.setRequestInterception(true);
+    page.on("request", request => {
+      if (request.url().startsWith("http://img1.tbcdn.cn/tfscom")) {
+        request.continue();
+        return;
+      }
+      var type = request.resourceType();
+      if (type === "image" || type === "stylesheet" || type === "font") {
+        request.respond({
+          body: ""
+        });
+      } else {
+        request.continue();
+      }
+    });
+    await page.goto(url);
+    var source = await page.content();
+    var to = Number(/dbst\s*:\s*(\d+)/.exec(source)![1]);
+    var now = Date.now();
+    var dt = to - now - _dt;
+    console.log(`等待${(dt / 1000) >> 0}s开始秒杀`);
+    await delay(dt);
+    await page.reload();
+    var b = page.evaluate(() => {
+      var refresh_btn = document.querySelector<HTMLDivElement>(
+        ".J_RefreshStatus"
+      );
+      if (refresh_btn) {
+        refresh_btn.click();
+        return false;
+      }
+      return true;
+    });
+    if (!b) {
+      await page.waitForResponse(res =>
+        res.url().startsWith("http://m.ajax.taobao.com/qst.htm")
+      );
+    }
+    page.evaluate(() => {
+      document.querySelector<HTMLInputElement>(".answer-input")!.focus();
+    });
   }
 }

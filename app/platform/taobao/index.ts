@@ -5,46 +5,35 @@
  * @LastEditTime: 2019-08-23 09:46:30
  */
 import AutoShop from "../auto-shop";
-import {
-  getCookie,
-  createTimerExcuter,
-  delay,
-  createScheduler
-} from "../../../utils/tools";
-import { getPcCartInfo } from "./pc";
+import { delay } from "../../../utils/tools";
 import { Page } from "puppeteer";
-import iconv = require("iconv-lite");
 import taobaoHandlers from "./handlers";
-import { resolveTaokouling, resolveUrl, logFile } from "./tools";
-import {
-  getGoodsInfo,
-  addCart,
-  getCartList,
-  updateCart,
-  cartToggle,
-  seckillList,
-  sixtyCourseList,
-  sixtyCourseReply,
-  submitOrder,
-  comment,
-  commentList,
-  getChaoshiGoodsList,
-  getCoupons,
-  getGoodsList,
-  checkLogin
-} from "./goods";
+import { resolveTaokouling, resolveUrl } from "./tools";
 import { newPage } from "../../../utils/page";
 import { readJSONSync } from "fs-extra";
-import { ArgOrder, ArgBuyDirect } from "../struct";
-import { config } from "../../common/config";
+import { ArgBuyDirect, ArgCoudanItem } from "../struct";
 import cheerio = require("cheerio");
-import { RequestPromise } from "request-promise-native";
 import taobaoCouponHandlers from "./coupon-map";
 import bus_global from "../../common/bus";
-import moment = require("moment");
-// const user = require("../../../.data/user.json").taobao;
-
-const orderScheduler = createScheduler(0);
+import { getCartList as getCartListFromPc } from "./cart-pc";
+import {
+  getCartList as getCartListFromMobile,
+  addCart,
+  updateCart,
+  cartToggle
+} from "./cart-mobile";
+import { taobaoComment } from "./comment";
+import { taobaoOrderMobile } from "./order-mobile";
+import setting from "./setting";
+import { taobaoOrderPc } from "./order-pc";
+import {
+  getGoodsInfo,
+  getChaoshiGoodsList,
+  getGoodsList
+} from "./goods-mobile";
+import { getCoupons } from "./member";
+import { sixtyCourseList, sixtyCourseReply } from "./activity";
+import { seckillList } from "./seckill";
 
 export class Taobao extends AutoShop {
   mobile = true;
@@ -96,9 +85,9 @@ export class Taobao extends AutoShop {
   async cartList(args) {
     var items;
     if (!args.from_pc) {
-      items = await getCartList();
+      items = await getCartListFromMobile();
     } else {
-      items = await this.cartListFromPc();
+      items = await getCartListFromPc();
     }
     return { items };
   }
@@ -115,116 +104,40 @@ export class Taobao extends AutoShop {
   cartUpdateQuantity(data) {
     return updateCart(data, "update");
   }
-  comment = comment;
+  comment(args) {
+    return taobaoComment.comment(args);
+  }
   commentList(args) {
-    return commentList(/* args.type,  */ args.page);
+    return taobaoComment.getCommentList(/* args.type,  */ args.page);
   }
   buyDirect(data: ArgBuyDirect, p?: Promise<void>): Promise<any> {
     if (data.from_pc) {
-      return this.buyDirectFromPc(data, p);
+      return taobaoOrderPc.buyDirect(data, p);
     }
-    return this.buyDirectFromMobile(data, p);
+    return taobaoOrderMobile.buyDirect(data, p);
   }
-  async coudan(ids: string[]): Promise<any> {
-    var list = await this.cartList({});
-    var datas: any[] = [];
-    list.items.forEach(({ items }) => {
-      items.forEach(item => {
-        if (ids.includes(item.cartId)) {
-          datas.push(item);
-        }
-      });
-    });
-    return this.cartBuy({ items: datas });
-  }
-
-  spm = "a222m.7628550.0.1";
-
-  cartBuyFromMobile(args: { items: any[] }) {
-    return orderScheduler(() =>
-      submitOrder({
-        data: {
-          buyNow: "false",
-          buyParam: args.items.map(({ settlement }) => settlement).join(","),
-          spm: this.spm
-        },
-        other: {}
-      })
-    );
+  async coudan(items: ArgCoudanItem[]): Promise<any> {
+    return taobaoOrderMobile.coudan(items);
   }
 
   cartBuy(args: any) {
     if (args.from_pc) {
-      return this.cartBuyFromPc(args);
+      return taobaoOrderPc.cartBuy(args);
     }
-    return this.cartBuyFromMobile(args);
+    return this.cartBuy(args);
   }
 
   submitOrder(data) {
     if (data.from_pc) {
-      return orderScheduler(() => this.submitOrderFromPc(data));
+      return taobaoOrderPc.submitOrder(data);
     }
-    return orderScheduler(() => submitOrder(data));
+    return taobaoOrderMobile.submitOrder(data);
   }
 
   getGoodsInfo = getGoodsInfo;
 
-  getNextDataByGoodsInfo({ delivery, skuId, itemId }, quantity: number) {
-    return {
-      buyNow: true,
-      exParams: JSON.stringify({
-        addressId:
-          delivery.areaSell === "true" ? delivery.addressId : undefined,
-        buyFrom: "tmall_h5_detail"
-      }),
-      itemId,
-      quantity,
-      serviceId: null,
-      skuId
-    };
-  }
-
-  async buyDirectFromMobile(args: ArgBuyDirect, p?: Promise<void>) {
-    var data = await this.getGoodsInfo(args.url, args.skus);
-    if (data.quantity < args.quantity) {
-      if (args.jianlou) {
-        let p = createTimerExcuter(async () => {
-          var data = await this.getGoodsInfo(args.url, args.skus);
-          return {
-            success: data.quantity >= args.quantity,
-            data
-          };
-        }, args.jianlou!);
-        p.then(async () => {
-          console.log("有库存了，开始去下单");
-          if (args.from_cart) {
-            let id = await this.cartAdd({
-              url: args.url,
-              quantity: args.quantity,
-              skus: args.skus
-            });
-            return this.coudan([id]);
-          }
-          return submitOrder(
-            Object.assign(args, {
-              data: this.getNextDataByGoodsInfo(data, args.quantity)
-            })
-          );
-        });
-      }
-    } else {
-      if (!data.buyEnable) {
-        throw new Error(data.msg || "不能购买");
-      }
-      if (p) {
-        await p;
-      }
-      return submitOrder(
-        Object.assign(args, {
-          data: this.getNextDataByGoodsInfo(data, args.quantity)
-        })
-      );
-    }
+  getNextDataByGoodsInfo(data, quantity: number) {
+    return taobaoOrderMobile.getNextDataByGoodsInfo(data, quantity);
   }
 
   async goodsList(args) {
@@ -281,7 +194,7 @@ export class Taobao extends AutoShop {
 
   onAfterLogin() {
     bus_global.emit("taobao:cookie", this.cookie);
-    this.spm = `a1z0d.6639537.1997196601.${(Math.random() * 100) >>
+    setting.spm = `a1z0d.6639537.1997196601.${(Math.random() * 100) >>
       0}.412f7484UFYI5e`;
   }
 
@@ -308,396 +221,6 @@ export class Taobao extends AutoShop {
       "https://buy.m.tmall.com/order/confirm_order_wap.htm?enc=%E2%84%A2&itemId=538364857603&exParams=%7B%22addressId%22%3A%229607477385%22%2C%22etm%22%3A%22%22%7D&skuId=3471693791586&quantity=1&divisionCode=320583&userId=842405758&buyNow=true&_input_charset=utf-8&areaId=320583&addressId=9607477385&x-itemid=538364857603&x-uid=842405758"
     );
     return;
-  }
-
-  async buyDirectFromPc({ url, quantity }: ArgBuyDirect, p?: Promise<void>) {
-    var html: string = await this.req.get(
-      url.replace("detail.m.tmall.com/", "detail.tmall.com/"),
-      {
-        headers: {
-          "user-agent":
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
-        }
-      }
-    );
-    logFile(url + "\n" + html, "直接购买-商品详情");
-    var text = /TShop.Setup\(\s*(.*)\s*\);/.exec(html)![1];
-    // detail.isHiddenShopAction
-    var { itemDO, valItemInfo, tradeConfig } = JSON.parse(text);
-    if (!p && !itemDO.isOnline) {
-      throw new Error("商品已下架");
-    }
-    let form_str = /<form id="J_FrmBid"[^>]*>([\s\S]*?)<\/form>/.exec(html)![1];
-    let form_item_r = /\sname="([^"]+)"\s+value="([^"]*)"/g;
-    let form: Record<string, string> = {};
-    while (form_item_r.test(form_str)) {
-      form[RegExp.$1] = RegExp.$2;
-    }
-    if (!form.buyer_from) {
-      form.buyer_from = "ecity";
-    }
-    let skuId = "0";
-    if (itemDO.hasSku) {
-      let { skuList, skuMap } = valItemInfo;
-      let skuItem = skuList.find(
-        (item: any) => skuMap[`;${item.pvs};`].stock > 0
-      );
-      if (skuItem) {
-        skuId = skuItem.skuId;
-      } else {
-        throw new Error("没货了");
-      }
-    }
-    Object.assign(form, {
-      root_refer: "",
-      item_url_refer: url,
-
-      allow_quantity: itemDO.quantity,
-      buy_param: [itemDO.itemId, 1, skuId].join("_"),
-      quantity,
-      _tb_token_: "edeb7b783ff65",
-      skuInfo: [itemDO.title].join(";"),
-      _input_charset: "UTF-8",
-      skuId,
-      bankfrom: "",
-      from_etao: "",
-      item_id_num: itemDO.itemId,
-      item_id: itemDO.itemId,
-      auction_id: itemDO.itemId,
-      seller_rank: "0",
-      seller_rate_sum: "0",
-      is_orginal: "no",
-      point_price: "false",
-      secure_pay: "true",
-      pay_method: "\u6b3e\u5230\u53d1\u8d27",
-      from: "item_detail",
-      buy_now: itemDO.reservePrice,
-      current_price: itemDO.reservePrice,
-      auction_type: itemDO.auctionType,
-      seller_num_id: itemDO.userId,
-      activity: "",
-      chargeTypeId: ""
-    });
-    /* var pdetail = this.req.get("https:" + /var l,url='([^']+)/.exec(html)![1], {
-      headers: {
-        Referer: url
-      }
-    });
-    var detail_text = await pdetail;
-    var {
-      defaultModel: {
-        deliveryDO: { areaId }
-      }
-    } = JSON.parse(/\((.*)\)/.exec(detail_text)![1]);
-    Object.assign(form, {
-      destination: areaId
-    }); */
-    var qs_data = {
-      "x-itemid": itemDO.itemId,
-      "x-uid": getCookie("unb", this.cookie)
-    };
-    /* var page = await newPage();
-    // await page.goto(url);
-    await page.evaluate(form => {
-      var ele = document.createElement("form");
-      ele.action = "https://buy.tmall.com/order/confirm_order.htm";
-      ele.method = "post";
-      Object.keys(form).forEach(name => {
-        var input = document.createElement("input");
-        input.name = name;
-        input.value = form[name];
-        ele.appendChild(input);
-      });
-      document.body.appendChild(ele);
-      ele.submit();
-    }, form); */
-    if (p) {
-      await p;
-    }
-    try {
-      var ret = await orderScheduler(() =>
-        this.submitOrderFromPc({
-          data: {
-            form,
-            addr_url: "https:" + tradeConfig[2],
-            Referer: url
-          },
-          other: {}
-        })
-      );
-      /* var ret = await this.req.post("https:" + tradeConfig[2], {
-        form,
-        qs: qs_data
-      }); */
-      return ret;
-    } catch (e) {
-      console.error("订单提交出错", e);
-    }
-  }
-
-  async submitOrderFromPc(
-    args: ArgOrder<{
-      form: Record<string, any>;
-      addr_url: string;
-      Referer: string;
-    }>,
-    retryCount = 0
-  ): Promise<any> {
-    var {
-      data: { form, addr_url, Referer }
-    } = args;
-    console.log("准备进入订单结算页");
-    logFile(addr_url + "\n" + JSON.stringify(form), "pc-准备进入订单结算页");
-    var start_time = Date.now();
-    var html: string = await this.req.post(addr_url, {
-      form,
-      headers: {
-        Referer
-      }
-    });
-    var time_diff = Date.now() - start_time;
-    if (html.lastIndexOf("security-X5", html.indexOf("</title>")) > -1) {
-      let msg = "进入订单结算页碰到验证拦截";
-      console.log(`-------${msg}--------`);
-      logFile(html, "pc-订单提交验证拦截");
-      throw new Error(msg);
-    }
-    console.log("进入订单结算页用时：" + time_diff);
-    logFile(addr_url + "\n" + html, "pc-订单结算页");
-    var text = /var orderData\s*=(.*);/.exec(html)![1];
-    var {
-      data,
-      linkage,
-      hierarchy: { structure }
-    }: {
-      data: Record<
-        string,
-        {
-          submit: boolean;
-          tag: string;
-          fields: any;
-        }
-      > & {
-        confirmOrder_1: {
-          fields: {
-            pcSubmitUrl: string;
-            secretValue: string;
-            sparam1: string;
-            sparam2: string;
-            sourceTime: string;
-          };
-        };
-      };
-      linkage: {
-        common: {
-          compress: boolean;
-          queryParams: string;
-          submitParams: string;
-          validateParams: string;
-        };
-        signature: string;
-      };
-      hierarchy: {
-        structure: Record<string, string[]>;
-      };
-    } = JSON.parse(text);
-    console.log("-----进入订单结算页，准备提交订单----");
-    var { confirmOrder_1 } = data;
-    if (args.seckill && retryCount === 0 && confirmOrder_1.fields.sourceTime) {
-      let t = moment(+confirmOrder_1.fields.sourceTime);
-      let _s = t.second();
-      if (_s < 59 && _s > 55) {
-        let t_str = t.valueOf().toString();
-        let m = t_str.length - 4;
-        let delay_time = 10000 - Number(t_str.substring(m));
-        await delay(delay_time - time_diff);
-        return this.submitOrderFromPc(args, retryCount + 1);
-      }
-    }
-    var formData = [
-      "_tb_token_",
-      "action",
-      "event_submit_do_confirm",
-      "input_charset",
-      // "praper_alipay_cashier_domain",
-      "authYiYao",
-      "authHealth",
-      "F_nick"
-    ].reduce((state: any, name) => {
-      state[name] = new RegExp(
-        `name=['"]${name}['"].*? value=['"](.*?)['"]`
-      ).exec(html)![1];
-      return state;
-    }, {});
-    var ua_log =
-      "119#MlKA70vEMnDyqMMzZR0mfhNqsAOCc0zzNoYqOxPXiX8rOLMlRvBsQHACBLnD7HNkVW6u+TJDO2dsHEKw83cWa2lUDbCsSUkGMZA8RJBONt8LfoHMRPPe3FN8fHhS4Q9LdeNMR2VVNlsCqwMJqQPOutK6fusG4lhLPGg1RJ+q+NFGf/VwKSqj+EAL9eVH4QyG2eALRJE+EE387nASRVTmHNA6h2+S4lca0rA87PjVNN3Mxe3RaB0U3FNcQ1hzcDbL3e3My2I3TAFGfoZEh/loEEAL9weXLl9Lt1ELKlGv86GGMaASRBSUWLNN2I75eGcR3oALR2V48iVNNJd6+7hSzsyTgYCQM6ILf9lNDKDMyaD6cQ9YCYbCuYUcuuFM5yEg02+qaowfKLyxBXU8Ft9A4ia4LltAFPd5qdtAcnn8R7ho4LbVKKgB53QfxeC/hIJxtmKJZd2VBm5lz/LN09il3DbBKeaRMc/J1eugCy8Kb5lyXIoB3cfAkvUQjSDL5n4ubXZdBj4MiYX2BOsZRSfmWR8hVf5yn53hSaCZTLHKt7FbC9ZydWY1AB8+IFCJ8Qh2z9vM3TX/7pzXKH6MJcjYR8YntN9rmxnMKSOr/5hyWOGahQLHimcEeBmyWCbwLD6v6OOjualjPSwjk9VCx/yX2GAI4QJJ8bq3XA4b9z1AfjWmSe8/iedwoUahD6NT5zB3M0tAqy0vMv65kYVzj9Mvr/RimM2FHuErzYj9IjC0JJOFgnEYuAnMrRUvdLZjWqlyrIus3RbKuEM5E++wjfaqXGWRQny9BCGg+hJJIilFDyuuF3EitezdHX8mWypJ6e+MjAkDwq8Q7LIo5cANFZSQF3qpJun7d671jsKQLSuFgNPISBEAQWAy7+ZM3Y+biHaMRCXlYnMbY0EI";
-    delete linkage.common.queryParams;
-    console.log(args.noinvalid);
-    if (args.noinvalid && structure.invalidGroup_2) {
-      throw new Error("存在无效商品");
-    }
-    if (!config.isSubmitOrder) {
-      return;
-    }
-    try {
-      let p = this.req.post(
-        `https://buy.tmall.com${confirmOrder_1.fields.pcSubmitUrl}`,
-        {
-          qs: {
-            spm: `a220l.1.a22016.d011001001001.undefined`,
-            submitref: confirmOrder_1.fields.secretValue,
-            sparam1: confirmOrder_1.fields.sparam1,
-            sparam2: confirmOrder_1.fields.sparam2
-          },
-          form: {
-            ...formData,
-            praper_alipay_cashier_domain: "cashierstl",
-            hierarchy: JSON.stringify({
-              structure
-            }),
-            data: iconv
-              .encode(
-                JSON.stringify(
-                  Object.keys(data).reduce((state: any, name) => {
-                    var item = data[name];
-                    if (item.submit) {
-                      if (item.tag === "submitOrder") {
-                        if (item.fields) {
-                          if (ua_log) {
-                            item.fields.ua = ua_log;
-                          }
-                        }
-                      }
-                      state[name] = item;
-                    }
-                    return state;
-                  }, {})
-                ),
-                "gbk"
-              )
-              .toString(),
-            linkage: JSON.stringify({
-              common: linkage.common,
-              signature: linkage.signature
-            })
-          },
-          headers: {
-            Referer: addr_url,
-            "Sec-Fetch-Mode": "navigate",
-            "Sec-Fetch-User": "?1",
-            Accept:
-              "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
-            "Sec-Fetch-Site": "same-origin",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Accept-Language": "zh-CN,zh;q=0.9",
-            "Upgrade-Insecure-Requests": "1"
-          },
-          followAllRedirects: true,
-          encoding: null
-        }
-      );
-      let ret: string = await p;
-      if (p.path.startsWith("/auction/order/TmallConfirmOrderError.htm")) {
-        let msg = /<h2 class="sub-title">([^<]*)/.exec(ret)![1];
-        console.log(msg);
-        if (msg.includes("优惠信息变更")) {
-          return console.error(msg);
-        }
-        throw new Error(msg);
-      }
-      if (ret.indexOf("security-X5") > -1) {
-        console.log("-------提交碰到验证拦截--------");
-        logFile(ret, "pc-订单提交验证拦截");
-        return;
-      }
-      // /auction/confirm_order.htm
-      logFile(ret, "pc-订单已提交");
-      console.log("-----订单提交成功，等待付款----");
-    } catch (e) {
-      console.trace(e);
-      if (retryCount >= 3) {
-        return console.error("重试失败3次，放弃治疗");
-      }
-      console.log("重试中");
-      return this.submitOrderFromPc(args, retryCount + 1);
-    }
-  }
-
-  async cartBuyFromPc(args: {
-    items: {
-      sellerId: string;
-      cartId: string;
-      skuId: string;
-      itemId: string;
-      quantity: number;
-      createTime: string;
-      attr: string;
-    }[];
-  }) {
-    var goods = args.items;
-    var cartIdStr = goods.map(({ cartId }) => cartId).join(",");
-    var sellerIdStr = [...new Set(goods.map(({ sellerId }) => sellerId))].join(
-      ","
-    );
-    var items = goods.map(
-      ({ cartId, itemId, skuId, quantity, createTime, attr }) => ({
-        cartId,
-        itemId,
-        skuId,
-        quantity,
-        createTime,
-        attr
-      })
-    );
-    var form = {
-      hex: "n",
-      cartId: cartIdStr,
-      sellerid: sellerIdStr,
-      cart_param: JSON.stringify({
-        items
-      }),
-      unbalance: "",
-      delCartIds: cartIdStr,
-      use_cod: false,
-      buyer_from: "cart",
-      page_from: "cart",
-      source_time: Date.now()
-    };
-    delete args.items;
-    await orderScheduler(() =>
-      this.submitOrderFromPc({
-        data: {
-          form,
-          addr_url: `https://buy.tmall.com/order/confirm_order.htm?spm=aa1z0d.6639537.0.0.undefined`,
-          Referer: `https://cart.taobao.com/cart.htm?spm=a220o.1000855.a2226mz.12.5ada2389fIdDSp&from=btop`
-        },
-        other: {},
-        ...args
-      })
-    );
-  }
-
-  async cartListFromPc() {
-    var html: string = await this.req.get(`https://cart.taobao.com/cart.htm`, {
-      qs: {
-        spm: "a231o.7712113/g.1997525049.1.3e004608MXPqWt",
-        prepvid: `200_11.21.9.212_38091_${Date.now()}`,
-        extra: "",
-        from: "mini",
-        ad_id: "",
-        am_id: "",
-        cm_id: "",
-        pm_id: "1501036000a02c5c3739",
-        // pid: "mm_121093092_20166288_69356911",
-        clk1: "",
-        unid: "",
-        source_id: "",
-        app_pvid: `200_11.21.9.212_38091_${Date.now()}`
-      }
-    });
-    var text = /var firstData = (.*);}catch \(e\)/.exec(html)![1];
-    var res_data = JSON.parse(text);
-    return getPcCartInfo(res_data);
   }
 
   async getShopCollection(args: any) {

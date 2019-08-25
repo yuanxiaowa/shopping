@@ -12,7 +12,13 @@ import { Page } from "puppeteer";
 import { newPage, getPageCookie } from "../../utils/page";
 import iconv = require("iconv-lite");
 import cookieManager, { Cookie } from "../common/cookie-manager";
-import { ArgBuyDirect, ArgOrder, ArgCartBuy, ArgSearch } from "./struct";
+import {
+  ArgBuyDirect,
+  ArgOrder,
+  ArgCartBuy,
+  ArgSearch,
+  ArgCoudanItem
+} from "./struct";
 
 interface AutoShopOptions {
   name: string;
@@ -81,10 +87,7 @@ export default abstract class AutoShop implements AutoShopOptions {
             return iconv.decode(body, RegExp.$1);
           }
         }
-        if (body instanceof Buffer) {
-          return String(body);
-        }
-        return body;
+        return String(body);
       },
       jar: request.jar()
     };
@@ -101,7 +104,7 @@ export default abstract class AutoShop implements AutoShopOptions {
       }
     }
   }
-  abstract coudan(items: string[]): Promise<any>;
+  abstract coudan(items: ArgCoudanItem[]): Promise<any>;
   abstract cartList(args: { from_pc: boolean }): Promise<any>;
   abstract cartBuy(data: ArgCartBuy): Promise<any>;
   async cartToggle(data: { items: any; checked: boolean }): Promise<any> {}

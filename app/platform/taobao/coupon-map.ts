@@ -14,8 +14,10 @@ import {
   getStoreCoupon,
   getInnerStoreCoupon,
   getPindaoCoupon,
-  getMulCoupons
+  getMulCoupons,
+  getUnifyCoupon
 } from "./coupon-handlers";
+import { getInvitation } from "./fans";
 
 /* async function handler(
   url: string,
@@ -84,13 +86,21 @@ const taobaoCouponHandlers = {
     test: startsWith("https://uland.taobao.com/quan/detail"),
     handler: getInnerStoreCoupon
   },
-  pindao: {
+  /* pindao: {
     test: startsWith("https://pages.tmall.com/wow/"),
     handler: getPindaoCoupon
-  },
+  }, */
   mulCoupon: {
     test: startsWith("https://pages.tmall.com/wow/a/act/tmall"),
     handler: getMulCoupons
+  },
+  unify: {
+    test: startsWith("https://taoquan.taobao.com/coupon/unify_apply.htm"),
+    handler: getUnifyCoupon
+  },
+  fans: {
+    test: startsWith("https://fans.m.tmall.com/"),
+    handler: getInvitation
   }
 };
 

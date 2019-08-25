@@ -36,7 +36,7 @@ import {
 } from "../../../utils/tools";
 import qs = require("querystring");
 import cheerio = require("cheerio");
-import { ArgBuyDirect, ArgOrder, ArgSearch } from "../struct";
+import { ArgBuyDirect, ArgOrder, ArgSearch, ArgCoudanItem } from "../struct";
 import {
   getCouponCenterQuanpinList,
   getCouponCenterQuanpin,
@@ -116,7 +116,13 @@ export class Jingdong extends AutoShop {
     }
     return Promise.all(urls.map(this.resolveUrl));
   }
-  coudan(items: string[]): Promise<any> {
+  async coudan(items: ArgCoudanItem[]): Promise<any> {
+    await this.req.get(`https://cart.jd.com/reBuyForOrderCenter.action`, {
+      qs: {
+        wids: items.map(({ url }) => getSkuId(url)).join(","),
+        nums: items.map(({ quantity }) => quantity).join(",")
+      }
+    });
     return this.cartBuy(undefined);
   }
   cartList(args: any) {

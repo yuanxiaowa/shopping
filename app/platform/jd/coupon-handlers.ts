@@ -6,7 +6,7 @@ import {
   executer,
   requestData
 } from "./tools";
-import { getJsonpData } from "../../../utils/tools";
+import { getJsonpData, delay } from "../../../utils/tools";
 import { getGoodsUrl } from "./goods";
 import moment = require("moment");
 
@@ -110,6 +110,7 @@ export async function obtainGoodsCoupon(data: { roleId: number; key: string }) {
  * @param url
  * @example https://wqs.jd.com/event/promote/game11/index.shtml?cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=3f8d9f58aed14a30a581d169f573ced2
  * @example https://wqs.jd.com/event/promote/zdm18/index.shtml?cu=true&sid=b3234f60d61e8b4e3b5a8e703c321b0w&un_area=19_1601_50258_50374&_ts=1557200825024&ad_od=share&scpos=#st=6455&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=c842a3cb81d948899b818c0602bd9b8d
+ * @example https://wq.jd.com/webportal/event/25842?cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_1001480949_&utm_term=fd39ee31c9ee43e1b1b9a8d446c74bf3&scpos=#st=0
  */
 export async function queryFloorCoupons(url: string) {
   let html: string = await getReq().get(url);
@@ -125,24 +126,39 @@ export async function queryFloorCoupons(url: string) {
         type: number;
         level: string;
         name: string;
-        // 0:已领 1:可领 2:已领光
-        // status: string;
+        // 0:可领 1:已领 2:已领光
+        status: string | number;
         begin: string;
         end: string;
       }[];
+      extend: {
+        active: {
+          key: string;
+          level: string;
+        }[];
+      };
     };
   }[] = JSON.parse(text);
-  let coupon_items = items.filter(({ name }) => name === "coupon");
+  let coupon_items = items.filter(
+    ({ name }) => name === "coupon" || name === "userbenefit"
+  );
   // 校验状态，暂时不需要
   // https://wq.jd.com/active/querybingo?callback=cb_quan_daogou06A&active=daogou06&g_tk=1461522350&g_ty=ls
   // Referer: https://wqs.jd.com/event/promote/game11/index.shtml
   let now = Date.now();
-  return coupon_items.map(({ data: { list } }) =>
-    list.filter(
-      ({ begin, end }) =>
-        now >= new Date(begin).getTime() && now < new Date(end).getTime()
-    )
-  );
+  return coupon_items
+    .map(({ data, name }) => {
+      if (name === "coupon") {
+        return data.list.filter(
+          ({ begin, end, status }) =>
+            status === 0 &&
+            now >= new Date(begin).getTime() &&
+            now < new Date(end).getTime()
+        );
+      }
+      return data.extend.active;
+    })
+    .filter(items => items.length > 0);
 }
 
 export async function obtainFloorCoupon(data: { key: string; level: string }) {
@@ -182,7 +198,13 @@ export async function obtainFloorCoupon(data: { key: string; level: string }) {
    "retmsg" : "未登录"
 }
 );}catch(e){} */
-  return getJsonpData(ret);
+  var result = getJsonpData(ret);
+  // "retmsg" : "您参与得太频繁了，请稍后再试"
+  if (result.ret === 145) {
+    await delay(1000);
+    return obtainFloorCoupon(data);
+  }
+  return result;
 }
 
 /**
@@ -192,7 +214,7 @@ export async function obtainFloorCoupon(data: { key: string; level: string }) {
  */
 export async function queryActivityCoupons(url: string) {
   let html: string = await getReq().get(url);
-  let arr = /window.(dataHub\d+|__react_data__)\s*=(.*);?/.exec(html)!;
+  let arr = /window.(dataHub\d+|__react_data__)\s*=(.*?)(;|\n)/.exec(html)!;
   let key = arr[1];
   let data = JSON.parse(arr[2]);
   if (key === "__react_data__") {

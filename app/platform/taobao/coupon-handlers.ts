@@ -4,11 +4,12 @@
  * @LastEditors: oudingy1in
  * @LastEditTime: 2019-08-15 17:44:13
  */
-import { requestData, logFile, mteeInfo, getReq } from "./tools";
+import { requestData, logFile } from "./tools";
 import { getGoodsUrl } from "./goods";
 import { newPage } from "../../../utils/page";
 import { delay } from "../../../utils/tools";
 import moment = require("moment");
+import setting from "./setting";
 
 export async function getTaolijin(url: string) {
   var { searchParams } = new URL(url);
@@ -63,7 +64,7 @@ export async function getTaolijin(url: string) {
             {
               couponKey
             },
-            mteeInfo
+            setting.mteeInfo
           ),
           "get",
           "1.0"
@@ -76,8 +77,9 @@ export async function getTaolijin(url: string) {
         } = res.result.coupon;
         logFile(coupon, "淘礼金-领优惠券");
         msg += "," + coupon.msg;
-        if (coupon.retStatus !== "0") {
-          if (coupon.retStatus !== "1") {
+        let retStatus = Number(coupon.retStatus);
+        if (retStatus !== 0) {
+          if (retStatus !== 1) {
             success = false;
           }
         }
@@ -169,7 +171,7 @@ export async function getCouponEdetail(url: string) {
             mteeAsac: "1A19322J4Z3PLXO583LRB6",
             mteeType: "sdk"
           },
-          mteeInfo
+          setting.mteeInfo
         )
       ),
       floorId: "13352"
@@ -280,7 +282,7 @@ export async function getInnerStoreCoupon(url: string) {
         activityId: searchParams.get("activityId"),
         pid: searchParams.get("pid") || "mm_33231688_7050284_23466709"
       },
-      mteeInfo
+      setting.mteeInfo
     ),
     "get",
     "1.0"
@@ -365,7 +367,7 @@ export async function getStoreCoupon(arg: {
 }
 
 export async function getChaoshiCoupon(url: string) {
-  await getReq().get(
+  await setting.req.get(
     "https://pages.tmall.com/wow/chaoshi/act/wupr?__share__id__=1&share_crt_v=1&disableNav=YES&clickid=I220_12934752281563334657389832&wh_pid=act%2Falipay-fddew&%3A1562722996_273_1814643204=&tkFlag=1&tk_cps_param=118770447&sourceType=other&sp_tk=77%2BlYTZJbFk2a0k5YlTvv6U%3D&type=2&suid=D4896C7D-775F-4FD1-83AE-CA02284E20B0&wh_biz=tm&utparam=%7B%22ranger_buckets%22%3A%223042%22%7D&e=5G5jofRaROzKHwXYt0GK7-GCrBUXRDJ7JMc6T-9QrFVy1_NmXSnu4K3G98p2zSm3QsD6q6f1XPUJnFZ9u4P0mYRqxKSGsgCT8sviUM61dt2zZ2XZRKAfeid9H6GwqKYA8lo6HDoeVZpDcdFQGwqrO5njwOJxMd6Sd6vbaT_nXo_U4vk3CD6EfpnjwOJxMd6SYXwZ6GyZXXd4MCjxSJNmpBFGSN27hbJORRq7BkT9HWmiZ-QMlGz6FQ&disableAB=true&un=dbd409acd9cb28554c6e4bed9157ce66&eRedirect=1&ttid=201200%40taobao_iphone_8.8.0&cpp=1&shareurl=true&app=chrome&ali_trackid=&tk_cps_ut=2&sourceType=other&suid=7ff09f5d-b67d-41f7-86be-cbc26ea29ace&ut_sk=1.XK%2BQ06Gx8KwDAHyGAUJXIrJu_21646297_1563378089122.Copy.chaoshi_act_page_tb&ali_trackid=2:mm_130931909_559550329_109023950193:1563379429_121_861011236"
   );
 }
@@ -475,7 +477,7 @@ export async function getMulCoupons(url: string) {
   var goodsCoupons: any[] = [];
   var keys = Object.keys(data);
   keys.forEach(key => {
-    if (data[key].coupons) {
+    if (data[key] && data[key].coupons) {
       goodsCoupons.push(...data[key].coupons);
     }
   });
@@ -497,6 +499,9 @@ export async function getMulCoupons(url: string) {
     "1.0"
   );
   return Object.keys(data).map(key => {
+    if (!data[key]) {
+      return;
+    }
     var { items, coupons } = data[key];
     if (items) {
       // 需要分享领的券
@@ -517,6 +522,25 @@ export async function getMulCoupons(url: string) {
           ).catch(e => e)
         )
       );
+    }
+  });
+}
+
+function getInputValue(name: string, text: string) {
+  return new RegExp(`name="${name}" [^>]*value="([^"]*)"`).exec(text)![1];
+}
+
+export async function getUnifyCoupon(url: string) {
+  var html = await setting.req.get(url);
+  var _tb_token_ = getInputValue("_tb_token_", html);
+  var ua = getInputValue("ua", html);
+  return setting.req.post(url, {
+    form: {
+      _tb_token_,
+      ua
+    },
+    headers: {
+      Referer: url
     }
   });
 }

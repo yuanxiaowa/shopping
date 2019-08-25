@@ -34,3 +34,8 @@ export type ArgSearch = {
   start_price?: string;
   coupon_tag_id?: string;
 } & Record<string, any>;
+
+export type ArgCoudanItem = {
+  quantity: number;
+  url: string;
+};

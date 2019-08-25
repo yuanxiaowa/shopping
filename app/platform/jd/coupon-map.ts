@@ -1,4 +1,9 @@
-import { getActivityCoupons, getGoodsCoupons, getFloorCoupons } from "./tools";
+import {
+  getActivityCoupons,
+  getGoodsCoupons,
+  getFloorCoupons,
+  getReq
+} from "./tools";
 import { startsWith, test } from "ramda";
 import {
   getQuanpinCoupon,
@@ -17,43 +22,7 @@ const jingdongCouponHandlers = {
     // https://wq.jd.com/webportal/event/25842?cu=true&cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=4b1871b719e94013a1e77bb69fee767e&scpos=#st=460
     // https://wq.jd.com/webportal/event/25842?cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=c39350c2555145809ef3f4c05465cdf0&scpos=#st=376
     test: startsWith("https://wq.jd.com/webportal/event/"),
-    handler: async url => {
-      // @ts-ignore
-      var html: string = await this.req.get(url);
-      var text = /window._componentConfig\s*=\s*(.*);/.exec(html)![1];
-      var items = JSON.parse(text).filter(({ name }: any) => name === "coupon");
-      var now = Date.now();
-      items.forEach(({ data: { list } }: any) => {
-        list.forEach(({ begin, end, key, level }: any) => {
-          if (
-            new Date(begin).getTime() < now &&
-            new Date(end).getTime() > now
-          ) {
-            obtainFloorCoupon({
-              key,
-              level
-            });
-          }
-        });
-      });
-      /* var page = await newPage();
-      await page.goto(url);
-      await page.evaluate(() => {
-        Array.from(
-          document.querySelectorAll<HTMLDivElement>(
-            ".atmosphere_coupon_1600_591_skin_ft_cloud:not(.disabled)"
-          )
-        ).forEach(ele => {
-          ele.click();
-        });
-        Array.from(
-          document.querySelectorAll<HTMLDivElement>(
-            ".coupon_2030_294_item"
-          )
-        ).forEach(ele => ele.click());
-      });
-      return page; */
-    }
+    handler: getFloorCoupons
   },
   couponCenter: {
     test: startsWith("https://coupon.m.jd.com/center/getCouponCenter.action"),
@@ -86,7 +55,7 @@ const jingdongCouponHandlers = {
   },
   activity: {
     // https://pro.m.jd.com/mall/active/2fJDHSrZhhDcNKg9ahyKkbny5r4X/index.html?jd_pop=29588686-c925-471d-b9f2-49696e154408&abt=0&jd_pop=be4dd5ce-8a22-4e00-a791-b00f4c114ab6&abt=0&cu=true&cu=true&cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=d1dc38952a544e00879cf4a4f4b871b6
-    test: test(/^https:\/\/pro(\.m)?\.jd\.com\/mall\/active/),
+    test: test(/^https:\/\/pro(\.m)?\.jd\.com\/(mall|wq)\/active/),
     async handler(url) {
       return getActivityCoupons(url);
     }

@@ -132,10 +132,10 @@ export function getCookie(name: string, cookie: string) {
 }
 
 export function logFileWrapper(name: string) {
-  return async (content: any, label: string) => {
+  return async (content: any, label: string, ext = ".txt") => {
     var now = moment();
     var filename = `.data/${name}/${now.format(
-      moment.HTML5_FMT.DATE
+      moment.HTML5_FMT.DATE + ext
     )}/${label}/${now.format("HH_mm_ss.SSS")}`;
     await fs.ensureFile(filename);
     if (typeof content === "string") {
@@ -194,6 +194,29 @@ export const sysJingdongTime = getSysTime(
   ({ serverTime }) => serverTime
 );
 
+export function TimerCondition(interval = 1500) {
+  return (target: any, key: string, descriptor: PropertyDescriptor) => {
+    var old_fn: Function = descriptor.value;
+    descriptor.value = (data: any, duration = 15) => {
+      var t = duration * 60 * 1000;
+      var start = Date.now();
+      async function f() {
+        var ret = await old_fn.call(target, data);
+        if (ret.success) {
+          return ret.data;
+        }
+        if (Date.now() - start > t) {
+          throw new Error("超时了");
+        }
+        console.log(new Date().toLocaleString(), interval + "ms后重试");
+        await delay(interval);
+        return f();
+      }
+      return f();
+    };
+  };
+}
+
 export function createTimerExcuter<T = any>(
   func: Function,
   duration = 15,
@@ -217,6 +240,34 @@ export function createTimerExcuter<T = any>(
     }
     f();
   });
+}
+
+export function Serial(t = 1500) {
+  return (target: any, key: string, descriptor: PropertyDescriptor) => {
+    var handlers: (() => any)[] = [];
+    var pending = false;
+    async function start() {
+      if (pending === true) {
+        return;
+      }
+      pending = true;
+      while (handlers.length > 0) {
+        try {
+          await handlers.shift()!();
+        } catch (e) {}
+        await delay(t);
+      }
+      pending = false;
+    }
+    var old_fn = descriptor.value;
+    descriptor.value = (...args: any[]) => {
+      var p = new Promise(resolve => {
+        handlers.push(() => old_fn.apply(target, args).then(resolve));
+      });
+      start();
+      return p;
+    };
+  };
 }
 
 export function createScheduler(t = 1500) {

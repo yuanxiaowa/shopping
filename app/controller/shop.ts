@@ -173,7 +173,15 @@ export default class ShopController extends Controller {
           ids.push(id);
         } catch (e) {}
       }
-      ctx.body = await handle(ins.coudan(ids), "下单成功");
+      ctx.body = await handle(
+        ins.coudan(
+          items.slice(0, i).map(({ url }) => ({
+            url,
+            quantity: 1
+          }))
+        ),
+        "下单成功"
+      );
       return;
     }
     var toTime = moment(t);

@@ -4,8 +4,7 @@
  * @LastEditors: oudingy1in
  * @LastEditTime: 2019-08-15 17:44:13
  */
-import { requestData, logFile } from "./tools";
-import { getGoodsUrl } from "./goods";
+import { requestData, logFile, getGoodsUrl } from "./tools";
 import { newPage } from "../../../utils/page";
 import { delay } from "../../../utils/tools";
 import moment = require("moment");

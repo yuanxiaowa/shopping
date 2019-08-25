@@ -400,6 +400,8 @@ export class Jingdong extends AutoShop {
           if (text.includes("您要购买的商品无货了")) {
             console.log("机会稍纵即逝，继续来");
             f();
+          } else {
+            console.log("下单成功");
           }
         }
       };
@@ -411,6 +413,7 @@ export class Jingdong extends AutoShop {
       console.log("retry");
       return this.submitOrder(args);
     }
+    console.log("下单成功");
     await page.waitForNavigation();
     await page.close();
   }

@@ -80,14 +80,17 @@ export default abstract class AutoShop implements AutoShopOptions {
       },
       gzip: true,
       encoding: null,
-      transform(body: Buffer, { headers }: Response) {
+      transform(body: any, { headers }: Response) {
         var ctype = headers["content-type"]!;
         if (/charset=([-\w]+)/i.test(ctype)) {
           if (RegExp.$1 && RegExp.$1.toLowerCase() !== "utf-8") {
             return iconv.decode(body, RegExp.$1);
           }
         }
-        return String(body);
+        if (body instanceof Buffer) {
+          return String(body);
+        }
+        return body;
       },
       jar: request.jar()
     };

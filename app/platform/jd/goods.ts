@@ -1102,25 +1102,28 @@ export async function getStock(
   }[],
   address: any
 ) {
-  var { result } = await getReq().post(
-    "https://trade.jd.com/api/v1/batch/stock",
-    {
-      json: {
-        skuNumList,
-        areaRequest: {
-          provinceId: address.provId,
-          cityId: address.cityId,
-          countyId: address.countyId,
-          townId: address.townId
-        },
-        coordnateRequest: {
-          longtitude: address.longitude,
-          latitude: address.latitude
-        }
+  var res = await getReq().post("https://trade.jd.com/api/v1/batch/stock", {
+    json: {
+      skuNumList,
+      areaRequest: {
+        provinceId: address.provId,
+        cityId: address.cityId,
+        countyId: address.countyId,
+        townId: address.townId
+      },
+      coordnateRequest: {
+        longtitude: address.longitude / 1000000 + "",
+        latitude: address.latitude / 1000000 + ""
       }
+    },
+    headers: {
+      "x-requested-with": "XMLHttpRequest",
+      referer: "https://trade.jd.com/shopping/order/getOrderInfo.action",
+      "user-agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36"
     }
-  );
-  return result;
+  });
+  return res.result;
 }
 
 export function getGoodsUrl(skuId: string) {

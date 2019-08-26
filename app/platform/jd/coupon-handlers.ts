@@ -16,6 +16,7 @@ import { getJsonpData, delay } from "../../../utils/tools";
 import moment = require("moment");
 import setting from "./setting";
 import { DT } from "../../common/config";
+import { flatten } from "ramda";
 
 export async function queryGoodsCoupon(data: {
   skuId: string;
@@ -249,18 +250,21 @@ export async function queryActivityCoupons(url: string) {
     endPeriod?: string;
     scope: string;
     limit: string;
-  }[][] = Object.keys(data)
-    .filter(key => data[key].couponList)
-    .map(key =>
-      data[key].couponList.map(item =>
-        Object.assign(item, {
-          activityId,
-          actKey: item.cpId,
-          quota: Number(/\d+/.exec(item.limit)![0]),
-          discount: Number(item.discount)
-        })
+  }[] = flatten<any>(
+    Object.keys(data)
+      .filter(key => data[key].couponList)
+      .map(key =>
+        data[key].couponList.map(item =>
+          Object.assign(item, {
+            activityId,
+            actKey: item.cpId,
+            dp: Number(/\d+/.exec(item.limit)![0]) - Number(item.discount)
+          })
+        )
       )
-    );
+  ).sort((keyA, keyB) => {
+    return keyA.dp - keyB.dp;
+  });
   return {
     items,
     simpleCoupons

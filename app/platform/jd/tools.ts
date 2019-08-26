@@ -192,19 +192,15 @@ export async function getActivityCoupons(url: string) {
   });
   return wrapItems(
     Promise.all(
-      items.map(_items =>
-        Promise.all(
-          _items.map(item =>
-            executer(() =>
-              obtainActivityCoupon({
-                activityId,
-                actKey: item.cpId,
-                args: item.args,
-                scene: item.scene,
-                childActivityUrl: encodeURIComponent(url)
-              })
-            )
-          )
+      items.map(item =>
+        executer(() =>
+          obtainActivityCoupon({
+            activityId,
+            actKey: item.cpId,
+            args: item.args,
+            scene: item.scene,
+            childActivityUrl: encodeURIComponent(url)
+          })
         )
       )
     )

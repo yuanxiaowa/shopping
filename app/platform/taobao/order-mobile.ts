@@ -130,10 +130,10 @@ export class TaobaoOrderMobile {
     }
     console.timeEnd("订单结算" + r);
     console.log("-------------已经进入手机订单结算页-------------");
-    logFile(data1, "手机订单结算页");
+    logFile(data1, "手机订单结算页", ".json");
     console.log("-------------进入手机订单结算页，准备提交-------------");
     var postdata = transformOrderData(data1, args);
-    logFile(postdata, "订单结算页提交的数据");
+    logFile(postdata, "订单结算页提交的数据", ".json");
     /* writeFile("a1.json", getTransformData(postdata));
   writeFile("a2.json", getTransformData(await getPageData(args))); */
     if (!config.isSubmitOrder) {

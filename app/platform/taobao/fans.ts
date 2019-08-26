@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-08-26 09:17:47
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-08-26 19:17:23
+ */
 import { requestData } from "./tools";
 import setting from "./setting";
 
@@ -131,6 +137,24 @@ export async function getInvitation(url: string) {
   }
   var { crowdAwardDrawn } = await taobaoFans.getinvitation(data);
   if (crowdAwardDrawn === "false") {
+    await taobaoFans.openinvitation(data);
+  }
+}
+
+export async function getInvitation2(url: string) {
+  var html = await setting.req.get(url);
+  var actId = Number(/actId%3d(\d+)/.exec(html)![1]);
+  var sellerId = Number(/sellerId%3d(\d+)/.exec(html)![1]);
+  var data = {
+    actId,
+    sellerId
+  };
+  var fansInfo = await taobaoFans.getFansInfo(data.sellerId);
+  if (!fansInfo.fans) {
+    await taobaoFans.follow(data.sellerId);
+  }
+  var { crowdAwardDrawn } = await taobaoFans.getinvitation(data);
+  if (!crowdAwardDrawn) {
     await taobaoFans.openinvitation(data);
   }
 }

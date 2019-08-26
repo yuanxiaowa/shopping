@@ -1,9 +1,10 @@
-import {
-  getActivityCoupons,
-  getGoodsCoupons,
-  getFloorCoupons,
-  getReq
-} from "./tools";
+/*
+ * @Author: oudingyin
+ * @Date: 2019-08-10 13:25:48
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-08-26 19:02:01
+ */
+import { getActivityCoupons, getGoodsCoupons, getFloorCoupons } from "./tools";
 import { startsWith, test } from "ramda";
 import {
   getQuanpinCoupon,

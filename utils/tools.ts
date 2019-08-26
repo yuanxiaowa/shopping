@@ -135,8 +135,8 @@ export function logFileWrapper(name: string) {
   return async (content: any, label: string, ext = ".txt") => {
     var now = moment();
     var filename = `.data/${name}/${now.format(
-      moment.HTML5_FMT.DATE + ext
-    )}/${label}/${now.format("HH_mm_ss.SSS")}`;
+      moment.HTML5_FMT.DATE
+    )}/${label}/${now.format("HH_mm_ss.SSS") + ext}`;
     await fs.ensureFile(filename);
     if (typeof content === "string") {
       return writeFile(filename, content);

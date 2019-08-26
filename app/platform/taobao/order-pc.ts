@@ -117,7 +117,7 @@ export class TaobaoOrderPc {
       throw new Error(msg);
     }
     console.log("进入订单结算页用时：" + time_diff);
-    logFile(addr_url + "\n" + html, "pc-订单结算页");
+    logFile(addr_url + "\n" + html, "pc-订单结算页", ".html");
     var text = /var orderData\s*=(.*);/.exec(html)![1];
     var {
       data,

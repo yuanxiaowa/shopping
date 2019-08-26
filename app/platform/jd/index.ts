@@ -2,23 +2,12 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-22 18:35:37
+ * @LastEditTime: 2019-08-26 19:03:12
  */
 import { newPage } from "../../../utils/page";
-import { Page } from "puppeteer";
 import AutoShop from "../auto-shop";
 import {
-  toggleCartChecked,
-  getShopJindou,
-  getVideoHongbao,
-  getCartList,
-  getCommentList,
-  addComment,
-  addCart,
-  delCart,
-  updateCartQuantity,
   calcPrice,
-  getGoodsInfo,
   getShopCollection,
   deleteShop,
   getGoodsList,
@@ -27,16 +16,9 @@ import {
 import jingdongHandlers from "./handlers";
 import jingdongCouponHandlers from "./coupon-map";
 import { resolveUrl, getSkuId, setReq } from "./tools";
-import { config } from "../../common/config";
-import {
-  delay,
-  getCookie,
-  createTimerExcuter,
-  getJsonpData
-} from "../../../utils/tools";
-import qs = require("querystring");
+import { delay } from "../../../utils/tools";
 import cheerio = require("cheerio");
-import { ArgBuyDirect, ArgOrder, ArgSearch, ArgCoudanItem } from "../struct";
+import { ArgBuyDirect, ArgOrder, ArgCoudanItem } from "../struct";
 import {
   getCouponCenterQuanpinList,
   getCouponCenterQuanpin,
@@ -44,50 +26,17 @@ import {
   getPlusQuanpinList,
   getPlusQuanpin
 } from "./coupon-handlers";
-const user = require("../../../.data/user.json").jingdong;
-
-export async function buy(page: Page) {
-  if (page.url().startsWith("https://item.m.jd.com/")) {
-    await page.click("#buyBtn2");
-  } else {
-    await page.click("#InitCartUrl");
-  }
-}
-
-export async function addToCart(url: string, page: Page) {
-  /* if (page.url().startsWith("https://item.m.jd.com/")){
-    return page.click('#addCart2')
-    } */
-  var id = getSkuId(url);
-  return page.goto(
-    `https://cart.jd.com/gate.action?pid=${id}&pcount=1&ptype=1`
-  );
-}
-
-export async function login(page: Page) {
-  console.log("京东登录");
-  await page.goto("https://passport.jd.com/new/login.aspx");
-  await page.click(".login-tab-r");
-  await page.evaluate(() => {
-    (<HTMLSpanElement>document.querySelector(".clear-btn")).click();
-  });
-  await page.type("#loginname", user.username);
-  await page.type("#nloginpwd", user.password);
-  await page.click("#loginsubmit");
-  await page.waitForNavigation({
-    timeout: 0
-  });
-  console.log("京东登录成功");
-}
-
-export async function loginMobile(page: Page) {
-  await page.goto(`https://plogin.m.jd.com/user/login.action`);
-  await page.type("#username", user.username);
-  await page.type("#password", user.password);
-  await page.click("#loginBtn");
-  // await page.click("a.quick-qq");
-  await page.waitForNavigation();
-}
+import {
+  getCartList,
+  toggleCartChecked,
+  addCart,
+  delCart,
+  updateCartQuantity
+} from "./cart";
+import { jingDongComment } from "./comment";
+import { getShopJindou } from "./store";
+import { jingDongOrder } from "./order";
+import { login, loginAction } from "./member";
 
 export class Jingdong extends AutoShop {
   constructor() {
@@ -116,14 +65,9 @@ export class Jingdong extends AutoShop {
     }
     return Promise.all(urls.map(this.resolveUrl));
   }
-  async coudan(items: ArgCoudanItem[]): Promise<any> {
-    await this.req.get(`https://cart.jd.com/reBuyForOrderCenter.action`, {
-      qs: {
-        wids: items.map(({ url }) => getSkuId(url)).join(","),
-        nums: items.map(({ quantity }) => quantity).join(",")
-      }
-    });
-    return this.cartBuy(undefined);
+  getStock = getStock;
+  coudan(items: ArgCoudanItem[]): Promise<any> {
+    return jingDongOrder.coudan(items);
   }
   cartList(args: any) {
     return getCartList();
@@ -149,7 +93,7 @@ export class Jingdong extends AutoShop {
     return updateCartQuantity(data);
   }
   async comment(data: any): Promise<any> {
-    return Promise.all(data.orderIds.map(addComment));
+    return Promise.all(data.orderIds.map(jingDongComment.addComment));
   }
   async commentList(data: { page: number; type: number }): Promise<any> {
     // 2:待收货 3:全部 5:已取消 6:已完成 7:有效订单 8:待评价
@@ -194,66 +138,12 @@ export class Jingdong extends AutoShop {
     };
   }
 
-  async buyDirect(args: ArgBuyDirect, p?: Promise<void>): Promise<any> {
-    if (args.jianlou) {
-      let isSeckill = false;
-      createTimerExcuter(async () => {
-        let data = await getGoodsInfo(getSkuId(args.url));
-        let success = data.stock.StockState !== 34;
-        isSeckill = data.miao;
-        if (success) {
-          if (data.stock.rn > -1) {
-            success = data.stock.rn >= args.quantity;
-          }
-        }
-        return {
-          success,
-          data
-        };
-      }, args.jianlou).then(() => {
-        console.log("有库存了，去下单");
-        var res = this.getNextDataByGoodsInfo(
-          { skuId: getSkuId(args.url) },
-          args.quantity,
-          isSeckill
-        );
-        return this.submitOrder(
-          Object.assign(
-            {
-              data: res
-            },
-            args
-          )
-        );
-      });
-      return;
-    }
-    let data = await getGoodsInfo(getSkuId(args.url));
-    let res = this.getNextDataByGoodsInfo(
-      { skuId: getSkuId(args.url) },
-      args.quantity,
-      data.miao
-    );
-    if (p) {
-      await p;
-    }
-    return this.submitOrder(
-      Object.assign(
-        {
-          data: res
-        },
-        args
-      )
-    );
+  buyDirect(args: ArgBuyDirect, p?: Promise<void>): Promise<any> {
+    return jingDongOrder.buyDirect(args, p);
   }
 
-  async cartBuy(data: any) {
-    return this.submitOrder({
-      data: {
-        submit_url: "https://p.m.jd.com/norder/order.action"
-      },
-      other: {}
-    });
+  cartBuy(data: any) {
+    return jingDongOrder.submitOrder(data);
   }
 
   async getGoodsInfo(url: string, skus?: number[] | undefined): Promise<any> {
@@ -271,151 +161,16 @@ export class Jingdong extends AutoShop {
     });
   }
 
-  getNextDataByGoodsInfo({ skuId }: any, quantity: number, isSeckill = false) {
-    var submit_url =
-      (isSeckill
-        ? "https://wqs.jd.com/order/s_confirm_miao.shtml?"
-        : "https://wq.jd.com/deal/confirmorder/main?") +
-      qs.stringify({
-        sceneval: "2",
-        bid: "",
-        wdref: `https://item.m.jd.com/product/${skuId}.html`,
-        scene: "jd",
-        isCanEdit: "1",
-        EncryptInfo: "",
-        Token: "",
-        commlist: [skuId, "", quantity, skuId, 1, 0, 0].join(","),
-        locationid: (getCookie("jdAddrId", this.cookie) || "")
-          .split("_")
-          .slice(0, 3)
-          .join("-"),
-        type: "0",
-        lg: "0",
-        supm: "0"
-      });
-    return {
-      submit_url
-    };
+  getNextDataByGoodsInfo(data: any, quantity: number, isSeckill = false) {
+    return jingDongOrder.getNextDataByGoodsInfo(data, quantity, isSeckill);
   }
 
-  getStock(ids: string[]) {
-    return this.req.post(
-      "https://trade.jd.com/shopping/order/getOrderInfo.action",
-      {
-        headers: {},
-        json: {
-          skuNumList: ids.map(skuId => ({ skuId, num: "1" })),
-          areaRequest: {
-            provinceId: "22",
-            cityId: "1930",
-            countyId: "50946",
-            townId: "52194"
-          },
-          coordnateRequest: { longtitude: "104.086731", latitude: "30.679346" }
-        }
-      }
-    );
-  }
-
-  async submitOrder(
+  submitOrder(
     args: ArgOrder<{
       submit_url: string;
     }>
   ): Promise<any> {
-    var page = await newPage();
-    page.setRequestInterception(true);
-    page.on("request", request => {
-      var type = request.resourceType();
-      if (type === "image" || type === "stylesheet") {
-        request.respond({
-          body: ""
-        });
-      } else {
-        request.continue();
-      }
-    });
-    page.goto(args.data.submit_url);
-    let text_userasset = await page
-      .waitForResponse(res => res.url().includes("userasset"))
-      .then(res => res.text());
-    if (typeof args.expectedPrice === "number") {
-      let {
-        order: {
-          orderprice: { totalPrice }
-        }
-      } = JSON.parse(/\((.*)\)\}catch/.exec(text_userasset)![1]);
-      totalPrice = totalPrice / 100;
-      if (args.expectedPrice < totalPrice) {
-        page.close();
-        throw new Error(
-          `太贵了，期望价格:${args.expectedPrice}, 实际价格：${totalPrice}`
-        );
-      }
-    }
-    if (!config.isSubmitOrder) {
-      await page.setOfflineMode(true);
-    }
-    await page.evaluate(pass => {
-      document.querySelector<HTMLInputElement>("#shortPassInput")!.value = pass;
-      document.querySelector<HTMLElement>("#btnPayOnLine")!.click();
-    }, user.paypass);
-    var res = await page.waitForResponse(res =>
-      res.url().startsWith("https://wqdeal.jd.com/deal/msubmit/confirm?")
-    );
-    var text = await res.text();
-    console.log(text);
-    if (text.includes("您要购买的商品无货了")) {
-      console.log("开始刷库存");
-      let {
-        order: { address, venderCart }
-        // @ts-ignore
-      } = await page.evaluate(() => window.dealData);
-      var skulist: any[] = [];
-      venderCart.forEach(({ products }) => {
-        products.forEach(({ mainSku }) => {
-          skulist.push({
-            skuId: mainSku.id,
-            num: mainSku.num
-          });
-        });
-      });
-      let f = async () => {
-        var result = await getStock(skulist, address);
-        var n = Object.keys(result).find(key =>
-          result[key].status.includes("无货")
-        );
-        if (n) {
-          f();
-        } else {
-          await page.evaluate(pass => {
-            document.querySelector<HTMLInputElement>(
-              "#shortPassInput"
-            )!.value = pass;
-            document.querySelector<HTMLElement>("#btnPayOnLine")!.click();
-          }, user.paypass);
-          var res = await page.waitForResponse(res =>
-            res.url().startsWith("https://wqdeal.jd.com/deal/msubmit/confirm")
-          );
-          var text = await res.text();
-          if (text.includes("您要购买的商品无货了")) {
-            console.log("机会稍纵即逝，继续来");
-            f();
-          } else {
-            console.log("下单成功");
-          }
-        }
-      };
-      f();
-      return;
-    } else if (text.includes("多次提交过快，请稍后再试")) {
-      await page.close();
-      await delay(2000);
-      console.log("retry");
-      return this.submitOrder(args);
-    }
-    console.log("下单成功");
-    await page.waitForNavigation();
-    await page.close();
+    return jingDongOrder.submitOrder(args);
   }
 
   getShopCollection = getShopCollection;
@@ -444,15 +199,7 @@ export class Jingdong extends AutoShop {
     await page.close();
   }
 
-  async loginAction(page: Page) {
-    console.log("京东手机登录");
-    await page.waitForNavigation({
-      timeout: 0
-    });
-    await page.type("#username", user.username);
-    await page.type("#password", user.password);
-    await page.click("#loginBtn");
-  }
+  loginAction = loginAction;
 
   onFirstLogin() {
     getShopJindou();

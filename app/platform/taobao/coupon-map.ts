@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-05 10:20:54
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-15 22:09:55
+ * @LastEditTime: 2019-08-26 19:14:51
  */
 import { startsWith } from "ramda";
 import { newPage } from "../../../utils/page";
@@ -17,7 +17,7 @@ import {
   getMulCoupons,
   getUnifyCoupon
 } from "./coupon-handlers";
-import { getInvitation } from "./fans";
+import { getInvitation, getInvitation2 } from "./fans";
 
 /* async function handler(
   url: string,
@@ -98,9 +98,13 @@ const taobaoCouponHandlers = {
     test: startsWith("https://taoquan.taobao.com/coupon/unify_apply.htm"),
     handler: getUnifyCoupon
   },
-  fans: {
+  invitation1: {
     test: startsWith("https://fans.m.tmall.com/"),
     handler: getInvitation
+  },
+  invitation2: {
+    test: startsWith("https://pages.tmall.com/wow/fsp/act/invitation"),
+    handler: getInvitation2
   }
 };
 

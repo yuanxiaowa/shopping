@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-07-12 15:48:14
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-08-26 19:21:04
+ */
 import request = require("request-promise-native");
 import { newPage } from "../../../utils/page";
 import { logFileWrapper, getCookie } from "../../../utils/tools";
@@ -55,7 +61,7 @@ export function setReq(
     headers: {
       cookie: _cookie,
       "user-agent":
-        '"Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1"'
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1"
     }
   });
 }

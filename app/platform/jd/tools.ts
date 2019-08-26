@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-07-12 15:34:45
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-08-26 15:17:30
+ */
 import request = require("request-promise-native");
 
 import {
@@ -16,23 +22,11 @@ import {
 } from "../../../utils/tools";
 import { RequestAPI, RequiredUriUrl } from "request";
 import { getGoodsInfo } from "./goods";
+import setting, { setSetting } from "./setting";
 
 export const executer = createScheduler(3000);
 
 export const logFile = logFileWrapper("jingdong");
-
-var req: RequestAPI<
-  request.RequestPromise<any>,
-  request.RequestPromiseOptions,
-  RequiredUriUrl
->;
-var eid = "";
-var fp = "0a2d744505998993736ee93c5880c826";
-var cookie = "";
-
-export function getReq() {
-  return req;
-}
 
 export async function requestData(
   body: any,
@@ -44,7 +38,7 @@ export async function requestData(
     api?: string;
   }
 ) {
-  var text: string = await req.get("https://api.m.jd.com/" + api, {
+  var text: string = await setting.req.get("https://api.m.jd.com/" + api, {
     qs: {
       client: "wh5",
       clientVersion: "2.0.0",
@@ -52,8 +46,8 @@ export async function requestData(
         "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.90 Safari/537.36",
       lang: "zh_CN",
       networkType: "4g",
-      eid,
-      fp,
+      eid: setting.eid,
+      fp: setting.fp,
       functionId,
       body: JSON.stringify(body),
       jsonp: "cb",
@@ -72,8 +66,8 @@ export async function requestData(
 
 export function getBaseData() {
   return {
-    eid,
-    fp
+    eid: setting.eid,
+    fp: setting.fp
   };
 }
 
@@ -85,13 +79,13 @@ export function setReq(
   >,
   _cookie: string
 ) {
-  cookie = _cookie;
-  eid = getCookie("3AB9D23F7A4B3C9B");
-  req = _req;
+  setSetting("cookie", _cookie);
+  setSetting("eid", getCookie("3AB9D23F7A4B3C9B"));
+  setSetting("req", _req);
 }
 
 export function goGetCookie(url: string) {
-  return req.get("https://wq.jd.com/mlogin/mpage/Login", {
+  return setting.req.get("https://wq.jd.com/mlogin/mpage/Login", {
     qs: {
       rurl: url
     }
@@ -106,7 +100,7 @@ export function time33(str: string) {
 }
 export function getCookie(name: string) {
   var reg = new RegExp("(^| )" + name + "(?:=([^;]*))?(;|$)"),
-    val = cookie.match(reg);
+    val = setting.cookie.match(reg);
   if (!val || !val[2]) {
     return "";
   }
@@ -191,8 +185,11 @@ export async function getFloorCoupons(url: string) {
 }
 
 export async function getActivityCoupons(url: string) {
-  var items = await queryActivityCoupons(url);
+  var { items, simpleCoupons } = await queryActivityCoupons(url);
   var activityId = /(\w+)\/index.html/.exec(url)![1];
+  simpleCoupons.forEach(url => {
+    setting.req.get(url);
+  });
   return wrapItems(
     Promise.all(
       items.map(_items =>
@@ -236,4 +233,8 @@ export async function resolveUrl(url: string) {
   await p.catch(() => {});
   let l = p.response!.headers.location!;
   return l;
+}
+
+export function getGoodsUrl(skuId: string) {
+  return `https://item.m.jd.com/product/${skuId}.html`;
 }

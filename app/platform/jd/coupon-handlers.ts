@@ -1,21 +1,27 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-07-12 15:37:17
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-08-26 19:01:38
+ */
 import {
   logFile,
   getBaseData,
-  getReq,
   getCookie,
   executer,
-  requestData
+  requestData,
+  getGoodsUrl
 } from "./tools";
 import { getJsonpData, delay } from "../../../utils/tools";
-import { getGoodsUrl } from "./goods";
 import moment = require("moment");
+import setting from "./setting";
 
 export async function queryGoodsCoupon(data: {
   skuId: string;
   vid: number;
   cid: string;
 }) {
-  var text: string = await getReq().post(
+  var text: string = await setting.req.post(
     `https://wq.jd.com/mjgj/fans/queryusegetcoupon`,
     {
       qs: {
@@ -78,7 +84,7 @@ export async function queryGoodsCoupon(data: {
 }
 
 export async function obtainGoodsCoupon(data: { roleId: number; key: string }) {
-  var text: string = await getReq().get(
+  var text: string = await setting.req.get(
     `https://wq.jd.com/activeapi/obtainjdshopfreecouponv2`,
     {
       qs: {
@@ -113,7 +119,7 @@ export async function obtainGoodsCoupon(data: { roleId: number; key: string }) {
  * @example https://wq.jd.com/webportal/event/25842?cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_1001480949_&utm_term=fd39ee31c9ee43e1b1b9a8d446c74bf3&scpos=#st=0
  */
 export async function queryFloorCoupons(url: string) {
-  let html: string = await getReq().get(url);
+  let html: string = await setting.req.get(url);
   let text = /window\._componentConfig=(.*);/.exec(html)![1];
   let items: {
     name: string;
@@ -166,21 +172,24 @@ export async function obtainFloorCoupon(data: { key: string; level: string }) {
   if (g_pt_tk) {
     g_pt_tk = time33(g_pt_tk);
   } */
-  var ret: string = await getReq().get("https://wq.jd.com/active/active_draw", {
-    qs: {
-      active: data.key,
-      level: data.level,
-      _: Date.now(),
-      g_login_type: "0",
-      callback: "jsonpCBKE",
-      // g_tk: time33(getCookie("wq_skey")),
-      // g_pt_tk,
-      g_ty: "ls"
-    },
-    headers: {
-      Referer: "https://wqs.jd.com/event/promote/mobile8/index.shtml"
+  var ret: string = await setting.req.get(
+    "https://wq.jd.com/active/active_draw",
+    {
+      qs: {
+        active: data.key,
+        level: data.level,
+        _: Date.now(),
+        g_login_type: "0",
+        callback: "jsonpCBKE",
+        // g_tk: time33(getCookie("wq_skey")),
+        // g_pt_tk,
+        g_ty: "ls"
+      },
+      headers: {
+        Referer: "https://wqs.jd.com/event/promote/mobile8/index.shtml"
+      }
     }
-  });
+  );
   /* try{ jsonpCBKA(
 {
    "active" : "daogou06",
@@ -213,7 +222,7 @@ export async function obtainFloorCoupon(data: { key: string; level: string }) {
  * @example https://pro.m.jd.com/mall/active/4FziapEprFVTPwjVx19WRDMTbbbF/index.html?utm_source=pdappwakeupup_20170001&utm_user=plusmember&ad_od=share&utm_source=androidapp&utm_medium=appshare&utm_campaign=t_335139774&utm_term=CopyURL
  */
 export async function queryActivityCoupons(url: string) {
-  let html: string = await getReq().get(url);
+  let html: string = await setting.req.get(url);
   let arr = /window.(dataHub\d+|__react_data__)\s*=(.*?)(;|\n)/.exec(html)!;
   let key = arr[1];
   let data = JSON.parse(arr[2]);
@@ -221,7 +230,12 @@ export async function queryActivityCoupons(url: string) {
     data = data.activityData.floorList;
   }
   let activityId = /active\/(\w+)/.exec(url)![1];
-  let ret: {
+  let simpleCoupons = arr[2].match(/\/\/jrmkt\.jd\.com\/[^"]+/g) || [];
+  simpleCoupons = simpleCoupons.concat(
+    arr[2].match(/\/\/btmkt\.jd\.com\/[^"]+/g) || []
+  );
+  simpleCoupons = simpleCoupons.map(url => `https:${url}`);
+  let items: {
     cpId: string;
     args: string;
     srv: string;
@@ -241,7 +255,10 @@ export async function queryActivityCoupons(url: string) {
         Object.assign({ activityId, actKey: item.cpId }, item)
       )
     );
-  return ret;
+  return {
+    items,
+    simpleCoupons
+  };
 }
 
 export async function obtainActivityCoupon(data: {
@@ -251,7 +268,7 @@ export async function obtainActivityCoupon(data: {
   childActivityUrl: string;
   actKey: string;
 }) {
-  var ret: string = await getReq().post(
+  var ret: string = await setting.req.post(
     `https://api.m.jd.com/client.action?functionId=newBabelAwardCollection`,
     {
       form: {
@@ -413,7 +430,7 @@ export async function getCouponZeus(url: string) {
  */
 export async function getCouponSingle(url: string) {
   var { searchParams } = new URL(url);
-  var text: string = await getReq().get(
+  var text: string = await setting.req.get(
     "https://s.m.jd.com/activemcenter/mfreecoupon/getcoupon",
     {
       qs: {
@@ -442,7 +459,7 @@ export async function getCouponSingle(url: string) {
 }
 
 export async function getShopCoupons(url: string) {
-  var html: string = await getReq().get(url);
+  var html: string = await setting.req.get(url);
   var text = /window.SHOP_COUPONS\s*=\s*(\[[\s\S]*?\])\s*;/.exec(html)![1];
   var now = Date.now();
   var coupons: any[] = JSON.parse(text).filter(
@@ -535,7 +552,7 @@ export async function getFanliCoupon(url: string) {
   if (code !== 1) {
     throw new Error(msg)
   } */
-  var text = await getReq().get(
+  var text = await setting.req.get(
     "https://ifanli.m.jd.com/rebate/userCenter/takeCoupon",
     {
       qs: {
@@ -572,7 +589,7 @@ export async function getCouponCenterQuanpinList(
     key: string;
   }[]
 > {
-  var text = await getReq().get(
+  var text = await setting.req.get(
     "https://a.jd.com/indexAjax/getCouponListByCatalogId.html",
     {
       qs: {
@@ -608,17 +625,20 @@ export async function getCouponCenterQuanpin(
   code: string;
   message: string;
 }> {
-  var text = await getReq().get("https://a.jd.com/indexAjax/getCoupon.html", {
-    qs: {
-      callback: "jQuery4276212",
-      key,
-      type: 1
-    },
-    headers: {
-      "x-requested-with": "XMLHttpRequest",
-      referer: "https://a.jd.com/"
+  var text = await setting.req.get(
+    "https://a.jd.com/indexAjax/getCoupon.html",
+    {
+      qs: {
+        callback: "jQuery4276212",
+        key,
+        type: 1
+      },
+      headers: {
+        "x-requested-with": "XMLHttpRequest",
+        referer: "https://a.jd.com/"
+      }
     }
-  });
+  );
   return getJsonpData(text);
 }
 
@@ -632,7 +652,7 @@ export async function getPlusQuanpinList(): Promise<
     discount: number;
   }[]
 > {
-  var text = await getReq().get(
+  var text = await setting.req.get(
     "https://plus.jd.com/coupon/dayCoupons?locationCode=10006"
   );
   var {
@@ -646,22 +666,25 @@ export async function getPlusQuanpinList(): Promise<
  * @param item
  */
 export async function getPlusQuanpin(item: any) {
-  var text = await getReq().get("https://plus.jd.com/coupon/receiveDayCoupon", {
-    qs: {
-      couponKey: item.couponKey,
-      discount: item.discount,
-      locationCode: 10006,
-      platform: 0,
-      eventId: "plus2017|keycount|MonthlyCoupon|Get",
-      eid: -1,
-      fp: -1
+  var text = await setting.req.get(
+    "https://plus.jd.com/coupon/receiveDayCoupon",
+    {
+      qs: {
+        couponKey: item.couponKey,
+        discount: item.discount,
+        locationCode: 10006,
+        platform: 0,
+        eventId: "plus2017|keycount|MonthlyCoupon|Get",
+        eid: -1,
+        fp: -1
+      }
     }
-  });
+  );
   return JSON.parse(text);
 }
 
 export async function getMyCoupons() {
-  var text = await getReq().get(
+  var text = await setting.req.get(
     "https://wq.jd.com/activeapi/queryjdcouponlistwithfinance?state=3&wxadd=1&_=1566400385806&sceneval=2&g_login_type=1&callback=queryjdcouponcb3&g_ty=ls",
     {
       headers: {

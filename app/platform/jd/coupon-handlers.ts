@@ -308,7 +308,7 @@ export async function obtainActivityCoupon(data: {
   // A7:您来早了，活动还没开始哟，请稍后再来~
   // D2:本时段优惠券已抢完，请10:00再来吧！
   // A1:领取成功！感谢您的参与，祝您购物愉快~
-  if (resData.subCode === "A7") {
+  if (resData.subCode === "A7" || resData.subCode === "A28") {
     console.log(resData.subCodeMsg);
     let hours = ["08", "10", "12", "14", "16", "18", "20"];
     let now = moment();

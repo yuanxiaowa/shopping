@@ -305,17 +305,38 @@ export async function obtainActivityCoupon(data: {
     }
   );
   var resData = JSON.parse(ret);
+  // A7:您来早了，活动还没开始哟，请稍后再来~
+  // D2:本时段优惠券已抢完，请10:00再来吧！
+  // A1:领取成功！感谢您的参与，祝您购物愉快~
   if (resData.subCode === "A7") {
-    console.log("0点抢券");
-    delay(
-      moment("00", "HH")
-        .add("d", 1)
-        .valueOf() -
-        Date.now() -
-        DT.jingdong
-    ).then(() => obtainActivityCoupon(data));
+    console.log(resData.subCodeMsg);
+    let hours = ["08", "10", "12", "14", "16", "18", "20"];
+    let now = moment();
+    let h = "00";
+    for (let _h of hours) {
+      if (now.get("h") < Number(_h)) {
+        h = _h;
+        break;
+      }
+    }
+    let to_date = moment(h, "HH");
+    if (h === "00") {
+      to_date.add("d", 1);
+    }
+    console.log(to_date.format(), "开始抢券");
+    delay(to_date.valueOf() - Date.now() - DT.jingdong).then(() =>
+      obtainActivityCoupon(data)
+    );
+  } else if (resData.subCode === "D2") {
+    console.log(resData.subCodeMsg);
+    let to_date = moment(/\d{2}:\d{2}/.exec(resData.subCodeMsg)![0]);
+    console.log(to_date.format(), "开始抢券");
+    delay(to_date.valueOf() - Date.now() - DT.jingdong).then(() =>
+      obtainActivityCoupon(data)
+    );
+  } else {
+    console.log(resData);
   }
-  console.log(resData);
   return resData;
 }
 

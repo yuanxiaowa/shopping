@@ -7,6 +7,7 @@
 import { Controller } from "egg";
 import moment = require("moment");
 import { sysTaobaoTime, sysJingdongTime } from "../../utils/tools";
+import { DT } from "../common/config";
 
 var delayMap: Record<
   number,
@@ -63,11 +64,6 @@ async function handle(p: any, msg?: string) {
     };
   }
 }
-
-var DT = {
-  taobao: 0,
-  jingdong: 0
-};
 
 async function sysTime(platform: string) {
   var handler = platform === "taobao" ? sysTaobaoTime : sysJingdongTime;

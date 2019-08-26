@@ -15,6 +15,7 @@ import {
 import { getJsonpData, delay } from "../../../utils/tools";
 import moment = require("moment");
 import setting from "./setting";
+import { DT } from "../../common/config";
 
 export async function queryGoodsCoupon(data: {
   skuId: string;
@@ -303,7 +304,19 @@ export async function obtainActivityCoupon(data: {
       }
     }
   );
-  return ret;
+  var resData = JSON.parse(ret);
+  if (resData.subCode === "A7") {
+    console.log("0点抢券");
+    delay(
+      moment("00", "HH")
+        .add("d", 1)
+        .valueOf() -
+        Date.now() -
+        DT.jingdong
+    ).then(() => obtainActivityCoupon(data));
+  }
+  console.log(resData);
+  return resData;
 }
 
 /**

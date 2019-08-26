@@ -253,7 +253,12 @@ export async function queryActivityCoupons(url: string) {
     .filter(key => data[key].couponList)
     .map(key =>
       data[key].couponList.map(item =>
-        Object.assign({ activityId, actKey: item.cpId }, item)
+        Object.assign(item, {
+          activityId,
+          actKey: item.cpId,
+          quota: Number(/\d+/.exec(item.limit)![0]),
+          discount: Number(item.discount)
+        })
       )
     );
   return {

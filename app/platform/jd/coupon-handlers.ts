@@ -329,7 +329,7 @@ export async function obtainActivityCoupon(data: {
     );
   } else if (resData.subCode === "D2") {
     console.log(resData.subCodeMsg);
-    let to_date = moment(/\d{2}:\d{2}/.exec(resData.subCodeMsg)![0]);
+    let to_date = moment(/\d{2}:\d{2}/.exec(resData.subCodeMsg)![0], "HH");
     console.log(to_date.format(), "开始抢券");
     delay(to_date.valueOf() - Date.now() - DT.jingdong).then(() =>
       obtainActivityCoupon(data)

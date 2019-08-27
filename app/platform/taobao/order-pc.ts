@@ -1,6 +1,12 @@
-import { getCookie, delay } from "../../../utils/tools";
+/*
+ * @Author: oudingyin
+ * @Date: 2019-08-26 09:17:48
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-08-27 17:25:56
+ */
+import { delay } from "../../../utils/tools";
 import setting from "./setting";
-import { logFile } from "../jd/tools";
+import { logFile } from "./tools";
 import { ArgBuyDirect, ArgOrder } from "../struct";
 import { config } from "../../common/config";
 import moment = require("moment");
@@ -120,10 +126,17 @@ export class TaobaoOrderPc {
     logFile(addr_url + "\n" + html, "pc-订单结算页", ".html");
     var text = /var orderData\s*=(.*);/.exec(html)![1];
     var {
+      endpoint,
       data,
       linkage,
       hierarchy: { structure }
     }: {
+      endpoint: {
+        mode: string;
+        osVersion: string;
+        protocolVersion: string;
+        ultronage: string;
+      };
       data: Record<
         string,
         {
@@ -134,11 +147,36 @@ export class TaobaoOrderPc {
       > & {
         confirmOrder_1: {
           fields: {
-            pcSubmitUrl: string;
+            /* pcSubmitUrl: string;
             secretValue: string;
             sparam1: string;
             sparam2: string;
-            sourceTime: string;
+            sourceTime: string; */
+          };
+        };
+        submitOrderPC_1: {
+          hidden: {
+            extensionMap: {
+              action: string;
+              event_submit_do_confirm: string;
+              input_charset: string;
+              pcSubmitUrl: string;
+              secretKey: string;
+              secretValue: string;
+              sparam1: string;
+              sparam2?: string;
+              unitSuffix: string;
+            };
+          };
+        };
+        realPayPC_1: {
+          fields: {
+            price: string;
+          };
+          hidden: {
+            extensionMap: {
+              timestamp: string;
+            };
           };
         };
       };
@@ -156,9 +194,13 @@ export class TaobaoOrderPc {
       };
     } = JSON.parse(text);
     console.log("-----进入订单结算页，准备提交订单----");
-    var { confirmOrder_1 } = data;
-    if (args.seckill && retryCount === 0 && confirmOrder_1.fields.sourceTime) {
-      let t = moment(+confirmOrder_1.fields.sourceTime);
+    var { /* confirmOrder_1, */ submitOrderPC_1, realPayPC_1 } = data;
+    if (
+      args.seckill &&
+      retryCount === 0 &&
+      realPayPC_1.hidden.extensionMap.timestamp
+    ) {
+      let t = moment(+realPayPC_1.hidden.extensionMap.timestamp);
       let _s = t.second();
       if (_s < 59 && _s > 55) {
         let t_str = t.valueOf().toString();
@@ -168,23 +210,28 @@ export class TaobaoOrderPc {
         return this.submitOrder(args, retryCount + 1);
       }
     }
+    if (args.expectedPrice) {
+      if (+realPayPC_1.fields.price < +args.expectedPrice) {
+        throw new Error("太贵了，买不起");
+      }
+    }
     var formData = [
-      "_tb_token_",
-      "action",
-      "event_submit_do_confirm",
-      "input_charset",
-      // "praper_alipay_cashier_domain",
-      "authYiYao",
-      "authHealth",
-      "F_nick"
+      "_tb_token_"
+      // "action",
+      // "event_submit_do_confirm",
+      // "input_charset",
+      // // "praper_alipay_cashier_domain",
+      // "authYiYao",
+      // "authHealth",
+      // "F_nick"
     ].reduce((state: any, name) => {
       state[name] = new RegExp(
         `name=['"]${name}['"].*? value=['"](.*?)['"]`
       ).exec(html)![1];
       return state;
     }, {});
-    var ua_log =
-      "119#MlKA70vEMnDyqMMzZR0mfhNqsAOCc0zzNoYqOxPXiX8rOLMlRvBsQHACBLnD7HNkVW6u+TJDO2dsHEKw83cWa2lUDbCsSUkGMZA8RJBONt8LfoHMRPPe3FN8fHhS4Q9LdeNMR2VVNlsCqwMJqQPOutK6fusG4lhLPGg1RJ+q+NFGf/VwKSqj+EAL9eVH4QyG2eALRJE+EE387nASRVTmHNA6h2+S4lca0rA87PjVNN3Mxe3RaB0U3FNcQ1hzcDbL3e3My2I3TAFGfoZEh/loEEAL9weXLl9Lt1ELKlGv86GGMaASRBSUWLNN2I75eGcR3oALR2V48iVNNJd6+7hSzsyTgYCQM6ILf9lNDKDMyaD6cQ9YCYbCuYUcuuFM5yEg02+qaowfKLyxBXU8Ft9A4ia4LltAFPd5qdtAcnn8R7ho4LbVKKgB53QfxeC/hIJxtmKJZd2VBm5lz/LN09il3DbBKeaRMc/J1eugCy8Kb5lyXIoB3cfAkvUQjSDL5n4ubXZdBj4MiYX2BOsZRSfmWR8hVf5yn53hSaCZTLHKt7FbC9ZydWY1AB8+IFCJ8Qh2z9vM3TX/7pzXKH6MJcjYR8YntN9rmxnMKSOr/5hyWOGahQLHimcEeBmyWCbwLD6v6OOjualjPSwjk9VCx/yX2GAI4QJJ8bq3XA4b9z1AfjWmSe8/iedwoUahD6NT5zB3M0tAqy0vMv65kYVzj9Mvr/RimM2FHuErzYj9IjC0JJOFgnEYuAnMrRUvdLZjWqlyrIus3RbKuEM5E++wjfaqXGWRQny9BCGg+hJJIilFDyuuF3EitezdHX8mWypJ6e+MjAkDwq8Q7LIo5cANFZSQF3qpJun7d671jsKQLSuFgNPISBEAQWAy7+ZM3Y+biHaMRCXlYnMbY0EI";
+    // var ua_log =
+    //   "119#MlKA70vEMnDyqMMzZR0mfhNqsAOCc0zzNoYqOxPXiX8rOLMlRvBsQHACBLnD7HNkVW6u+TJDO2dsHEKw83cWa2lUDbCsSUkGMZA8RJBONt8LfoHMRPPe3FN8fHhS4Q9LdeNMR2VVNlsCqwMJqQPOutK6fusG4lhLPGg1RJ+q+NFGf/VwKSqj+EAL9eVH4QyG2eALRJE+EE387nASRVTmHNA6h2+S4lca0rA87PjVNN3Mxe3RaB0U3FNcQ1hzcDbL3e3My2I3TAFGfoZEh/loEEAL9weXLl9Lt1ELKlGv86GGMaASRBSUWLNN2I75eGcR3oALR2V48iVNNJd6+7hSzsyTgYCQM6ILf9lNDKDMyaD6cQ9YCYbCuYUcuuFM5yEg02+qaowfKLyxBXU8Ft9A4ia4LltAFPd5qdtAcnn8R7ho4LbVKKgB53QfxeC/hIJxtmKJZd2VBm5lz/LN09il3DbBKeaRMc/J1eugCy8Kb5lyXIoB3cfAkvUQjSDL5n4ubXZdBj4MiYX2BOsZRSfmWR8hVf5yn53hSaCZTLHKt7FbC9ZydWY1AB8+IFCJ8Qh2z9vM3TX/7pzXKH6MJcjYR8YntN9rmxnMKSOr/5hyWOGahQLHimcEeBmyWCbwLD6v6OOjualjPSwjk9VCx/yX2GAI4QJJ8bq3XA4b9z1AfjWmSe8/iedwoUahD6NT5zB3M0tAqy0vMv65kYVzj9Mvr/RimM2FHuErzYj9IjC0JJOFgnEYuAnMrRUvdLZjWqlyrIus3RbKuEM5E++wjfaqXGWRQny9BCGg+hJJIilFDyuuF3EitezdHX8mWypJ6e+MjAkDwq8Q7LIo5cANFZSQF3qpJun7d671jsKQLSuFgNPISBEAQWAy7+ZM3Y+biHaMRCXlYnMbY0EI";
     delete linkage.common.queryParams;
     console.log(args.noinvalid);
     if (args.noinvalid && structure.invalidGroup_2) {
@@ -195,13 +242,15 @@ export class TaobaoOrderPc {
     }
     try {
       let p = setting.req.post(
-        `https://buy.tmall.com${confirmOrder_1.fields.pcSubmitUrl}`,
+        `https://buy.tmall.com${
+          submitOrderPC_1.hidden.extensionMap.pcSubmitUrl
+        }`,
         {
           qs: {
             spm: `a220l.1.a22016.d011001001001.undefined`,
-            submitref: confirmOrder_1.fields.secretValue,
-            sparam1: confirmOrder_1.fields.sparam1,
-            sparam2: confirmOrder_1.fields.sparam2
+            submitref: submitOrderPC_1.hidden.extensionMap.secretValue,
+            sparam1: submitOrderPC_1.hidden.extensionMap.sparam1,
+            sparam2: submitOrderPC_1.hidden.extensionMap.sparam2
           },
           form: {
             ...formData,
@@ -215,13 +264,13 @@ export class TaobaoOrderPc {
                   Object.keys(data).reduce((state: any, name) => {
                     var item = data[name];
                     if (item.submit) {
-                      if (item.tag === "submitOrder") {
+                      /* if (item.tag === "submitOrder") {
                         if (item.fields) {
                           if (ua_log) {
                             item.fields.ua = ua_log;
                           }
                         }
-                      }
+                      } */
                       state[name] = item;
                     }
                     return state;
@@ -246,8 +295,7 @@ export class TaobaoOrderPc {
             "Accept-Language": "zh-CN,zh;q=0.9",
             "Upgrade-Insecure-Requests": "1"
           },
-          followAllRedirects: true,
-          encoding: null
+          followAllRedirects: true
         }
       );
       let ret: string = await p;

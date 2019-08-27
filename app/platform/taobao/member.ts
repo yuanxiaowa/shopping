@@ -1,6 +1,5 @@
 import { requestData } from "./tools";
 import qs = require("querystring");
-import iconv = require("iconv-lite");
 import setting from "./setting";
 
 export async function checkLogin() {
@@ -13,7 +12,7 @@ export async function checkLogin() {
 }
 
 export async function getCoupons({ page }: { page: number }) {
-  var buf: Buffer = await setting.req.get(
+  var html: string = await setting.req.get(
     "https://taoquan.taobao.com/coupon/list_my_coupon.htm",
     {
       qs: {
@@ -22,11 +21,9 @@ export async function getCoupons({ page }: { page: number }) {
         sortby: "",
         order: "desc",
         page
-      },
-      encoding: null
+      }
     }
   );
-  var html: string = iconv.decode(buf, "gb2312");
   var $ = cheerio.load(html);
   var items = $(".tmall-coupon-box:not(.tmall-coupon-out)")
     .not(".tmall-coupon-used")

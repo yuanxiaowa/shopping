@@ -99,7 +99,6 @@ export default abstract class AutoShop implements AutoShopOptions {
     this.onAfterLogin();
   }
   abstract resolveUrl(url: string): Promise<string>;
-  abstract resolveUrls(text: string): Promise<string[]>;
   async qiangquan(url: string): Promise<string | Page | undefined> {
     for (let key in this.coupon_handlers) {
       if (this.coupon_handlers[key].test(url)) {

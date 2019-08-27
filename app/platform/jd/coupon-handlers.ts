@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-12 15:37:17
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-26 19:01:38
+ * @LastEditTime: 2019-08-27 14:55:08
  */
 import {
   logFile,
@@ -222,6 +222,8 @@ export async function obtainFloorCoupon(data: { key: string; level: string }) {
  * 查询活动主题优惠券
  * @param url
  * @example https://pro.m.jd.com/mall/active/4FziapEprFVTPwjVx19WRDMTbbbF/index.html?utm_source=pdappwakeupup_20170001&utm_user=plusmember&ad_od=share&utm_source=androidapp&utm_medium=appshare&utm_campaign=t_335139774&utm_term=CopyURL
+ * @example https://pro.m.jd.com/mall/active/4BgbZ97pC8BvPgCDDTvPaSTYWaME/index.html?cu=true&cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_1001480949_&utm_term=db75fe82545e4f18aaee199a2831c0fa
+ * @example https://pro.m.jd.com/mall/active/4M3v49dheo7VXKXnQ8Y7yT99QGmo/index.html?cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=caf8ffe18b8a416e9d9a3c22e01c83f1
  */
 export async function queryActivityCoupons(url: string) {
   let html: string = await setting.req.get(url);
@@ -243,6 +245,7 @@ export async function queryActivityCoupons(url: string) {
     srv: string;
     jsonSrv: string;
     // 0:满减 2:白条
+    // 0:可领 1:已领取 3:今日已领取 4:今日已抢完
     status: string;
     // 1
     scene: string;
@@ -250,17 +253,20 @@ export async function queryActivityCoupons(url: string) {
     endPeriod?: string;
     scope: string;
     limit: string;
+    discount: string;
   }[] = flatten<any>(
     Object.keys(data)
       .filter(key => data[key].couponList)
       .map(key =>
-        data[key].couponList.map(item =>
-          Object.assign(item, {
-            activityId,
-            actKey: item.cpId,
-            dp: Number(/\d+/.exec(item.limit)![0]) - Number(item.discount)
-          })
-        )
+        data[key].couponList
+          .filter(({ status }) => status === "0")
+          .map(item =>
+            Object.assign(item, {
+              activityId,
+              actKey: item.cpId,
+              dp: Number(/\d+/.exec(item.limit)![0]) - Number(item.discount)
+            })
+          )
       )
   ).sort((keyA, keyB) => {
     return keyA.dp - keyB.dp;
@@ -277,6 +283,8 @@ export async function obtainActivityCoupon(data: {
   scene: string;
   childActivityUrl: string;
   actKey: string;
+  discount: string;
+  limit: string;
 }) {
   var ret: string = await setting.req.post(
     `https://api.m.jd.com/client.action?functionId=newBabelAwardCollection`,
@@ -317,34 +325,37 @@ export async function obtainActivityCoupon(data: {
   // A7:您来早了，活动还没开始哟，请稍后再来~
   // D2:本时段优惠券已抢完，请10:00再来吧！
   // A1:领取成功！感谢您的参与，祝您购物愉快~
+  console.log(data.discount + "," + data.limit);
   if (resData.subCode === "A7" || resData.subCode === "A28") {
-    console.log(data, resData.subCodeMsg);
-    let hours = ["08", "10", "12", "14", "16", "18", "20"];
-    let now = moment();
-    let h = "00";
-    for (let _h of hours) {
-      if (now.get("h") < Number(_h)) {
-        h = _h;
-        break;
+    console.log(resData.subCodeMsg);
+    delay(5000).then(() => {
+      let hours = ["08", "10", "12", "14", "16", "18", "20"];
+      let now = moment();
+      let h = "00";
+      for (let _h of hours) {
+        if (now.get("h") < Number(_h)) {
+          h = _h;
+          break;
+        }
       }
-    }
-    let to_date = moment(h, "HH");
-    if (h === "00") {
-      to_date.add("d", 1);
-    }
-    console.log(to_date.format(), "开始抢券");
-    delay(to_date.valueOf() - Date.now() - DT.jingdong).then(() =>
-      obtainActivityCoupon(data)
-    );
+      let to_date = moment(h, "HH");
+      if (h === "00") {
+        to_date.add("d", 1);
+      }
+      console.log(to_date.format(), "开始抢券");
+      delay(to_date.valueOf() - Date.now() - DT.jingdong).then(() =>
+        obtainActivityCoupon(data)
+      );
+    });
   } else if (resData.subCode === "D2") {
     console.log(resData.subCodeMsg);
-    let to_date = moment(/\d{2}:\d{2}/.exec(resData.subCodeMsg)![0], "HH");
-    console.log(to_date.format(), "开始抢券");
-    delay(to_date.valueOf() - Date.now() - DT.jingdong).then(() =>
-      obtainActivityCoupon(data)
-    );
-  } else {
-    console.log(resData);
+    delay(5000).then(() => {
+      let to_date = moment(/\d{2}:\d{2}/.exec(resData.subCodeMsg)![0], "HH");
+      console.log(to_date.format(), "开始抢券");
+      delay(to_date.valueOf() - Date.now() - DT.jingdong).then(() =>
+        obtainActivityCoupon(data)
+      );
+    });
   }
   return resData;
 }

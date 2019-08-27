@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-26 19:03:12
+ * @LastEditTime: 2019-08-27 09:06:16
  */
 import { newPage } from "../../../utils/page";
 import AutoShop from "../auto-shop";
@@ -54,17 +54,6 @@ export class Jingdong extends AutoShop {
   }
 
   resolveUrl = resolveUrl;
-  async resolveUrls(text: string) {
-    var urls: string[] = [];
-    text = text.trim();
-    if (/\s/.test(text)) {
-      urls = Array.from(text.match(/https?:\/\/\w+(?:\.\w+){2,}[-\w/.]*/g)!);
-    } else {
-      let url = await resolveUrl(text);
-      urls.push(url);
-    }
-    return Promise.all(urls.map(this.resolveUrl));
-  }
   getStock = getStock;
   coudan(items: ArgCoudanItem[]): Promise<any> {
     return jingDongOrder.coudan(items);
@@ -143,7 +132,7 @@ export class Jingdong extends AutoShop {
   }
 
   cartBuy(data: any) {
-    return jingDongOrder.submitOrder(data);
+    return jingDongOrder.cartBuy(data);
   }
 
   async getGoodsInfo(url: string, skus?: number[] | undefined): Promise<any> {

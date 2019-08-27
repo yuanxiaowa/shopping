@@ -1,9 +1,8 @@
 import { flatten } from "ramda";
 import setting from "./setting";
-import iconv = require("iconv-lite");
 
 export async function getCartList() {
-  var buff: Buffer = await setting.req.get(`https://cart.taobao.com/cart.htm`, {
+  var html: string = await setting.req.get(`https://cart.taobao.com/cart.htm`, {
     qs: {
       spm: "a231o.7712113/g.1997525049.1.3e004608MXPqWt",
       prepvid: `200_11.21.9.212_38091_${Date.now()}`,
@@ -18,10 +17,8 @@ export async function getCartList() {
       unid: "",
       source_id: "",
       app_pvid: `200_11.21.9.212_38091_${Date.now()}`
-    },
-    encoding: null
+    }
   });
-  var html = iconv.decode(buff, "gb2312");
   var text = /var firstData = (.*);}catch \(e\)/.exec(html)![1];
   var { list } = JSON.parse(text);
   var ret = list.map((item: any) => {

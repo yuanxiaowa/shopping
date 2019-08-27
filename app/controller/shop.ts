@@ -271,12 +271,6 @@ export default class ShopController extends Controller {
     var { data } = ctx.request.body;
     ctx.body = await handle(app[platform].resolveUrl(data));
   }
-  public async resolveUrls() {
-    const { ctx, app } = this;
-    var { platform } = ctx.query;
-    var { data } = ctx.request.body;
-    ctx.body = await handle(app[platform].resolveUrls(data));
-  }
   /**
    * 秒杀列表
    */

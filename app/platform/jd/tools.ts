@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-12 15:34:45
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-26 15:17:30
+ * @LastEditTime: 2019-08-27 09:41:43
  */
 import request = require("request-promise-native");
 
@@ -195,6 +195,8 @@ export async function getActivityCoupons(url: string) {
       items.map(item =>
         executer(() =>
           obtainActivityCoupon({
+            discount: item.discount,
+            limit: item.limit,
             activityId,
             actKey: item.cpId,
             args: item.args,

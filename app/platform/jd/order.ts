@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 15:02:23
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-26 16:23:18
+ * @LastEditTime: 2019-08-27 17:16:42
  */
 import setting from "./setting";
 import { getCookie, time33, getSkuId } from "./tools";
@@ -67,12 +67,17 @@ export class JingDongOrder {
   }
 
   async cartBuy(data: any) {
-    return this.submitOrder({
-      data: {
-        submit_url: "https://p.m.jd.com/norder/order.action"
-      },
-      other: {}
-    });
+    return this.submitOrder(
+      Object.assign(
+        {
+          data: {
+            submit_url: "https://p.m.jd.com/norder/order.action"
+          },
+          other: {}
+        },
+        data
+      )
+    );
   }
 
   async submitOrder(
@@ -174,6 +179,8 @@ export class JingDongOrder {
     console.log("下单成功");
     await page.waitForNavigation();
     await page.close();
+    // "errId":"9075","errMsg":"您的下单操作过于频繁，请稍后再试."
+    // "errId":"8730","errMsg":"您要购买的商品无货了，换个收货地址或者其他款式的商品试试"
   }
 
   getNextDataByGoodsInfo({ skuId }: any, quantity: number, isSeckill = false) {

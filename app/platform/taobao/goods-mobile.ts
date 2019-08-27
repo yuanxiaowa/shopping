@@ -1,7 +1,6 @@
 import { getItemId, requestData } from "./tools";
 import setting from "./setting";
 import { ArgSearch } from "../struct";
-import iconv = require("iconv-lite");
 
 export async function getGoodsInfo(url: string, skus?: number[]) {
   var itemId = getItemId(url);
@@ -116,25 +115,26 @@ function transformMobileGoodsInfo({ apiStack, item }, skus?: number[]) {
 export async function getChaoshiGoodsList(args) {
   var q = args.keyword;
   delete args.keyword;
-  var buf = await setting.req.get("https://list.tmall.com/chaoshi_data.htm", {
-    qs: Object.assign(
-      {
-        p: 1,
-        user_id: 725677994,
-        q,
-        cat: 50514008,
-        sort: "p",
-        unify: "yes",
-        from: "chaoshi"
-      },
-      args
-    ),
-    headers: {
-      "X-Requested-With": "XMLHttpRequest"
-    },
-    encoding: null
-  });
-  var text = iconv.decode(buf, "gb2312");
+  var text: string = await setting.req.get(
+    "https://list.tmall.com/chaoshi_data.htm",
+    {
+      qs: Object.assign(
+        {
+          p: 1,
+          user_id: 725677994,
+          q,
+          cat: 50514008,
+          sort: "p",
+          unify: "yes",
+          from: "chaoshi"
+        },
+        args
+      ),
+      headers: {
+        "X-Requested-With": "XMLHttpRequest"
+      }
+    }
+  );
   var { srp, status } = JSON.parse(text);
   if (status.success) {
     return srp;

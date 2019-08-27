@@ -28,7 +28,10 @@ export async function resolveTaokouling(text: string) {
 }
 
 export async function resolveUrl(url: string) {
-  if (/^https?:\/\/s.click.taobao.com\/t/.test(url)) {
+  if (!url.startsWith("http")) {
+    return resolveTaokouling(url);
+  }
+  if (/^https?:\/\/s.click.taobao.com\/t/.test(url) || url.includes("t.cn/")) {
     var page = await newPage();
     await page.goto(url);
     url = page.url();
@@ -52,14 +55,10 @@ export function getGoodsUrl(itemId: string) {
   return `https://detail.m.tmall.com/item.htm?id=${itemId}`;
 }
 
-export function setReq(
-  /* _req: request.RequestPromiseAPI,  */ _cookie: string
-) {
+export function setReq(req: request.RequestPromiseAPI, _cookie: string) {
   setting.cookie = _cookie;
-  setting.req = request.defaults({
-    jar: true,
+  setting.req = req.defaults({
     headers: {
-      cookie: _cookie,
       "user-agent":
         "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1"
     }

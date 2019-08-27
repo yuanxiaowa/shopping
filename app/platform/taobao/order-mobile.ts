@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-08-26 09:17:48
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-08-27 17:52:31
+ */
 import { ArgOrder, ArgBuyDirect, ArgCoudanItem } from "../struct";
 import { requestData, logFile } from "./tools";
 import { config } from "../../common/config";
@@ -227,6 +233,8 @@ export class TaobaoOrderMobile {
             })
           );
         });
+      } else {
+        throw new Error("无库存了");
       }
     } else {
       if (!data.buyEnable) {

@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-23 09:46:30
+ * @LastEditTime: 2019-08-27 10:31:00
  */
 import AutoShop from "../auto-shop";
 import { delay } from "../../../utils/tools";
@@ -70,17 +70,6 @@ export class Taobao extends AutoShop {
     // return checkLogin();
   }
   resolveUrl = resolveUrl;
-  async resolveUrls(text: string): Promise<string[]> {
-    var urls: string[] = [];
-    if (/复制/.test(text) || !/https?:\/\//.test(text)) {
-      // let tkl_e = /(￥\w+￥)/.exec(text);
-      let url = await resolveTaokouling(text);
-      urls.push(url);
-    } else {
-      urls = text.match(/https?:\/\/\w+(?:\.\w+){2,}[^ ]*/)!;
-    }
-    return Promise.all(urls.map(resolveUrl));
-  }
 
   async cartList(args) {
     var items;
@@ -193,7 +182,7 @@ export class Taobao extends AutoShop {
   }
 
   onAfterLogin() {
-    bus_global.emit("taobao:cookie", this.cookie);
+    bus_global.emit("taobao:cookie", this.req, this.cookie);
     setting.spm = `a1z0d.6639537.1997196601.${(Math.random() * 100) >>
       0}.412f7484UFYI5e`;
   }

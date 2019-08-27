@@ -4,7 +4,7 @@
  * @LastEditors: oudingy1in
  * @LastEditTime: 2019-08-26 19:14:51
  */
-import { startsWith } from "ramda";
+import { startsWith, test } from "ramda";
 import { newPage } from "../../../utils/page";
 import { resolveUrl } from "./tools";
 import {
@@ -61,6 +61,20 @@ import { getInvitation, getInvitation2 } from "./fans";
 } */
 
 const taobaoCouponHandlers = {
+  goods: {
+    test: test(
+      /^https:\/\/(detail(\.m)?\.tmall|item\.taobao|h5\.m\.taobao)\.com\//
+    ),
+    handler(url) {
+      return { url, success: true };
+    }
+  },
+  chaoshi: {
+    test: startsWith("https://chaoshi.detail.tmall.com/"),
+    handler(url) {
+      return { url, success: true };
+    }
+  },
   uland: {
     test: startsWith("https://uland.taobao.com/coupon/edetail?"),
     handler: getCouponEdetail

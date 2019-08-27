@@ -215,21 +215,46 @@ export class TaobaoOrderPc {
         throw new Error("太贵了，买不起");
       }
     }
-    var formData = [
-      "_tb_token_"
-      // "action",
-      // "event_submit_do_confirm",
-      // "input_charset",
-      // // "praper_alipay_cashier_domain",
-      // "authYiYao",
-      // "authHealth",
-      // "F_nick"
-    ].reduce((state: any, name) => {
-      state[name] = new RegExp(
-        `name=['"]${name}['"].*? value=['"](.*?)['"]`
-      ).exec(html)![1];
-      return state;
-    }, {});
+    var formData = {
+      input_charset: submitOrderPC_1.hidden.extensionMap.input_charset,
+      event_submit_do_confirm:
+        submitOrderPC_1.hidden.extensionMap.event_submit_do_confirm,
+      action: submitOrderPC_1.hidden.extensionMap.action,
+      praper_alipay_cashier_domain: "cashierstl",
+      _tb_token_: /name=['"]_tb_token_['"].*? value=['"](.*?)['"]/.exec(
+        html
+      )![1],
+      endpoint: encodeURIComponent(JSON.stringify(endpoint)),
+      hierarchy: encodeURIComponent(
+        JSON.stringify({
+          structure
+        })
+      ),
+      linkage: encodeURIComponent(
+        JSON.stringify({
+          common: linkage.common,
+          signature: linkage.signature
+        })
+      ),
+      data: encodeURIComponent(
+        JSON.stringify(
+          Object.keys(data).reduce((state: any, name) => {
+            var item = data[name];
+            if (item.submit) {
+              /* if (item.tag === "submitOrder") {
+                        if (item.fields) {
+                          if (ua_log) {
+                            item.fields.ua = ua_log;
+                          }
+                        }
+                      } */
+              state[name] = item;
+            }
+            return state;
+          }, {})
+        )
+      )
+    };
     // var ua_log =
     //   "119#MlKA70vEMnDyqMMzZR0mfhNqsAOCc0zzNoYqOxPXiX8rOLMlRvBsQHACBLnD7HNkVW6u+TJDO2dsHEKw83cWa2lUDbCsSUkGMZA8RJBONt8LfoHMRPPe3FN8fHhS4Q9LdeNMR2VVNlsCqwMJqQPOutK6fusG4lhLPGg1RJ+q+NFGf/VwKSqj+EAL9eVH4QyG2eALRJE+EE387nASRVTmHNA6h2+S4lca0rA87PjVNN3Mxe3RaB0U3FNcQ1hzcDbL3e3My2I3TAFGfoZEh/loEEAL9weXLl9Lt1ELKlGv86GGMaASRBSUWLNN2I75eGcR3oALR2V48iVNNJd6+7hSzsyTgYCQM6ILf9lNDKDMyaD6cQ9YCYbCuYUcuuFM5yEg02+qaowfKLyxBXU8Ft9A4ia4LltAFPd5qdtAcnn8R7ho4LbVKKgB53QfxeC/hIJxtmKJZd2VBm5lz/LN09il3DbBKeaRMc/J1eugCy8Kb5lyXIoB3cfAkvUQjSDL5n4ubXZdBj4MiYX2BOsZRSfmWR8hVf5yn53hSaCZTLHKt7FbC9ZydWY1AB8+IFCJ8Qh2z9vM3TX/7pzXKH6MJcjYR8YntN9rmxnMKSOr/5hyWOGahQLHimcEeBmyWCbwLD6v6OOjualjPSwjk9VCx/yX2GAI4QJJ8bq3XA4b9z1AfjWmSe8/iedwoUahD6NT5zB3M0tAqy0vMv65kYVzj9Mvr/RimM2FHuErzYj9IjC0JJOFgnEYuAnMrRUvdLZjWqlyrIus3RbKuEM5E++wjfaqXGWRQny9BCGg+hJJIilFDyuuF3EitezdHX8mWypJ6e+MjAkDwq8Q7LIo5cANFZSQF3qpJun7d671jsKQLSuFgNPISBEAQWAy7+ZM3Y+biHaMRCXlYnMbY0EI";
     delete linkage.common.queryParams;
@@ -242,9 +267,7 @@ export class TaobaoOrderPc {
     }
     try {
       let p = setting.req.post(
-        `https://buy.tmall.com${
-          submitOrderPC_1.hidden.extensionMap.pcSubmitUrl
-        }`,
+        `https://buy.tmall.com${submitOrderPC_1.hidden.extensionMap.pcSubmitUrl}`,
         {
           qs: {
             spm: `a220l.1.a22016.d011001001001.undefined`,
@@ -252,38 +275,7 @@ export class TaobaoOrderPc {
             sparam1: submitOrderPC_1.hidden.extensionMap.sparam1,
             sparam2: submitOrderPC_1.hidden.extensionMap.sparam2
           },
-          form: {
-            ...formData,
-            praper_alipay_cashier_domain: "cashierstl",
-            hierarchy: JSON.stringify({
-              structure
-            }),
-            data: iconv
-              .encode(
-                JSON.stringify(
-                  Object.keys(data).reduce((state: any, name) => {
-                    var item = data[name];
-                    if (item.submit) {
-                      /* if (item.tag === "submitOrder") {
-                        if (item.fields) {
-                          if (ua_log) {
-                            item.fields.ua = ua_log;
-                          }
-                        }
-                      } */
-                      state[name] = item;
-                    }
-                    return state;
-                  }, {})
-                ),
-                "gbk"
-              )
-              .toString(),
-            linkage: JSON.stringify({
-              common: linkage.common,
-              signature: linkage.signature
-            })
-          },
+          form: formData,
           headers: {
             Referer: addr_url,
             "Sec-Fetch-Mode": "navigate",

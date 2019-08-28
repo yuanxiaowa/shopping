@@ -75,6 +75,12 @@ const taobaoCouponHandlers = {
       return { url, success: true };
     }
   },
+  ataobao: {
+    test: startsWith("https://a.m.taobao.com/i"),
+    async handler(url: string) {
+      return /\d+/.exec(url)![0];
+    }
+  },
   uland: {
     test: startsWith("https://uland.taobao.com/coupon/edetail?"),
     handler: getCouponEdetail

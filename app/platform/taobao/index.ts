@@ -8,7 +8,7 @@ import AutoShop from "../auto-shop";
 import { delay } from "../../../utils/tools";
 import { Page } from "puppeteer";
 import taobaoHandlers from "./handlers";
-import { resolveTaokouling, resolveUrl } from "./tools";
+import { resolveUrl } from "./tools";
 import { newPage } from "../../../utils/page";
 import { readJSONSync } from "fs-extra";
 import { ArgBuyDirect, ArgCoudan } from "../struct";

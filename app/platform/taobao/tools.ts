@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-12 15:48:14
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-26 19:21:04
+ * @LastEditTime: 2019-08-28 19:53:16
  */
 import request = require("request-promise-native");
 import { newPage } from "../../../utils/page";
@@ -29,7 +29,7 @@ export async function resolveTaokouling(text: string) {
 
 export async function resolveUrl(url: string) {
   if (!url.startsWith("http")) {
-    return resolveTaokouling(url);
+    url = await resolveTaokouling(url);
   }
   if (/^https?:\/\/s.click.taobao.com\/t/.test(url) || url.includes("t.cn/")) {
     var page = await newPage();

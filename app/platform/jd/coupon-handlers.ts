@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-12 15:37:17
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-27 14:55:08
+ * @LastEditTime: 2019-08-28 21:12:03
  */
 import {
   logFile,
@@ -328,7 +328,7 @@ export async function obtainActivityCoupon(data: {
   console.log(data.discount + "," + data.limit);
   if (resData.subCode === "A7" || resData.subCode === "A28") {
     console.log(resData.subCodeMsg);
-    delay(5000).then(() => {
+    (() => {
       let hours = ["08", "10", "12", "14", "16", "18", "20"];
       let now = moment();
       let h = "00";
@@ -346,16 +346,16 @@ export async function obtainActivityCoupon(data: {
       delay(to_date.valueOf() - Date.now() - DT.jingdong).then(() =>
         obtainActivityCoupon(data)
       );
-    });
+    })();
   } else if (resData.subCode === "D2") {
     console.log(resData.subCodeMsg);
-    delay(5000).then(() => {
+    (() => {
       let to_date = moment(/\d{2}:\d{2}/.exec(resData.subCodeMsg)![0], "HH");
       console.log(to_date.format(), "开始抢券");
       delay(to_date.valueOf() - Date.now() - DT.jingdong).then(() =>
         obtainActivityCoupon(data)
       );
-    });
+    })();
   }
   return resData;
 }

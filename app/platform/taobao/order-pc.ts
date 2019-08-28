@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-27 17:25:56
+ * @LastEditTime: 2019-08-28 12:48:59
  */
 import { delay } from "../../../utils/tools";
 import setting from "./setting";
@@ -14,10 +14,10 @@ import iconv = require("iconv-lite");
 import { getGoodsInfo } from "./goods-pc";
 
 export class TaobaoOrderPc {
-  async buyDirect({ url, quantity }: ArgBuyDirect, p?: Promise<void>) {
-    var { itemDO, tradeConfig, form } = await getGoodsInfo(url, true);
+  async buyDirect(arg: ArgBuyDirect, p?: Promise<void>) {
+    var { itemDO, tradeConfig, form } = await getGoodsInfo(arg.url, true);
     Object.assign(form, {
-      quantity
+      quantity: arg.quantity
     });
     if (!p && !itemDO.isOnline) {
       throw new Error("商品已下架");
@@ -26,14 +26,19 @@ export class TaobaoOrderPc {
       await p;
     }
     try {
-      return this.submitOrder({
-        data: {
-          form,
-          addr_url: "https:" + tradeConfig[2],
-          Referer: url
-        },
-        other: {}
-      });
+      return this.submitOrder(
+        Object.assign(
+          {
+            data: {
+              form,
+              addr_url: "https:" + tradeConfig[2],
+              Referer: arg.url
+            },
+            other: {}
+          },
+          arg
+        )
+      );
       /* var ret = await this.req.post("https:" + tradeConfig[2], {
         form,
         qs: qs_data
@@ -210,8 +215,8 @@ export class TaobaoOrderPc {
         return this.submitOrder(args, retryCount + 1);
       }
     }
-    if (args.expectedPrice) {
-      if (+realPayPC_1.fields.price < +args.expectedPrice) {
+    if (typeof args.expectedPrice !== "undefined") {
+      if (+realPayPC_1.fields.price > +args.expectedPrice) {
         throw new Error("太贵了，买不起");
       }
     }
@@ -267,7 +272,9 @@ export class TaobaoOrderPc {
     }
     try {
       let p = setting.req.post(
-        `https://buy.tmall.com${submitOrderPC_1.hidden.extensionMap.pcSubmitUrl}`,
+        `https://buy.tmall.com${
+          submitOrderPC_1.hidden.extensionMap.pcSubmitUrl
+        }`,
         {
           qs: {
             spm: `a220l.1.a22016.d011001001001.undefined`,

@@ -17,7 +17,7 @@ import {
   ArgOrder,
   ArgCartBuy,
   ArgSearch,
-  ArgCoudanItem
+  ArgCoudan
 } from "./struct";
 
 interface AutoShopOptions {
@@ -106,7 +106,7 @@ export default abstract class AutoShop implements AutoShopOptions {
       }
     }
   }
-  abstract coudan(items: ArgCoudanItem[]): Promise<any>;
+  abstract coudan(data: ArgCoudan): Promise<any>;
   abstract cartList(args: { from_pc: boolean }): Promise<any>;
   abstract cartBuy(data: ArgCartBuy): Promise<any>;
   async cartToggle(data: { items: any; checked: boolean }): Promise<any> {}

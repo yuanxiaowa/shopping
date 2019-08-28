@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-05 10:20:54
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-26 19:14:51
+ * @LastEditTime: 2019-08-28 18:00:48
  */
 import { startsWith, test } from "ramda";
 import { newPage } from "../../../utils/page";
@@ -65,13 +65,13 @@ const taobaoCouponHandlers = {
     test: test(
       /^https:\/\/(detail(\.m)?\.tmall|item\.taobao|h5\.m\.taobao)\.com\//
     ),
-    handler(url) {
+    async handler(url) {
       return { url, success: true };
     }
   },
   chaoshi: {
     test: startsWith("https://chaoshi.detail.tmall.com/"),
-    handler(url) {
+    async handler(url) {
       return { url, success: true };
     }
   },

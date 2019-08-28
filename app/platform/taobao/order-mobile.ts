@@ -4,7 +4,7 @@
  * @LastEditors: oudingy1in
  * @LastEditTime: 2019-08-27 17:52:31
  */
-import { ArgOrder, ArgBuyDirect, ArgCoudanItem } from "../struct";
+import { ArgOrder, ArgBuyDirect, ArgCoudan } from "../struct";
 import { requestData, logFile } from "./tools";
 import { config } from "../../common/config";
 import { Serial, TimerCondition } from "../../../utils/tools";
@@ -220,12 +220,11 @@ export class TaobaoOrderMobile {
               quantity: args.quantity,
               skus: args.skus
             }); */
-            return this.coudan([
-              {
-                url: args.url,
-                quantity: args.quantity
-              }
-            ]);
+            return this.coudan({
+              urls: [args.url],
+              quantities: [args.quantity],
+              expectedPrice: args.expectedPrice!
+            });
           }
           return this.submitOrder(
             Object.assign(args, {
@@ -251,8 +250,15 @@ export class TaobaoOrderMobile {
     }
   }
 
-  async coudan(items: ArgCoudanItem[]): Promise<any> {
-    var ids = await Promise.all(items.map(item => addCart(item)));
+  async coudan(data: ArgCoudan): Promise<any> {
+    var ids = await Promise.all(
+      data.urls.map((url, i) =>
+        addCart({
+          url,
+          quantity: data.quantities[i]
+        })
+      )
+    );
     var list = await getCartList();
     var datas: any[] = [];
     list.forEach(({ items }) => {

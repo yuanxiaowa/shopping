@@ -18,7 +18,7 @@ import jingdongCouponHandlers from "./coupon-map";
 import { resolveUrl, getSkuId, setReq } from "./tools";
 import { delay } from "../../../utils/tools";
 import cheerio = require("cheerio");
-import { ArgBuyDirect, ArgOrder, ArgCoudanItem } from "../struct";
+import { ArgBuyDirect, ArgOrder, ArgCoudan } from "../struct";
 import {
   getCouponCenterQuanpinList,
   getCouponCenterQuanpin,
@@ -55,8 +55,8 @@ export class Jingdong extends AutoShop {
 
   resolveUrl = resolveUrl;
   getStock = getStock;
-  coudan(items: ArgCoudanItem[]): Promise<any> {
-    return jingDongOrder.coudan(items);
+  coudan(data: ArgCoudan): Promise<any> {
+    return jingDongOrder.coudan(data);
   }
   cartList(args: any) {
     return getCartList();

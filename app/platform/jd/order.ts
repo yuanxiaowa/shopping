@@ -6,7 +6,7 @@
  */
 import setting from "./setting";
 import { getCookie, time33, getSkuId } from "./tools";
-import { ArgBuyDirect, ArgOrder, ArgCoudanItem } from "../struct";
+import { ArgBuyDirect, ArgOrder, ArgCoudan } from "../struct";
 import { delay, TimerCondition } from "../../../utils/tools";
 import { getStock, getGoodsInfo } from "./goods";
 import { newPage } from "../../../utils/page";
@@ -210,14 +210,14 @@ export class JingDongOrder {
     };
   }
 
-  async coudan(items: ArgCoudanItem[]): Promise<any> {
+  async coudan(data: ArgCoudan): Promise<any> {
     await setting.req.get(`https://cart.jd.com/reBuyForOrderCenter.action`, {
       qs: {
-        wids: items.map(({ url }) => getSkuId(url)).join(","),
-        nums: items.map(({ quantity }) => quantity).join(",")
+        wids: data.urls.map(getSkuId).join(","),
+        nums: data.quantities.join(",")
       }
     });
-    return this.cartBuy(undefined);
+    return this.cartBuy(data);
   }
 }
 

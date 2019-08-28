@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-27 10:31:00
+ * @LastEditTime: 2019-08-28 18:00:49
  */
 import AutoShop from "../auto-shop";
 import { delay } from "../../../utils/tools";
@@ -11,7 +11,7 @@ import taobaoHandlers from "./handlers";
 import { resolveTaokouling, resolveUrl } from "./tools";
 import { newPage } from "../../../utils/page";
 import { readJSONSync } from "fs-extra";
-import { ArgBuyDirect, ArgCoudanItem } from "../struct";
+import { ArgBuyDirect, ArgCoudan } from "../struct";
 import cheerio = require("cheerio");
 import taobaoCouponHandlers from "./coupon-map";
 import bus_global from "../../common/bus";
@@ -105,8 +105,8 @@ export class Taobao extends AutoShop {
     }
     return taobaoOrderMobile.buyDirect(data, p);
   }
-  async coudan(items: ArgCoudanItem[]): Promise<any> {
-    return taobaoOrderMobile.coudan(items);
+  async coudan(data: ArgCoudan): Promise<any> {
+    return taobaoOrderMobile.coudan(data);
   }
 
   cartBuy(args: any) {

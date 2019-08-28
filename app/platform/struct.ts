@@ -35,7 +35,8 @@ export type ArgSearch = {
   coupon_tag_id?: string;
 } & Record<string, any>;
 
-export type ArgCoudanItem = {
-  quantity: number;
-  url: string;
+export type ArgCoudan = {
+  quantities: number[];
+  urls: string[];
+  expectedPrice: number;
 };

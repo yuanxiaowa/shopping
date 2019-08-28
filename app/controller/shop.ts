@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-11 18:00:06
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-26 19:03:28
+ * @LastEditTime: 2019-08-28 17:55:06
  */
 import { Controller } from "egg";
 import moment = require("moment");
@@ -169,12 +169,13 @@ export default class ShopController extends Controller {
           ids.push(id);
         } catch (e) {}
       }
+      let _items = items.slice(0, i);
       ctx.body = await handle(
         ins.coudan(
-          items.slice(0, i).map(({ url }) => ({
-            url,
-            quantity: 1
-          }))
+          Object.assign({
+            urls: _items.map(({ url }) => url),
+            quantities: _items.map(() => 1)
+          })
         ),
         "下单成功"
       );
@@ -202,7 +203,7 @@ export default class ShopController extends Controller {
   public async coudan() {
     const { ctx, app } = this;
     var { platform } = ctx.query;
-    var { data } = ctx.request.body;
+    var data = ctx.request.body;
     ctx.body = await handle(app[platform].coudan(data));
   }
   public async qiangquan() {

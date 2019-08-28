@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-08-26 09:17:48
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-08-28 11:26:28
+ */
 import setting from "./setting";
 import { logFile } from "./tools";
 
@@ -28,10 +34,25 @@ export async function getGoodsInfo(url: string, hasForm = false) {
     }
     let skuId = "0";
     if (itemDO.hasSku) {
-      let { skuList, skuMap } = valItemInfo;
-      let skuItem = skuList.find(
-        (item: any) => skuMap[`;${item.pvs};`].stock > 0
-      );
+      let { skuList, skuMap } = <
+        {
+          skuList: {
+            names: string;
+            pvs: string;
+            skuId: string;
+          }[];
+          skuMap: {
+            price: string;
+            priceCent: number;
+            skuId: string;
+            stock: number;
+          }[];
+        }
+      >valItemInfo;
+      let items = Object.values(skuMap)
+        .filter(item => item.stock > 0)
+        .sort((a, b) => a.priceCent - b.priceCent);
+      let skuItem = items[0];
       if (skuItem) {
         skuId = skuItem.skuId;
       } else {

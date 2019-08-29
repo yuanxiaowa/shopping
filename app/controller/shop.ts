@@ -210,25 +210,28 @@ export default class ShopController extends Controller {
     const { ctx, app } = this;
     var { platform, t } = ctx.query;
     var { data } = ctx.request.body;
-    var toTime = moment(t || undefined);
-    var dt = toTime.diff(moment()) - DT[platform];
-    if (dt > 0) {
-      let p = delay(dt, {
-        type: `抢券`,
-        time: t,
-        platform,
-        comment: data._comment
-      });
-      (async () => {
-        await p;
-        app[platform].qiangquan(data);
-      })();
-      ctx.body = {
-        code: 0,
-        msg: toTime.fromNow() + " 将直接抢券"
-      };
-      return;
+    if (t) {
+      let toTime = moment(t);
+      let dt = toTime.diff(moment()) - DT[platform];
+      if (dt > 0) {
+        let p = delay(dt, {
+          type: `抢券`,
+          time: t,
+          platform,
+          comment: data._comment
+        });
+        (async () => {
+          await p;
+          app[platform].qiangquan(data);
+        })();
+        ctx.body = {
+          code: 0,
+          msg: toTime.fromNow() + " 将直接抢券"
+        };
+        return;
+      }
     }
+
     ctx.body = await handle(app[platform].qiangquan(data));
   }
   public async coupons() {

@@ -93,28 +93,30 @@ export default class ShopController extends Controller {
     const { ctx, app } = this;
     var { platform, t } = ctx.query;
     var data = ctx.request.body;
-    var toTime = moment(t);
-    var dt = toTime.diff(moment()) - DT[platform];
-    if (dt > 0) {
-      let p = delay(dt, {
-        type: `从购物车下单`,
-        time: t,
-        platform,
-        comment: data._comment
-      });
-      data.seckill = true;
-      (async () => {
-        await p;
-        console.log(platform, "开始从购物车下单");
-        await app[platform].cartBuy(data);
-      })();
-      ctx.body = {
-        code: 0,
-        msg: toTime.fromNow() + " 从购物车下单"
-      };
-    } else {
-      ctx.body = await handle(app[platform].cartBuy(data), "下单成功");
+    if (t) {
+      let toTime = moment(t);
+      let dt = toTime.diff(moment()) - DT[platform];
+      if (dt > 0) {
+        let p = delay(dt, {
+          type: `从购物车下单`,
+          time: t,
+          platform,
+          comment: data._comment
+        });
+        data.seckill = true;
+        (async () => {
+          await p;
+          console.log(platform, "开始从购物车下单");
+          await app[platform].cartBuy(data);
+        })();
+        ctx.body = {
+          code: 0,
+          msg: toTime.fromNow() + " 从购物车下单"
+        };
+        return;
+      }
     }
+    ctx.body = await handle(app[platform].cartBuy(data), "下单成功");
   }
   public async cartToggle() {
     const { ctx, app } = this;
@@ -181,24 +183,26 @@ export default class ShopController extends Controller {
       );
       return;
     }
-    var toTime = moment(t);
-    var dt = toTime.diff(moment()) - DT[platform];
-    if (dt > 0) {
-      let p = delay(dt, {
-        type: `直接购买`,
-        time: t,
-        platform,
-        comment: data._comment
-      });
-      data.seckill = true;
-      ins.buyDirect(data, p);
-      ctx.body = {
-        code: 0,
-        msg: toTime.fromNow() + " 将直接下单"
-      };
-    } else {
-      ctx.body = await handle(ins.buyDirect(data), "下单成功");
+    if (t) {
+      let toTime = moment(t);
+      let dt = toTime.diff(moment()) - DT[platform];
+      if (dt > 0) {
+        let p = delay(dt, {
+          type: `直接购买`,
+          time: t,
+          platform,
+          comment: data._comment
+        });
+        data.seckill = true;
+        ins.buyDirect(data, p);
+        ctx.body = {
+          code: 0,
+          msg: toTime.fromNow() + " 将直接下单"
+        };
+        return;
+      }
     }
+    ctx.body = await handle(ins.buyDirect(data), "下单成功");
   }
   public async coudan() {
     const { ctx, app } = this;

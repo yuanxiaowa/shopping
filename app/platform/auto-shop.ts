@@ -135,9 +135,6 @@ export default abstract class AutoShop implements AutoShopOptions {
   }
   is_prev_login = true;
   async login(page: Page, cb?: Function) {
-    if (!this.is_prev_login) {
-      return;
-    }
     this.is_prev_login = false;
     page.goto(this.login_url);
     let p = this.loginAction(page);
@@ -174,6 +171,11 @@ export default abstract class AutoShop implements AutoShopOptions {
     setTimeout(this.preserveState.bind(this), this.interval_check);
     if (!logined) {
       try {
+        setTimeout(() => {
+          if (!this.is_prev_login) {
+            page.close();
+          }
+        }, 2 * 60 * 1000);
         await new Promise(resolve => {
           this.login(page, resolve);
         });

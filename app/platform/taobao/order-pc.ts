@@ -272,9 +272,7 @@ export class TaobaoOrderPc {
     }
     try {
       let p = setting.req.post(
-        `https://buy.tmall.com${
-          submitOrderPC_1.hidden.extensionMap.pcSubmitUrl
-        }`,
+        `https://buy.tmall.com${submitOrderPC_1.hidden.extensionMap.pcSubmitUrl}`,
         {
           qs: {
             spm: `a220l.1.a22016.d011001001001.undefined`,
@@ -302,7 +300,7 @@ export class TaobaoOrderPc {
         let msg = /<h2 class="sub-title">([^<]*)/.exec(ret)![1];
         console.log(msg);
         if (msg.includes("优惠信息变更")) {
-          return console.error(msg);
+          return;
         }
         throw new Error(msg);
       }

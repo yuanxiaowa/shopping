@@ -211,12 +211,15 @@ export class JingDongOrder {
   }
 
   async coudan(data: ArgCoudan): Promise<any> {
-    await setting.req.get(`https://cart.jd.com/reBuyForOrderCenter.action`, {
-      qs: {
-        wids: data.urls.map(getSkuId).join(","),
-        nums: data.quantities.join(",")
+    var ret = await setting.req.get(
+      `https://cart.jd.com/reBuyForOrderCenter.action`,
+      {
+        qs: {
+          wids: data.urls.map(getSkuId).join(","),
+          nums: data.quantities.join(",")
+        }
       }
-    });
+    );
     return this.cartBuy(data);
   }
 }

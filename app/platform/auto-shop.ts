@@ -54,6 +54,7 @@ export default abstract class AutoShop implements AutoShopOptions {
       handler(num: number, page: Page): Promise<any>;
     }
   >;
+  state_other_urls?: string[];
   coupon_handlers!: Record<
     string,
     { test(url: string): boolean; handler(url: string): Promise<any> }
@@ -185,6 +186,11 @@ export default abstract class AutoShop implements AutoShopOptions {
       }
     }
     await page.goto(this.state_url);
+    if (this.state_other_urls) {
+      for (let url of this.state_other_urls) {
+        await page.goto(url);
+      }
+    }
     this.setCookie(await getPageCookie(page));
     await page.close();
   }

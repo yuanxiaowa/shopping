@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-27 09:06:16
+ * @LastEditTime: 2019-08-31 15:30:03
  */
 import { newPage } from "../../../utils/page";
 import AutoShop from "../auto-shop";
@@ -91,7 +91,9 @@ export class Jingdong extends AutoShop {
     // 2:待收货 3:全部 5:已取消 6:已完成 7:有效订单 8:待评价
     // return getCommentList(data.type, data.page);
     var page = await newPage();
-    await page.goto("https://club.jd.com/myJdcomments/myJdcomment.action");
+    await page.goto(
+      `"https://club.jd.com/myJdcomments/myJdcomment.action?sort=0&page=${page}"`
+    );
     var text = await page.content();
     page.close();
     /* var text = await this.req.get(

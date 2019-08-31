@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-12 15:37:17
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-28 21:12:03
+ * @LastEditTime: 2019-08-31 16:08:15
  */
 import {
   logFile,
@@ -159,9 +159,9 @@ export async function queryFloorCoupons(url: string) {
       if (name === "coupon") {
         return data.list.filter(
           ({ begin, end, status }) =>
-            status === 0 &&
             now >= new Date(begin).getTime() &&
-            now < new Date(end).getTime()
+            now < new Date(end).getTime() &&
+            (typeof status === "undefined" || status === 0)
         );
       }
       return data.extend.active;
@@ -747,7 +747,7 @@ export async function getMyCoupons() {
       }
     }
   );
-  var text2 = /\((.*)\);/.exec(text)![1];
+  var text2 = /\(([\s\S]*)\);/.exec(text)![1];
   var {
     coupon: { useable }
   } = JSON.parse(text2);

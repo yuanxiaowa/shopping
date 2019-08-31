@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-05 10:20:54
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-28 18:00:48
+ * @LastEditTime: 2019-08-31 17:06:08
  */
 import { startsWith, test } from "ramda";
 import { newPage } from "../../../utils/page";
@@ -61,6 +61,16 @@ import { getInvitation, getInvitation2 } from "./fans";
 } */
 
 const taobaoCouponHandlers = {
+  mtaobao: {
+    test: startsWith("http://a.m.tmall.com/i"),
+    async handler(url) {
+      var obj = new URL(url);
+      obj.host = "detail.m.tmall.com";
+      obj.pathname = "/item.htm";
+      obj.searchParams.set("id", /\d+/.exec(url)![0]);
+      return obj.toString();
+    }
+  },
   goods: {
     test: test(
       /^https:\/\/(detail(\.m)?\.tmall|item\.taobao|h5\.m\.taobao)\.com\//

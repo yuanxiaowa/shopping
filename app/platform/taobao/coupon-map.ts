@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-05 10:20:54
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-31 17:06:08
+ * @LastEditTime: 2019-08-31 17:17:09
  */
 import { startsWith, test } from "ramda";
 import { newPage } from "../../../utils/page";
@@ -68,7 +68,9 @@ const taobaoCouponHandlers = {
       obj.host = "detail.m.tmall.com";
       obj.pathname = "/item.htm";
       obj.searchParams.set("id", /\d+/.exec(url)![0]);
-      return obj.toString();
+      return {
+        url: obj.toString()
+      };
     }
   },
   goods: {

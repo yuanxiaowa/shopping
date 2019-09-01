@@ -21,7 +21,10 @@ export async function getGoodsInfo(url: string, hasForm = false) {
   var text = /TShop.Setup\(\s*(.*)\s*\);/.exec(html)![1];
   // detail.isHiddenShopAction
   var ret = JSON.parse(text);
-  var { itemDO, valItemInfo } = ret;
+  var { itemDO, valItemInfo, valTimeLeft } = ret;
+  if (!valTimeLeft) {
+    throw new Error("商品已下架");
+  }
   if (hasForm) {
     let form_str = /<form id="J_FrmBid"[^>]*>([\s\S]*?)<\/form>/.exec(html)![1];
     let form_item_r = /\sname="([^"]+)"\s+value="([^"]*)"/g;

@@ -4,7 +4,7 @@
  * @LastEditors: oudingy1in
  * @LastEditTime: 2019-08-28 12:48:59
  */
-import { delay } from "../../../utils/tools";
+import { delay, Serial } from "../../../utils/tools";
 import setting from "./setting";
 import { logFile } from "./tools";
 import { ArgBuyDirect, ArgOrder } from "../struct";
@@ -99,7 +99,7 @@ export class TaobaoOrderPc {
       ...args
     });
   }
-
+  @Serial(0)
   async submitOrder(
     args: ArgOrder<{
       form: Record<string, any>;

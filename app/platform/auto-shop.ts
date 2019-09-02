@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-22 18:42:34
+ * @LastEditTime: 2019-09-02 18:13:17
  */
 import { RequestAPI, RequiredUriUrl, Response } from "request";
 import request = require("request-promise-native");
@@ -119,7 +119,6 @@ export default abstract class AutoShop implements AutoShopOptions {
   abstract commentList(data: { page: number; type: number }): Promise<any>;
   abstract buyDirect(data: ArgBuyDirect, p?: Promise<void>): Promise<any>;
   abstract getGoodsInfo(url: string, skus?: number[]): Promise<any>;
-  abstract getNextDataByGoodsInfo(data: any, quantity: number): any;
   abstract submitOrder(data: ArgOrder<any>): Promise<any>;
   async seckillList(name: string): Promise<any> {}
   abstract goodsList(args: ArgSearch): Promise<any>;

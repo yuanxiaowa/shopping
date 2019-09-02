@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-30 22:19:48
+ * @LastEditTime: 2019-09-02 18:13:18
  */
 import AutoShop from "../auto-shop";
 import { delay } from "../../../utils/tools";
@@ -124,10 +124,6 @@ export class Taobao extends AutoShop {
   }
 
   getGoodsInfo = getGoodsInfo;
-
-  getNextDataByGoodsInfo(data, quantity: number) {
-    return taobaoOrderMobile.getNextDataByGoodsInfo(data, quantity);
-  }
 
   async goodsList(args) {
     if (args.name === "chaoshi") {

@@ -75,7 +75,7 @@ const taobaoCouponHandlers = {
   },
   goods: {
     test: test(
-      /^https:\/\/(detail(\.m)?\.tmall|item\.taobao|h5\.m\.taobao)\.com\//
+      /^https?:\/\/(detail(\.m)?\.tmall|item\.taobao|h5\.m\.taobao)\.com\//
     ),
     async handler(url) {
       return { url, success: true };

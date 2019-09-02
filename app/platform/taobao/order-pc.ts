@@ -12,10 +12,11 @@ import { config } from "../../common/config";
 import moment = require("moment");
 import { getGoodsInfo } from "./goods-pc";
 import iconv = require("iconv-lite");
+const { taobao } = require("../../../.data/user.json");
 
 export class TaobaoOrderPc {
   async buyDirect(arg: ArgBuyDirect, p?: Promise<void>) {
-    var { itemDO, tradeConfig, form, detail } = await getGoodsInfo(
+    var { itemDO, tradeConfig, tradeType, form, detail } = await getGoodsInfo(
       arg.url,
       true
     );
@@ -29,16 +30,27 @@ export class TaobaoOrderPc {
       await p;
     }
     try {
-      return this.submitOrder(
+      if (form.etm === "" && detail.isHkItem) {
+        return this.submitOrder(
+          Object.assign(
+            {
+              data: {
+                form,
+                addr_url: "https:" + tradeConfig[tradeType],
+                Referer: arg.url
+              },
+              other: {}
+            },
+            arg
+          )
+        );
+      }
+      return this.submitOrderTaobao(
         Object.assign(
           {
             data: {
               form,
-              addr_url:
-                "https:" +
-                (form.etm === "" && detail.isHkItem
-                  ? tradeConfig[2]
-                  : tradeConfig[1]),
+              addr_url: "https:" + tradeConfig[1],
               Referer: arg.url
             },
             other: {}
@@ -73,35 +85,31 @@ export class TaobaoOrderPc {
       ","
     );
     var items = goods.map(
-      ({ cartId, itemId, skuId, quantity, createTime, attr, toBuy }) => ({
+      ({ cartId, itemId, skuId, quantity, createTime, attr }) => ({
         cartId,
         itemId,
         skuId,
         quantity,
         createTime,
-        attr,
-        toBuy
+        attr
       })
     );
-    var form = {
-      hex: "n",
-      cartId: cartIdStr,
-      sellerid: sellerIdStr,
-      cart_param: JSON.stringify({
-        items
-      }),
-      unbalance: "",
-      delCartIds: cartIdStr,
-      use_cod: false,
-      buyer_from: "cart",
-      page_from: "cart",
-      source_time: Date.now()
-    };
     delete args.items;
     if (goods[0].toBuy === "taobao") {
       return this.submitOrderTaobao({
         data: {
-          form,
+          form: {
+            // 1477911576836_599254259447_1_0_3099613854_0_0_0_buyerCondition~0~~dpbUpgrade~null~~cartCreateTime~1567339151000_{"attributes":{"itemExtra":"{}"}}_0
+            // 1475854274052_571869707416_1_0_2219509495_0_0_0_buyerCondition~0~~dpbUpgrade~null~~cartCreateTime~1567176717000_{"attributes":{"itemExtra":"{}"}}_0
+            item: goods
+              .map(
+                item =>
+                  `${item.cartId}_${item.itemId}_${item.quantity}_0_${item.sellerId}_0_0_0_buyerCondition~0~~dpbUpgrade~null~~cartCreateTime~${item.createTime}_{"attributes":{"itemExtra":"{}"}}_0`
+              )
+              .join(","),
+            buyer_from: "cart",
+            source_time: Date.now()
+          },
           addr_url: `https://buy.taobao.com/auction/order/confirm_order.htm?spm=a1z0d.6639537.0.0.undefined`,
           Referer: `https://cart.taobao.com/cart.htm?spm=a220o.1000855.a2226mz.12.5ada2389fIdDSp&from=btop`
         },
@@ -111,7 +119,20 @@ export class TaobaoOrderPc {
     }
     return this.submitOrder({
       data: {
-        form,
+        form: {
+          hex: "n",
+          cartId: cartIdStr,
+          sellerid: sellerIdStr,
+          cart_param: JSON.stringify({
+            items
+          }),
+          unbalance: "",
+          delCartIds: cartIdStr,
+          use_cod: false,
+          buyer_from: "cart",
+          page_from: "cart",
+          source_time: Date.now()
+        },
         addr_url: `https://buy.tmall.com/order/confirm_order.htm?spm=aa1z0d.6639537.0.0.undefined`,
         Referer: `https://cart.taobao.com/cart.htm?spm=a220o.1000855.a2226mz.12.5ada2389fIdDSp&from=btop`
       },
@@ -232,8 +253,10 @@ export class TaobaoOrderPc {
         let m = t_str.length - 4;
         let delay_time = 10000 - Number(t_str.substring(m));
         console.log("来早了，重试中...");
-        await delay(delay_time - time_diff);
-        return this.submitOrder(args, retryCount + 1);
+        delay(delay_time - time_diff).then(() =>
+          this.submitOrder(args, retryCount + 1)
+        );
+        return;
       }
     }
     if (typeof args.expectedPrice !== "undefined") {
@@ -274,6 +297,9 @@ export class TaobaoOrderPc {
                           }
                         }
                       } */
+              if (item.tag === "eticketDesc") {
+                item.fields.value = taobao.mobile;
+              }
               state[name] = item;
             }
             return state;
@@ -339,7 +365,7 @@ export class TaobaoOrderPc {
         return console.error("重试失败3次，放弃治疗");
       }
       console.log("重试中");
-      return this.submitOrder(args, retryCount + 1);
+      this.submitOrder(args, retryCount + 1);
     }
   }
 
@@ -419,8 +445,10 @@ export class TaobaoOrderPc {
         let t_str = t.valueOf().toString();
         let m = t_str.length - 4;
         let delay_time = 10000 - Number(t_str.substring(m));
-        await delay(delay_time - time_diff);
-        return this.submitOrder(args, retryCount + 1);
+        delay(delay_time - time_diff).then(() =>
+          this.submitOrderTaobao(args, retryCount + 1)
+        );
+        return;
       }
     }
     var formData = [
@@ -433,9 +461,12 @@ export class TaobaoOrderPc {
       "authHealth",
       "F_nick"
     ].reduce((state: any, name) => {
-      state[name] = new RegExp(
-        `name=['"]${name}['"].*? value=['"](.*?)['"]`
-      ).exec(html)![1];
+      var arr = new RegExp(`name=['"]${name}['"].*? value=['"](.*?)['"]`).exec(
+        html
+      );
+      if (arr) {
+        state[name] = arr![1];
+      }
       return state;
     }, {});
     var ua_log =
@@ -476,6 +507,8 @@ export class TaobaoOrderPc {
                             item.fields.ua = ua_log;
                           }
                         }
+                      } else if (item.tag === "eticketDesc") {
+                        item.fields.value = taobao.mobile;
                       }
                       state[name] = item;
                     }
@@ -528,7 +561,7 @@ export class TaobaoOrderPc {
         return console.error("重试失败3次，放弃治疗");
       }
       console.log("重试中");
-      return this.submitOrder(args, retryCount + 1);
+      this.submitOrderTaobao(args, retryCount + 1);
     }
   }
 }

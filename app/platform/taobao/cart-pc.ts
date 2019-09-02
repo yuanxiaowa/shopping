@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-08-26 09:17:47
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-09-02 17:46:40
+ */
 import { flatten } from "ramda";
 import setting from "./setting";
 
@@ -44,7 +50,8 @@ export async function getCartList() {
             price: subitem.price.now / 100,
             attr: subitem.attr,
             checked: subitem.checked,
-            createTime: subitem.createTime
+            createTime: subitem.createTime,
+            toBuy: subitem.toBuy
           }))
         )
       )

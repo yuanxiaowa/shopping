@@ -2,12 +2,17 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 15:02:23
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-27 17:16:42
+ * @LastEditTime: 2019-09-02 14:21:53
  */
 import setting from "./setting";
 import { getCookie, time33, getSkuId } from "./tools";
 import { ArgBuyDirect, ArgOrder, ArgCoudan } from "../struct";
-import { delay, TimerCondition } from "../../../utils/tools";
+import {
+  delay,
+  TimerCondition,
+  throwError,
+  Serial
+} from "../../../utils/tools";
 import { getStock, getGoodsInfo } from "./goods";
 import { newPage } from "../../../utils/page";
 import { config } from "../../common/config";
@@ -65,7 +70,6 @@ export class JingDongOrder {
     }
     return next();
   }
-
   async cartBuy(data: any) {
     return this.submitOrder(
       Object.assign(
@@ -80,6 +84,7 @@ export class JingDongOrder {
     );
   }
 
+  @Serial(0)
   async submitOrder(
     args: ArgOrder<{
       submit_url: string;
@@ -110,7 +115,7 @@ export class JingDongOrder {
       totalPrice = totalPrice / 100;
       if (args.expectedPrice < totalPrice) {
         page.close();
-        throw new Error(
+        throwError(
           `太贵了，期望价格:${args.expectedPrice}, 实际价格：${totalPrice}`
         );
       }

@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-12 15:37:17
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-31 16:08:15
+ * @LastEditTime: 2019-09-02 10:20:29
  */
 import {
   logFile,
@@ -259,7 +259,7 @@ export async function queryActivityCoupons(url: string) {
       .filter(key => data[key].couponList)
       .map(key =>
         data[key].couponList
-          .filter(({ status }) => status === "0")
+          .filter(({ status }) => status === "0" || status === "5")
           .map(item =>
             Object.assign(item, {
               activityId,

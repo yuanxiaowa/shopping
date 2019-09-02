@@ -2,10 +2,11 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-28 11:26:28
+ * @LastEditTime: 2019-09-02 18:07:38
  */
 import setting from "./setting";
 import { logFile } from "./tools";
+import { throwError } from "../../../utils/tools";
 
 export async function getGoodsInfo(url: string, hasForm = false) {
   var html: string = await setting.req.get(
@@ -21,10 +22,10 @@ export async function getGoodsInfo(url: string, hasForm = false) {
   var text = /TShop.Setup\(\s*(.*)\s*\);/.exec(html)![1];
   // detail.isHiddenShopAction
   var ret = JSON.parse(text);
-  var { itemDO, valItemInfo, valTimeLeft } = ret;
-  if (!valTimeLeft) {
-    throw new Error("商品已下架");
-  }
+  var { itemDO, valItemInfo, valTimeLeft, detail } = ret;
+  /* if (!valTimeLeft) {
+    throwError("商品已下架");
+  } */
   if (hasForm) {
     let form_str = /<form id="J_FrmBid"[^>]*>([\s\S]*?)<\/form>/.exec(html)![1];
     let form_item_r = /\sname="([^"]+)"\s+value="([^"]*)"/g;
@@ -59,7 +60,7 @@ export async function getGoodsInfo(url: string, hasForm = false) {
       if (skuItem) {
         skuId = skuItem.skuId;
       } else {
-        throw new Error("没货了");
+        throwError("没货了");
       }
     }
     Object.assign(form, {

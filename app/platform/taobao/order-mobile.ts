@@ -2,12 +2,12 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-27 17:52:31
+ * @LastEditTime: 2019-09-02 14:16:07
  */
 import { ArgOrder, ArgBuyDirect, ArgCoudan } from "../struct";
 import { requestData, logFile } from "./tools";
 import { config } from "../../common/config";
-import { Serial, TimerCondition } from "../../../utils/tools";
+import { Serial, TimerCondition, throwError } from "../../../utils/tools";
 import { getGoodsInfo } from "./goods-mobile";
 import { getCartList, addCart } from "./cart-mobile";
 import setting from "./setting";
@@ -32,12 +32,12 @@ function transformOrderData(orderdata: any, args: ArgOrder<any>) {
   } = orderdata;
   var invalids = structure[root].filter(name => name.startsWith("invalid"));
   if (invalids.length > 0) {
-    throw new Error("有失效宝贝");
+    throwError("有失效宝贝");
   }
   var realPay = data.realPay_1;
   if (typeof args.expectedPrice === "number") {
     if (Number(args.expectedPrice) < Number(realPay.fields.price)) {
-      throw new Error("价格太高了，买不起");
+      throwError("价格太高了，买不起");
     }
   }
   var orderData = Object.keys(data).reduce(
@@ -233,11 +233,11 @@ export class TaobaoOrderMobile {
           );
         });
       } else {
-        throw new Error("无库存了");
+        throwError("无库存了");
       }
     } else {
       if (!data.buyEnable) {
-        throw new Error(data.msg || "不能购买");
+        throwError(data.msg || "不能购买");
       }
       if (p) {
         await p;

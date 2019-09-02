@@ -1,6 +1,7 @@
 import { getItemId, requestData } from "./tools";
 import setting from "./setting";
 import { ArgSearch } from "../struct";
+import { throwError } from "../../../utils/tools";
 
 export async function getGoodsInfo(url: string, skus?: number[]) {
   var itemId = getItemId(url);
@@ -38,14 +39,12 @@ function transformMobileGoodsInfo({ apiStack, item }, skus?: number[]) {
       let propPath = skuBase.props
         .map(
           ({ pid, values }, i) =>
-            `${pid}:${
-              values[((skus[i] || 0) + values.length) % values.length].vid
-            }`
+            `${pid}:${values[((skus[i] || 0) + values.length) % values.length].vid}`
         )
         .join(";");
       let skuItem = skuBase.skus.find(item => item.propPath === propPath);
       if (!skuItem) {
-        throw new Error("指定商品型号不存在");
+        throwError("指定商品型号不存在");
       } else {
         skuId = skuItem.skuId;
       }
@@ -139,7 +138,7 @@ export async function getChaoshiGoodsList(args) {
   if (status.success) {
     return srp;
   }
-  throw new Error("出错了");
+  throwError("出错了");
 }
 
 /**

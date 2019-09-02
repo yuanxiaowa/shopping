@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-07-01 09:10:22
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-09-02 16:37:37
+ */
 import fs = require("fs-extra");
 import { join } from "path";
 import moment = require("moment");
@@ -261,8 +267,8 @@ export function Serial(t = 1500) {
     }
     var old_fn = descriptor.value;
     descriptor.value = (...args: any[]) => {
-      var p = new Promise(resolve => {
-        handlers.push(() => old_fn.apply(target, args).then(resolve));
+      var p = new Promise((resolve, reject) => {
+        handlers.push(() => old_fn.apply(target, args).then(resolve, reject));
       });
       start();
       return p;
@@ -356,3 +362,8 @@ export const taskManager: {
     this.tasks.push(item);
   }
 };
+
+export function throwError(msg: string) {
+  console.error(moment().toString(), msg);
+  throw new Error(msg);
+}

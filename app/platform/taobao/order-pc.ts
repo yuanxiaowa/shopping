@@ -244,7 +244,7 @@ export class TaobaoOrderPc {
     var formData: any;
     var qs_data: any;
     var submit_url: string;
-    if (confirmOrder_1) {
+    if (!submitOrderPC_1) {
       if (
         args.seckill &&
         retryCount === 0 &&

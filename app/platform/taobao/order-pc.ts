@@ -323,6 +323,9 @@ export class TaobaoOrderPc {
         sparam1: confirmOrder_1.fields.sparam1,
         sparam2: confirmOrder_1.fields.sparam2
       };
+      if (!confirmOrder_1.fields.pcSubmitUrl) {
+        throw new Error("无法提交订单");
+      }
       submit_url = `https://buy.taobao.com${confirmOrder_1.fields.pcSubmitUrl}`;
     } else {
       if (

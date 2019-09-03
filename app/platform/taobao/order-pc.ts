@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-03 14:13:22
+ * @LastEditTime: 2019-09-03 22:26:17
  */
 import { delay, Serial, throwError } from "../../../utils/tools";
 import setting from "./setting";
@@ -323,9 +323,6 @@ export class TaobaoOrderPc {
         sparam1: confirmOrder_1.fields.sparam1,
         sparam2: confirmOrder_1.fields.sparam2
       };
-      if (!confirmOrder_1.fields.pcSubmitUrl) {
-        throw new Error("无法提交订单");
-      }
       submit_url = `https://buy.taobao.com${confirmOrder_1.fields.pcSubmitUrl ||
         /var submitURL="([^"]+)/.exec(html)![1]}`;
     } else {

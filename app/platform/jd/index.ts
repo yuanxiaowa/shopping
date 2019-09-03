@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-31 15:30:03
+ * @LastEditTime: 2019-09-03 16:27:17
  */
 import { newPage } from "../../../utils/page";
 import AutoShop from "../auto-shop";
@@ -157,14 +157,6 @@ export class Jingdong extends AutoShop {
 
   getNextDataByGoodsInfo(data: any, quantity: number, isSeckill = false) {
     return jingDongOrder.getNextDataByGoodsInfo(data, quantity, isSeckill);
-  }
-
-  submitOrder(
-    args: ArgOrder<{
-      submit_url: string;
-    }>
-  ): Promise<any> {
-    return jingDongOrder.submitOrder(args);
   }
 
   getShopCollection = getShopCollection;

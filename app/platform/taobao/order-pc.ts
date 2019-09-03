@@ -326,7 +326,8 @@ export class TaobaoOrderPc {
       if (!confirmOrder_1.fields.pcSubmitUrl) {
         throw new Error("无法提交订单");
       }
-      submit_url = `https://buy.taobao.com${confirmOrder_1.fields.pcSubmitUrl}`;
+      submit_url = `https://buy.taobao.com${confirmOrder_1.fields.pcSubmitUrl ||
+        /var submitURL="([^"]+)/.exec(html)![1]}`;
     } else {
       if (
         args.seckill &&

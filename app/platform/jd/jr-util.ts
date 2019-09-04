@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-02 16:44:04
+ * @LastEditTime: 2019-09-04 18:10:48
  */
 import {
   getWelfareList,
@@ -26,7 +26,9 @@ import {
   receiveCoupon,
   getProductJingdouInfo,
   getProductJingdou,
-  getJinguoInfo
+  getJinguoInfo,
+  getJTLuckyInfo,
+  zuanlingqian
 } from "./jingrong";
 import { logReq, delay } from "../../../utils/tools";
 import { Page } from "puppeteer";
@@ -98,10 +100,12 @@ export class JingrongUtil {
     }
   }
 
-  @timer(1000 * 60 * 10)
+  @timer(1000 * 60 * 20)
   async harvestJinguo() {
-    var { userInfo } = await getJinguoInfo();
-    logReq("开始收获金果", () => harvestJinguo(userInfo));
+    var { userInfo, userToken } = await getJinguoInfo();
+    logReq("开始收获金果", () =>
+      harvestJinguo({ userId: userInfo, userToken })
+    );
   }
 
   @timerHourPoint([[7, 9], [11, 13], [18, 20]])
@@ -175,6 +179,18 @@ export class JingrongUtil {
       await getProductJingdou();
     }
   }
+
+  @daily()
+  @log("金条福利社抽奖")
+  async doJTLucky() {
+    await getJTLuckyInfo();
+  }
+
+  @daily()
+  @log("金条福利社抽奖")
+  zuanlingqian() {
+    zuanlingqian();
+  }
 }
 
 const jingrongUtil = new JingrongUtil();
@@ -207,6 +223,8 @@ export async function doAll() {
   jingrongUtil.doRightCenter();
   jingrongUtil.doProductJingdou();
   jingrongUtil.harvestJinguo();
+  jingrongUtil.doJTLucky();
+  jingrongUtil.zuanlingqian();
   return jingrongUtil.doSign();
 }
 

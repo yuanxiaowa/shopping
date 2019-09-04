@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-03 22:26:17
+ * @LastEditTime: 2019-09-04 17:13:12
  */
 import { delay, Serial, throwError } from "../../../utils/tools";
 import setting from "./setting";
@@ -349,6 +349,7 @@ export class TaobaoOrderPc {
           throwError("太贵了，买不起");
         }
       }
+      delete linkage.common.queryParams;
       submit_url = `https://buy.tmall.com${submitOrderPC_1.hidden.extensionMap.pcSubmitUrl}`;
       qs_data = {
         spm: `a220l.1.a22016.d011001001001.undefined`,
@@ -391,6 +392,13 @@ export class TaobaoOrderPc {
                       } */
                 if (item.tag === "eticketDesc") {
                   item.fields.value = taobao.mobile;
+                } else if (item.tag === "itemInfoPC") {
+                  let { priceInfo, quantity } = item.fields;
+                  priceInfo.valueStyles.bold = true;
+                  quantity.min = +quantity.min;
+                  quantity.quantity = +quantity.quantity;
+                  quantity.step = +quantity.step;
+                  quantity.max = +quantity.max;
                 }
                 state[name] = item;
               }
@@ -402,7 +410,7 @@ export class TaobaoOrderPc {
     }
     // var ua_log =
     //   "119#MlKA70vEMnDyqMMzZR0mfhNqsAOCc0zzNoYqOxPXiX8rOLMlRvBsQHACBLnD7HNkVW6u+TJDO2dsHEKw83cWa2lUDbCsSUkGMZA8RJBONt8LfoHMRPPe3FN8fHhS4Q9LdeNMR2VVNlsCqwMJqQPOutK6fusG4lhLPGg1RJ+q+NFGf/VwKSqj+EAL9eVH4QyG2eALRJE+EE387nASRVTmHNA6h2+S4lca0rA87PjVNN3Mxe3RaB0U3FNcQ1hzcDbL3e3My2I3TAFGfoZEh/loEEAL9weXLl9Lt1ELKlGv86GGMaASRBSUWLNN2I75eGcR3oALR2V48iVNNJd6+7hSzsyTgYCQM6ILf9lNDKDMyaD6cQ9YCYbCuYUcuuFM5yEg02+qaowfKLyxBXU8Ft9A4ia4LltAFPd5qdtAcnn8R7ho4LbVKKgB53QfxeC/hIJxtmKJZd2VBm5lz/LN09il3DbBKeaRMc/J1eugCy8Kb5lyXIoB3cfAkvUQjSDL5n4ubXZdBj4MiYX2BOsZRSfmWR8hVf5yn53hSaCZTLHKt7FbC9ZydWY1AB8+IFCJ8Qh2z9vM3TX/7pzXKH6MJcjYR8YntN9rmxnMKSOr/5hyWOGahQLHimcEeBmyWCbwLD6v6OOjualjPSwjk9VCx/yX2GAI4QJJ8bq3XA4b9z1AfjWmSe8/iedwoUahD6NT5zB3M0tAqy0vMv65kYVzj9Mvr/RimM2FHuErzYj9IjC0JJOFgnEYuAnMrRUvdLZjWqlyrIus3RbKuEM5E++wjfaqXGWRQny9BCGg+hJJIilFDyuuF3EitezdHX8mWypJ6e+MjAkDwq8Q7LIo5cANFZSQF3qpJun7d671jsKQLSuFgNPISBEAQWAy7+ZM3Y+biHaMRCXlYnMbY0EI";
-    delete linkage.common.queryParams;
+
     console.log(args.noinvalid);
     if (args.noinvalid && structure.invalidGroup_2) {
       throwError("存在无效商品");

@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-08-26 09:17:47
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-09-04 17:13:23
+ */
 import { requestData } from "./tools";
 import { getComment } from "../comment-tpl";
 import { Serial } from "../../../utils/tools";
@@ -116,7 +122,7 @@ export class TaobaoComment {
       "492409251844405857_srNameList": ""
     }
   }); */
-    return Promise.all(args.orderIds.map(this.commentOrder));
+    return Promise.all(args.orderIds.map(item => this.commentOrder(item)));
   }
 }
 

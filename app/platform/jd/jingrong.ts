@@ -2,11 +2,11 @@
  * @Author: oudingyin
  * @Date: 2019-08-06 21:38:21
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-19 09:15:18
+ * @LastEditTime: 2019-09-04 18:10:06
  */
 import request = require("request-promise-native");
 import * as R from "ramda";
-import { getJsonpData } from "../../../utils/tools";
+import { getJsonpData, delay } from "../../../utils/tools";
 import cookieManager from "../../common/cookie-manager";
 
 var req: request.RequestPromiseAPI;
@@ -70,7 +70,8 @@ async function requestData<T>(
   });
   if (inner) {
     if (!["0000", "200"].includes(res.code)) {
-      console.error(res);
+      console.log(url);
+      console.trace();
       throw new Error(res.msg);
     }
     return res.data;
@@ -324,6 +325,7 @@ export function getJinguoInfo() {
       coin: number;
     };
     userInfo: string;
+    userToken: string;
     sharePin: string;
     workerList: any[];
     avatar: string;
@@ -381,14 +383,15 @@ export function getJinguoInfo() {
 /**
  * 收获金果
  */
-export function harvestJinguo(userId: string) {
+export function harvestJinguo(data: { userId: string; userToken: string }) {
   interface T {
     upgrade: boolean;
     treeInfo: TreeInfo;
   }
   return requestData<T>(
     `https://ms.jr.jd.com/gw/generic/uc/h5/m/harvest`,
-    { source: 2, sharePin: null, userId },
+    // {"source":2,"sharePin":null,"userId":"EC5B554148D04B120512A21099D81D44","userToken":"6643208177167641D8408BEC3F35F2C4"}
+    Object.assign({ source: 2, sharePin: null }, data),
     true
   );
 }
@@ -789,7 +792,7 @@ export async function getRightCenterLucky() {
         t: Math.random()
       }
     );
-    console.log("权益中心抽奖获取到", couponsDetailVo.remark);
+    console.log("权益中心抽奖:", couponsDetailVo.remark);
   }
 }
 
@@ -909,4 +912,80 @@ export async function getProductJingdou() {
     },
     true
   );
+}
+
+/**
+ * 金条福利社
+ */
+export async function getJTLuckyInfo() {
+  var {
+    drawNum,
+    floorInfoList: [item]
+  } = await requestData(
+    "https://ms.jr.jd.com/gw/generic/bt/h5/m/queryJTLuckyInfo",
+    { channelSource: "1", channelCode: "1" }
+  );
+  for (let i = 0; i < drawNum; i++) {
+    var {
+      result: { code, info }
+    } = await requestData(
+      "https://ms.jr.jd.com/gw/generic/bt/h5/m/jtLluckyDraw",
+      {
+        activeId: item.activeId1,
+        key: item.activeId,
+        channelSource: item.data1,
+        channelCode: item.data2
+      }
+    );
+    console.log("金条福利社抽奖：", info);
+    // {"activeId":"23668062471552","key":"a6cb70305b05e77958dfe565e3f6242d","channelSource":"1","channelCode":"1"}
+  }
+}
+
+export async function zuanlingqian() {
+  var datas = await requestData<
+    {
+      rewardTimesDayLimit: number;
+      alreadyRewardTimesDay: number;
+      rewardRuleShow: string;
+      id: number;
+      bizLine: number;
+    }[]
+  >(
+    "https://ms.jr.jd.com/gw/generic/zc/h5/m/getCollectActListByFirstPage",
+    { bizLine: 2, clientType: "sms", clientVersion: "11.0" },
+    true
+  );
+  for (let item of datas) {
+    for (
+      let i = 0;
+      i < item.rewardTimesDayLimit - item.alreadyRewardTimesDay;
+      i++
+    ) {
+      console.log(item.rewardRuleShow);
+      await delay(62 * 1000);
+      await requestData(
+        "https://ms.jr.jd.com/gw/generic/zc/h5/m/completeZJAct",
+        {
+          bizLine: item.bizLine,
+          actId: item.id,
+          extRule: null
+        }
+      );
+      let text = await req.get("https://gia.jd.com/m.html");
+      await requestData("https://ms.jr.jd.com/gw/generic/zc/h5/m/rewardGift", {
+        bizLine: item.bizLine,
+        actId: item.id,
+        deviceInfo: {
+          eid:
+            "ZXHJWSWBJENX73DQAH7BW3RFGBNXZFMPJG6FFUDG3F26WRTNTZLAEVZEAERLMWPHRZGFKKG5YCL5XRQYJ7WB6F3NKE",
+          fp: "51a11bb8515839fa3ba154e9bc9c8d98",
+          token: /'(.*?)'/.exec(text)![1],
+          optType: "https://jddx.jd.com/m/jddnew/money/index.html"
+        },
+        clientType: "sms",
+        clientVersion: "11.0"
+      });
+    }
+  }
 }

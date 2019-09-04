@@ -2,10 +2,11 @@
  * @Author: oudingyin
  * @Date: 2019-09-02 14:43:19
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-02 16:46:51
+ * @LastEditTime: 2019-09-04 13:43:19
  */
 import moment = require("moment");
 import { delay } from "./tools";
+import { DT } from "../app/common/config";
 
 export function log(label: string) {
   return (target: any, key: string, desc: PropertyDescriptor) => {
@@ -61,8 +62,12 @@ export function timerHourPoint(hours: number[][]) {
           if (h < end) {
             if (h < start) {
               await delay(
-                moment("00".substring(h < 10 ? 1 : 2) + h, "HH").valueOf() -
-                  now.getTime()
+                moment(
+                  "00".substring(start < 10 ? 1 : 2) + start,
+                  "HH"
+                ).valueOf() -
+                  now.getTime() -
+                  DT.jingdong
               );
             }
             if (h >= start && h < end) {

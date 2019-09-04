@@ -35,6 +35,15 @@ export class JingDongOrder {
   async buyDirect(args: ArgBuyDirect, p?: Promise<void>): Promise<any> {
     var skuId = getSkuId(args.url);
     var data = await getGoodsInfo(skuId);
+    if (args.diejia) {
+      if (args.quantity === 1) {
+        let num = (199 / data.price.p) >> 0;
+        if (199 - num * data.price.p > 1) {
+          num++;
+        }
+        args.quantity = num;
+      }
+    }
     var next = async () => {
       let res = this.getNextDataByGoodsInfo(
         { skuId },

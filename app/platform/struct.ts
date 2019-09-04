@@ -13,6 +13,7 @@ export interface ArgBuyDirect {
   jianlou?: number;
   from_cart?: boolean;
   from_pc?: boolean;
+  diejia?: boolean;
 }
 
 export interface ArgOrder<T> {

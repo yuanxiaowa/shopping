@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-09-02 14:43:19
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-04 13:43:19
+ * @LastEditTime: 2019-09-05 11:59:03
  */
 import moment = require("moment");
 import { delay } from "./tools";
@@ -51,7 +51,7 @@ export function timerCondition(handler: (data: any) => boolean, t = 1000 * 60) {
   };
 }
 
-export function timerHourPoint(hours: number[][]) {
+export function timerHourPoint(hours: number[][], t = 0) {
   return (target: any, key: string, desc: PropertyDescriptor) => {
     var old_f: Function = desc.value;
     desc.value = (...args: any[]) => {
@@ -67,7 +67,8 @@ export function timerHourPoint(hours: number[][]) {
                   "HH"
                 ).valueOf() -
                   now.getTime() -
-                  DT.jingdong
+                  DT.jingdong +
+                  t
               );
             }
             if (h >= start && h < end) {

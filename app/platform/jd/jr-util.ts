@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-04 18:10:48
+ * @LastEditTime: 2019-09-05 11:59:02
  */
 import {
   getWelfareList,
@@ -108,7 +108,7 @@ export class JingrongUtil {
     );
   }
 
-  @timerHourPoint([[7, 9], [11, 13], [18, 20]])
+  @timerHourPoint([[7, 9], [11, 13], [18, 20]], 1000 * 20)
   signJinguo(workType: number) {
     logReq("金果签到", signJinguo(workType, 2));
   }
@@ -187,7 +187,7 @@ export class JingrongUtil {
   }
 
   @daily()
-  @log("金条福利社抽奖")
+  @log("做任务赚零钱")
   zuanlingqian() {
     zuanlingqian();
   }

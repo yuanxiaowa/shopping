@@ -2,19 +2,38 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-04 17:13:12
+ * @LastEditTime: 2019-09-05 15:51:21
  */
-import { delay, Serial, throwError } from "../../../utils/tools";
+import {
+  delay,
+  Serial,
+  throwError,
+  TimerCondition
+} from "../../../utils/tools";
 import setting from "./setting";
-import { logFile } from "./tools";
+import { logFile, getItemId } from "./tools";
 import { ArgBuyDirect, ArgOrder } from "../struct";
 import { config } from "../../common/config";
 import moment = require("moment");
-import { getGoodsInfo } from "./goods-pc";
+import { getGoodsInfo, getStock } from "./goods-pc";
 import iconv = require("iconv-lite");
 const { taobao } = require("../../../.data/user.json");
 
 export class TaobaoOrderPc {
+  @TimerCondition(0)
+  async waitForStock(
+    args: {
+      skuId?: string;
+      id: string;
+      quantity: number;
+    },
+    duration: number
+  ): Promise<any> {
+    var quantity = await getStock(args.id, args.skuId);
+    return {
+      success: quantity >= args.quantity
+    };
+  }
   async buyDirect(arg: ArgBuyDirect, p?: Promise<void>) {
     var { itemDO, tradeConfig, tradeType, form, detail } = await getGoodsInfo(
       arg.url,
@@ -37,6 +56,32 @@ export class TaobaoOrderPc {
       } else {
         addr_url += tradeConfig[1];
         type = "taobao";
+      }
+      if (arg.jianlou) {
+        this.waitForStock(
+          {
+            id: getItemId(arg.url),
+            quantity: arg.quantity,
+            skuId: form.skuId
+          },
+          arg.jianlou
+        ).then(() =>
+          this.submitOrder(
+            Object.assign(
+              {
+                data: {
+                  form,
+                  addr_url,
+                  Referer: arg.url
+                },
+                other: {}
+              },
+              arg
+            ),
+            type
+          )
+        );
+        return "正在捡漏中";
       }
       return this.submitOrder(
         Object.assign(

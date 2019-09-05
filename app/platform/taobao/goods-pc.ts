@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-02 18:07:38
+ * @LastEditTime: 2019-09-05 15:51:30
  */
 import setting from "./setting";
 import { logFile } from "./tools";
@@ -128,4 +128,30 @@ export async function getGoodsInfo(url: string, hasForm = false) {
       ele.submit();
     }, form); */
   return ret;
+}
+
+export async function getStock(id: string, skuId?: string) {
+  var {
+    defaultModel: { inventoryDO }
+  } = await setting.req.get(
+    `https://mdskip.taobao.com/core/initItemDetail.htm?itemId=${id}`
+  );
+  var { skuQuantity, icTotalQuantity } = <
+    {
+      skuQuantity: Record<
+        string,
+        {
+          quantity: number;
+          totalQuantity: number;
+          type: number;
+        }
+      >;
+      icTotalQuantity: number;
+      totalQuantity: number;
+    }
+  >inventoryDO;
+  if (!skuId) {
+    return icTotalQuantity;
+  }
+  return skuQuantity[skuId].quantity;
 }

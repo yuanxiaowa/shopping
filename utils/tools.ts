@@ -207,18 +207,16 @@ export function TimerCondition(interval = 1500) {
       var t = duration * 60 * 1000;
       var start = Date.now();
       async function f() {
-        var ret: any;
         try {
-          ret = await old_fn.call(target, data);
+          var ret = await old_fn.call(target, data);
+          if (ret.success) {
+            return ret.data;
+          }
+          if (Date.now() - start > t) {
+            throw new Error("超时了");
+          }
         } catch (e) {
           console.error(e);
-          throw e;
-        }
-        if (ret.success) {
-          return ret.data;
-        }
-        if (Date.now() - start > t) {
-          throw new Error("超时了");
         }
         console.log(new Date().toLocaleString(), interval + "ms后重试");
         await delay(interval);

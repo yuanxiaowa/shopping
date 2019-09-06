@@ -486,7 +486,10 @@ export class TaobaoOrderPc {
       if (p.path.startsWith("/auction/order/TmallConfirmOrderError.htm")) {
         let msg = /<h2 class="sub-title">([^<]*)/.exec(ret)![1];
         console.log(msg);
-        if (msg.includes("优惠信息变更")) {
+        if (
+          msg.includes("优惠信息变更") ||
+          msg.includes("商品在收货地址内不可售")
+        ) {
           return;
         }
         throwError(msg);

@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-12 15:34:45
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-28 19:54:02
+ * @LastEditTime: 2019-09-06 17:05:46
  */
 import request = require("request-promise-native");
 
@@ -222,17 +222,36 @@ export async function resolveUrl(url: string) {
   });
   let hrl = /var hrl='([^']+)/.exec(html)![1];
   let p = request.get(hrl, {
-    followRedirect: false,
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1"
-    }
+    followRedirect: false
   });
   await p.catch(() => {});
   let l = p.response!.headers.location!;
+  if (
+    /^https?:\/\/(?!=www|order|trade|cart|home|mall|bean)\w+\.jd\.com/.test(l)
+  ) {
+    html = await setting.req.get(l);
+    if (/var shopId = "(\d+)";/.test(html)) {
+      return `https://shop.m.jd.com/?shopId=${RegExp.$1}`;
+    }
+  }
   return l;
 }
 
 export function getGoodsUrl(skuId: string) {
   return `https://item.m.jd.com/product/${skuId}.html`;
+}
+
+export async function reqJsonpData(url: string, qs?: any) {
+  var text = await setting.req.get(url, {
+    qs,
+    headers: {
+      Referer:
+        "https://wqs.jd.com/my/fav/goods_fav.shtml?ptag=7155.1.8&sceneval=2"
+    }
+  });
+  var { iRet, errMsg, data } = getJsonpData(text);
+  if (Number(iRet) !== 0) {
+    throw new Error(errMsg);
+  }
+  return data;
 }

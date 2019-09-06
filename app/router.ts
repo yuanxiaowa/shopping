@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-11 17:44:17
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-27 21:33:14
+ * @LastEditTime: 2019-09-06 16:31:16
  */
 import { Application } from "egg";
 
@@ -28,8 +28,8 @@ export default (app: Application) => {
   router.get("/coupons", controller.shop.coupons);
   router.get("/calc/price", controller.shop.calcPrice);
 
-  router.get("/shop", controller.shop.shopCollection);
-  router.post("/shop/del", controller.shop.shopDelete);
+  router.get("/collection", controller.shop.getCollection);
+  router.post("/collection/del", controller.shop.delCollection);
 
   router.get("/check/status", controller.shop.checkStatus);
 

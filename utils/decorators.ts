@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-09-02 14:43:19
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-05 11:59:03
+ * @LastEditTime: 2019-09-06 09:40:25
  */
 import moment = require("moment");
 import { delay } from "./tools";
@@ -71,9 +71,7 @@ export function timerHourPoint(hours: number[][], t = 0) {
                   t
               );
             }
-            if (h >= start && h < end) {
-              old_f.apply(target, args);
-            }
+            old_f.apply(target, args);
           }
         }
       };

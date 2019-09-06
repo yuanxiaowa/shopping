@@ -2,11 +2,11 @@
  * @Author: oudingyin
  * @Date: 2019-08-05 10:20:54
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-31 17:17:09
+ * @LastEditTime: 2019-09-06 10:03:01
  */
 import { startsWith, test } from "ramda";
 import { newPage } from "../../../utils/page";
-import { resolveUrl } from "./tools";
+import { resolveUrl, getGoodsUrl } from "./tools";
 import {
   getCouponEdetail,
   getTaolijin,
@@ -90,7 +90,7 @@ const taobaoCouponHandlers = {
   ataobao: {
     test: startsWith("https://a.m.taobao.com/i"),
     async handler(url: string) {
-      return /\d+/.exec(url)![0];
+      return { url: getGoodsUrl(/\d+/.exec(url)![0]), success: true };
     }
   },
   uland: {

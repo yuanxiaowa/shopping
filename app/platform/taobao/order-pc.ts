@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-05 15:51:21
+ * @LastEditTime: 2019-09-06 10:10:54
  */
 import {
   delay,
@@ -391,7 +391,9 @@ export class TaobaoOrderPc {
       }
       if (typeof args.expectedPrice !== "undefined") {
         if (+realPayPC_1.fields.price > +args.expectedPrice) {
-          throwError("太贵了，买不起");
+          throwError(
+            `太贵了，期望价格:${args.expectedPrice}, 实际价格：${realPayPC_1.fields.price}`
+          );
         }
       }
       delete linkage.common.queryParams;

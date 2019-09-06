@@ -124,8 +124,22 @@ export default abstract class AutoShop implements AutoShopOptions {
   async testOrder(args: { file: string }): Promise<any> {}
   async coupons(args: { page: number }): Promise<any> {}
   async calcPrice(args: { url: string }): Promise<any> {}
-  abstract getShopCollection(args: any): Promise<any>;
-  abstract deleteShop(items: any[]): Promise<any>;
+  abstract getStoreCollection(page?: number): Promise<any>;
+  abstract getGoodsCollection(page?: number): Promise<any>;
+  abstract delStoreCollection(items: any[]): Promise<any>;
+  abstract delGoodsCollection(items: any[]): Promise<any>;
+  getCollection(arg: { type: "store" | "goods"; page: number }) {
+    if (arg.type === "store") {
+      return this.getStoreCollection(arg.page);
+    }
+    return this.getGoodsCollection(arg.page);
+  }
+  delCollection(arg: { type: "store" | "goods"; items: any[] }) {
+    if (arg.type === "store") {
+      return this.delStoreCollection(arg.items);
+    }
+    return this.delGoodsCollection(arg.items);
+  }
 
   async loginAction(page: Page): Promise<any> {
     return page.waitForNavigation({

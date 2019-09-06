@@ -4,12 +4,13 @@
  * @LastEditors: oudingy1in
  * @LastEditTime: 2019-08-26 15:21:44
  */
-import { getJsonpData } from "../../../utils/tools";
 import R = require("ramda");
 import qs = require("querystring");
 import { ArgSearch } from "../struct";
 import { queryGoodsCoupon } from "./coupon-handlers";
 import setting from "./setting";
+import { reqJsonpData } from "./tools";
+import { getJsonpData } from "../../../utils/tools";
 
 export async function getGoodsInfo(skuId: string) {
   var ret: string = await setting.req.get(
@@ -95,15 +96,12 @@ export async function getGoodsList(args: ArgSearch): Promise<any> {
     rtapi: "no",
     area_ids: "12,988,47821"
   };
-  var html: string = await setting.req.get(
+  var data = await reqJsonpData(
     "https://so.m.jd.com/list/couponSearch._m2wq_list",
     {
       qs: _qs
     }
   );
-  // var text = /_sfpageinit\((.*)\);/.exec(html)![1];
-  // var { data } = eval(`(${text})`);
-  var { data } = getJsonpData(html);
   var items = data.searchm.Paragraph.map(item => {
     return Object.assign(
       {
@@ -413,59 +411,6 @@ export async function calcPrice({
   );
 }
 
-export async function getShopCollection(args: any) {
-  var text: string = await setting.req.get(
-    "https://wq.jd.com/fav/shop/QueryShopFavList",
-    {
-      qs: {
-        cp: args.page || 1,
-        pageSize: "10",
-        lastlogintime: "0",
-        _: Date.now(),
-        sceneval: "2",
-        g_login_type: "1",
-        callback: "jsonpCBKA",
-        g_ty: "ls"
-      },
-      headers: {
-        Referer:
-          "https://wqs.jd.com/my/fav/shop_fav.shtml?ptag=7155.1.9&sceneval=2"
-      }
-    }
-  );
-  var { data, totalPage } = getJsonpData(text);
-  var items = data.map(item => {
-    return {
-      id: item.shopId,
-      title: item.shopName,
-      img: item.shopUrl,
-      url: `https://shop.m.jd.com/?shopId=${item.shopId}`
-    };
-  });
-  return {
-    page: args.page,
-    items,
-    more: Number(args.page) < Number(totalPage)
-  };
-}
-
-export async function deleteShop(items: any[]) {
-  var text = await setting.req.get("https://wq.jd.com/fav/shop/batchunfollow", {
-    qs: {
-      shopId: items.map(({ id }) => id).join(","),
-      _: Date.now(),
-      sceneval: "2",
-      g_login_type: "1",
-      callback: "jsonpCBKF",
-      g_ty: "ls"
-    }
-  });
-  var { iRet, errMsg } = getJsonpData(text);
-  if (iRet !== "0") {
-    throw new Error(errMsg);
-  }
-}
-
 export async function getStock(
   skuNumList: {
     skuId: string;
@@ -495,4 +440,31 @@ export async function getStock(
     }
   });
   return res.result;
+}
+
+export async function getGoodsCollection(page = 1) {
+  var data = await reqJsonpData(
+    `https://wq.jd.com/fav/comm/FavCommQueryFilter?cp=${page}&pageSize=10&category=0&promote=0&cutPrice=0&coupon=0&stock=0&areaNo=1_72_4139_0&_=1567754146891&sceneval=2&g_login_type=1&callback=jsonpCBKB&g_ty=ls`
+  );
+  var items = data.map(item =>
+    Object.assign(item, {
+      title: item.commTitle,
+      img: item.imageUrl,
+      id: item.commId
+    })
+  );
+  return {
+    items,
+    more: items.length > 0
+  };
+}
+
+export function delGoodsCollection(items: any[]) {
+  return Promise.all(
+    items.map(item =>
+      reqJsonpData(
+        `https://wq.jd.com/fav/comm/FavCommDel?commId=${item.commId}&_=1567754783171&sceneval=2&g_login_type=1&callback=jsonpCBKII&g_ty=ls`
+      )
+    )
+  );
 }

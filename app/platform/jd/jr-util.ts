@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-05 11:59:02
+ * @LastEditTime: 2019-09-06 09:38:23
  */
 import {
   getWelfareList,
@@ -101,16 +101,16 @@ export class JingrongUtil {
   }
 
   @timer(1000 * 60 * 20)
+  @log("收获金果")
   async harvestJinguo() {
     var { userInfo, userToken } = await getJinguoInfo();
-    logReq("开始收获金果", () =>
-      harvestJinguo({ userId: userInfo, userToken })
-    );
+    return harvestJinguo({ userId: userInfo, userToken });
   }
 
   @timerHourPoint([[7, 9], [11, 13], [18, 20]], 1000 * 20)
+  @log("金果签到")
   signJinguo(workType: number) {
-    logReq("金果签到", signJinguo(workType, 2));
+    return signJinguo(workType, 2)();
   }
 
   @daily()

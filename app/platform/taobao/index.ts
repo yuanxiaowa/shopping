@@ -34,6 +34,8 @@ import {
 import { getCoupons } from "./member";
 import { sixtyCourseList, sixtyCourseReply } from "./activity";
 import { seckillList } from "./seckill";
+import { getStoreCollection, delStoreCollection } from "./store";
+import { getGoodsCollection, delGoodsCollection } from "./goods-pc";
 
 export class Taobao extends AutoShop {
   mobile = true;
@@ -129,6 +131,10 @@ export class Taobao extends AutoShop {
   seckillList = seckillList;
   sixtyCourseList = sixtyCourseList;
   sixtyCourseReply = sixtyCourseReply;
+  getStoreCollection = getStoreCollection;
+  getGoodsCollection = getGoodsCollection;
+  delStoreCollection = delStoreCollection;
+  delGoodsCollection = delGoodsCollection;
 
   cartToggle = cartToggle;
 
@@ -199,74 +205,6 @@ export class Taobao extends AutoShop {
       "https://buy.m.tmall.com/order/confirm_order_wap.htm?enc=%E2%84%A2&itemId=538364857603&exParams=%7B%22addressId%22%3A%229607477385%22%2C%22etm%22%3A%22%22%7D&skuId=3471693791586&quantity=1&divisionCode=320583&userId=842405758&buyNow=true&_input_charset=utf-8&areaId=320583&addressId=9607477385&x-itemid=538364857603&x-uid=842405758"
     );
     return;
-  }
-
-  async getShopCollection(args: any) {
-    var fhtml = await this.req(
-      "https://shoucang.taobao.com/shop_collect_list_n.htm?spm=a1z0k.7386009.1997992801.3.46381019lOtNMa"
-    );
-    var token = /_tb_token_:\s*'([^']+)'/.exec(fhtml)![1];
-    var html: string = await this.req.get(
-      "https://shoucang.taobao.com/nodejs/shop_collect_list_chunk.htm?spm=a1z0k.7386009.1997992801.3.46381019lOtNMa",
-      {
-        qs: {
-          ifAllTag: "0",
-          tab: "0",
-          categoryCount: "0",
-          tagName: "",
-          type: "0",
-          categoryName: "",
-          needNav: "false",
-          startRow: args.page - 1,
-          t: Date.now()
-        }
-      }
-    );
-    var $ = cheerio.load(html);
-    var items = $(".shop-card")
-      .map((i, ele) => {
-        var $ele = $(ele);
-        var $a = $ele.find(".shop-name-link");
-        var img = $ele.find(".logo-img").attr("src");
-        var url = $a.attr("href");
-        return {
-          id: /shop_id=(\d+)/.exec(url)![1],
-          title: $a.text().trim(),
-          img,
-          url,
-          token
-        };
-      })
-      .get();
-    return {
-      page: args.page,
-      items,
-      more: items.length > 0
-    };
-  }
-
-  async deleteShop(items: { id: string; token: string }[]) {
-    var text: string = await this.req.post(
-      "https://shoucang.taobao.com/favorite/api/CollectOperating.htm",
-      {
-        form: {
-          _tb_token_: items[0].token,
-          _input_charset: "utf-8",
-          favType: 0,
-          "favIdArr[]": items.map(({ id }) => id),
-          operateType: "delete"
-        },
-        headers: {
-          "x-requested-with": "XMLHttpRequest",
-          referer:
-            "https://shoucang.taobao.com/shop_collect_list_n.htm?spm=a1z0k.7386009.1997992801.3.46381019lOtNMa"
-        }
-      }
-    );
-    var { errorMsg, success } = JSON.parse(text);
-    if (!success) {
-      throw new Error(errorMsg);
-    }
   }
 
   async miaosha(url: string, _dt = 0) {

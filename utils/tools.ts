@@ -212,11 +212,11 @@ export function TimerCondition(interval = 1500) {
           if (ret.success) {
             return ret.data;
           }
-          if (Date.now() - start > t) {
-            throw new Error("超时了");
-          }
         } catch (e) {
           console.error(e);
+        }
+        if (Date.now() - start > t) {
+          throw new Error("超时了");
         }
         console.log(new Date().toLocaleString(), interval + "ms后重试");
         await delay(interval);

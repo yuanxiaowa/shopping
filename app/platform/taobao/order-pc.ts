@@ -279,6 +279,7 @@ export class TaobaoOrderPc {
           validateParams: string;
         };
         signature: string;
+        input?: string[];
       };
       hierarchy: {
         structure: Record<string, string[]>;
@@ -289,6 +290,13 @@ export class TaobaoOrderPc {
     var formData: any;
     var qs_data: any;
     var submit_url: string;
+    /* console.log(args.noinvalid);
+    if (args.noinvalid && structure.invalidGroup_2) {
+      throwError("存在无效商品");
+    } */
+    if (!linkage.input) {
+      throwError("存在无效商品");
+    }
     if (!submitOrderPC_1) {
       if (
         args.seckill &&
@@ -389,13 +397,14 @@ export class TaobaoOrderPc {
           return;
         }
       }
-      if (typeof args.expectedPrice !== "undefined") {
-        if (+realPayPC_1.fields.price > +args.expectedPrice) {
-          throwError(
-            `太贵了，期望价格:${args.expectedPrice}, 实际价格：${realPayPC_1.fields.price}`
-          );
+      if (linkage.input)
+        if (typeof args.expectedPrice !== "undefined") {
+          if (+realPayPC_1.fields.price > +args.expectedPrice) {
+            throwError(
+              `太贵了，期望价格:${args.expectedPrice}, 实际价格：${realPayPC_1.fields.price}`
+            );
+          }
         }
-      }
       delete linkage.common.queryParams;
       submit_url = `https://buy.tmall.com${submitOrderPC_1.hidden.extensionMap.pcSubmitUrl}`;
       qs_data = {
@@ -458,10 +467,6 @@ export class TaobaoOrderPc {
     // var ua_log =
     //   "119#MlKA70vEMnDyqMMzZR0mfhNqsAOCc0zzNoYqOxPXiX8rOLMlRvBsQHACBLnD7HNkVW6u+TJDO2dsHEKw83cWa2lUDbCsSUkGMZA8RJBONt8LfoHMRPPe3FN8fHhS4Q9LdeNMR2VVNlsCqwMJqQPOutK6fusG4lhLPGg1RJ+q+NFGf/VwKSqj+EAL9eVH4QyG2eALRJE+EE387nASRVTmHNA6h2+S4lca0rA87PjVNN3Mxe3RaB0U3FNcQ1hzcDbL3e3My2I3TAFGfoZEh/loEEAL9weXLl9Lt1ELKlGv86GGMaASRBSUWLNN2I75eGcR3oALR2V48iVNNJd6+7hSzsyTgYCQM6ILf9lNDKDMyaD6cQ9YCYbCuYUcuuFM5yEg02+qaowfKLyxBXU8Ft9A4ia4LltAFPd5qdtAcnn8R7ho4LbVKKgB53QfxeC/hIJxtmKJZd2VBm5lz/LN09il3DbBKeaRMc/J1eugCy8Kb5lyXIoB3cfAkvUQjSDL5n4ubXZdBj4MiYX2BOsZRSfmWR8hVf5yn53hSaCZTLHKt7FbC9ZydWY1AB8+IFCJ8Qh2z9vM3TX/7pzXKH6MJcjYR8YntN9rmxnMKSOr/5hyWOGahQLHimcEeBmyWCbwLD6v6OOjualjPSwjk9VCx/yX2GAI4QJJ8bq3XA4b9z1AfjWmSe8/iedwoUahD6NT5zB3M0tAqy0vMv65kYVzj9Mvr/RimM2FHuErzYj9IjC0JJOFgnEYuAnMrRUvdLZjWqlyrIus3RbKuEM5E++wjfaqXGWRQny9BCGg+hJJIilFDyuuF3EitezdHX8mWypJ6e+MjAkDwq8Q7LIo5cANFZSQF3qpJun7d671jsKQLSuFgNPISBEAQWAy7+ZM3Y+biHaMRCXlYnMbY0EI";
 
-    console.log(args.noinvalid);
-    if (args.noinvalid && structure.invalidGroup_2) {
-      throwError("存在无效商品");
-    }
     if (!config.isSubmitOrder) {
       return;
     }

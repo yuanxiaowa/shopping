@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-05 10:20:54
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-06 10:03:01
+ * @LastEditTime: 2019-09-07 01:23:56
  */
 import { startsWith, test } from "ramda";
 import { newPage } from "../../../utils/page";
@@ -74,9 +74,7 @@ const taobaoCouponHandlers = {
     }
   },
   goods: {
-    test: test(
-      /^https?:\/\/(detail(\.m)?\.tmall|item\.taobao|h5\.m\.taobao)\.com\//
-    ),
+    test: test(/^https?:\/\/(detail(\.m)?\.tmall|item\.taobao|h5\.m\.taobao)/),
     async handler(url) {
       return { url, success: true };
     }

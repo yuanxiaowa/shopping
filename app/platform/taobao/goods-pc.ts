@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-06 17:42:33
+ * @LastEditTime: 2019-09-07 01:33:43
  */
 import setting from "./setting";
 import { logFile } from "./tools";
@@ -135,7 +135,13 @@ export async function getStock(id: string, skuId?: string) {
   var {
     defaultModel: { inventoryDO }
   } = await setting.req.get(
-    `https://mdskip.taobao.com/core/initItemDetail.htm?itemId=${id}`
+    `https://mdskip.taobao.com/core/initItemDetail.htm?itemId=${id}&isUseInventoryCenter=true&cartEnable=true&service3C=false&isApparel=false&isSecKill=false&tmallBuySupport=true&isAreaSell=false&tryBeforeBuy=false&offlineShop=false&showShopProm=true&isPurchaseMallPage=false&itemGmtModified=1567782519000&isRegionLevel=false&household=false&sellerPreview=false&queryMemberRight=false&addressLevel=3&isForbidBuyItem=false&callback=setMdskip&timestamp=1567790879892&isg=cBMsqBcgqOfrpb0TBOCwourza77OjIRAguPzaNbMi_5IK6TsOfQOkr-53F96cjWdtZ8p4K7K7H29-etfwz2T6qObHZ9R.&isg2=BJaWM8Tx1xPL9OPGmCxYgI6K50pYn9oZgxUXGQD_jXkUwzZdacbXgb7yWx-K69KJ`,
+    {
+      headers: {
+        Referer:
+          "https://detail.tmall.hk/hk/item.htm?id=585453718575&ali_trackid=2:mm_441610096_555100392_109014100361:1567790708_155_436441487"
+      }
+    }
   );
   var { skuQuantity, icTotalQuantity } = <
     {

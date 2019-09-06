@@ -207,7 +207,13 @@ export function TimerCondition(interval = 1500) {
       var t = duration * 60 * 1000;
       var start = Date.now();
       async function f() {
-        var ret = await old_fn.call(target, data);
+        var ret: any;
+        try {
+          ret = await old_fn.call(target, data);
+        } catch (e) {
+          console.error(e);
+          throw e;
+        }
         if (ret.success) {
           return ret.data;
         }

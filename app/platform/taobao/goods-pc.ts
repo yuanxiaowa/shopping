@@ -132,10 +132,8 @@ export async function getGoodsInfo(url: string, hasForm = false) {
 }
 
 export async function getStock(id: string, skuId?: string) {
-  var {
-    defaultModel: { inventoryDO }
-  } = await setting.req.get(
-    `https://mdskip.taobao.com/core/initItemDetail.htm?itemId=${id}&isUseInventoryCenter=true&cartEnable=true&service3C=false&isApparel=false&isSecKill=false&tmallBuySupport=true&isAreaSell=false&tryBeforeBuy=false&offlineShop=false&showShopProm=true&isPurchaseMallPage=false&itemGmtModified=1567782519000&isRegionLevel=false&household=false&sellerPreview=false&queryMemberRight=false&addressLevel=3&isForbidBuyItem=false&callback=setMdskip&timestamp=1567790879892&isg=cBMsqBcgqOfrpb0TBOCwourza77OjIRAguPzaNbMi_5IK6TsOfQOkr-53F96cjWdtZ8p4K7K7H29-etfwz2T6qObHZ9R.&isg2=BJaWM8Tx1xPL9OPGmCxYgI6K50pYn9oZgxUXGQD_jXkUwzZdacbXgb7yWx-K69KJ`,
+  var text = await setting.req.get(
+    `https://mdskip.taobao.com/core/initItemDetail.htm?itemId=${id}`,
     {
       headers: {
         Referer:
@@ -143,6 +141,9 @@ export async function getStock(id: string, skuId?: string) {
       }
     }
   );
+  var {
+    defaultModel: { inventoryDO }
+  } = JSON.parse(text);
   var { skuQuantity, icTotalQuantity } = <
     {
       skuQuantity: Record<

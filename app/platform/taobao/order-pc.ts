@@ -465,51 +465,54 @@ export class TaobaoOrderPc {
     if (!config.isSubmitOrder) {
       return;
     }
-    try {
-      let p = setting.req.post(submit_url, {
-        qs: qs_data,
-        form: formData,
-        headers: {
-          Referer: addr_url,
-          "Sec-Fetch-Mode": "navigate",
-          "Sec-Fetch-User": "?1",
-          Accept:
-            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
-          "Sec-Fetch-Site": "same-origin",
-          "Accept-Encoding": "gzip, deflate, br",
-          "Accept-Language": "zh-CN,zh;q=0.9",
-          "Upgrade-Insecure-Requests": "1"
-        },
-        followAllRedirects: true
-      });
-      let ret: string = await p;
-      if (p.path.startsWith("/auction/order/TmallConfirmOrderError.htm")) {
-        let msg = /<h2 class="sub-title">([^<]*)/.exec(ret)![1];
-        console.log(msg);
-        if (
-          msg.includes("优惠信息变更") ||
-          msg.includes("商品在收货地址内不可售")
-        ) {
+    (async () => {
+      try {
+        let p = setting.req.post(submit_url, {
+          qs: qs_data,
+          form: formData,
+          headers: {
+            Referer: addr_url,
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-User": "?1",
+            Accept:
+              "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
+            "Sec-Fetch-Site": "same-origin",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Language": "zh-CN,zh;q=0.9",
+            "Upgrade-Insecure-Requests": "1"
+          },
+          followAllRedirects: true
+        });
+        let ret: string = await p;
+        if (p.path.startsWith("/auction/order/TmallConfirmOrderError.htm")) {
+          let msg = /<h2 class="sub-title">([^<]*)/.exec(ret)![1];
+          console.log(msg);
+          if (
+            msg.includes("优惠信息变更") ||
+            msg.includes("商品在收货地址内不可售")
+          ) {
+            return;
+          }
+          throwError(msg);
+        }
+        if (ret.indexOf("security-X5") > -1) {
+          console.log("-------提交碰到验证拦截--------");
+          logFile(ret, "pc-订单提交验证拦截");
           return;
         }
-        throwError(msg);
+        // /auction/confirm_order.htm
+        logFile(ret, "pc-订单已提交");
+        console.log("-----订单提交成功，等待付款----");
+      } catch (e) {
+        console.trace(e);
+        if (retryCount >= 3) {
+          return console.error("重试失败3次，放弃治疗");
+        }
+        console.log("重试中");
+        this.submitOrder(args, type, retryCount + 1);
       }
-      if (ret.indexOf("security-X5") > -1) {
-        console.log("-------提交碰到验证拦截--------");
-        logFile(ret, "pc-订单提交验证拦截");
-        return;
-      }
-      // /auction/confirm_order.htm
-      logFile(ret, "pc-订单已提交");
-      console.log("-----订单提交成功，等待付款----");
-    } catch (e) {
-      console.trace(e);
-      if (retryCount >= 3) {
-        return console.error("重试失败3次，放弃治疗");
-      }
-      console.log("重试中");
-      this.submitOrder(args, type, retryCount + 1);
-    }
+    })();
+    return delay(50);
   }
 }
 

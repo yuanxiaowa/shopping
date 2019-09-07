@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-07 01:33:43
+ * @LastEditTime: 2019-09-07 09:27:44
  */
 import setting from "./setting";
 import { logFile } from "./tools";
@@ -131,13 +131,16 @@ export async function getGoodsInfo(url: string, hasForm = false) {
   return ret;
 }
 
-export async function getStock(id: string, skuId?: string) {
+export async function getStock(arg: {
+  url: string;
+  id: string;
+  skuId?: string;
+}) {
   var text = await setting.req.get(
-    `https://mdskip.taobao.com/core/initItemDetail.htm?itemId=${id}`,
+    `https://mdskip.taobao.com/core/initItemDetail.htm?itemId=${arg.id}`,
     {
       headers: {
-        Referer:
-          "https://detail.tmall.hk/hk/item.htm?id=585453718575&ali_trackid=2:mm_441610096_555100392_109014100361:1567790708_155_436441487"
+        Referer: arg.url
       }
     }
   );
@@ -158,10 +161,10 @@ export async function getStock(id: string, skuId?: string) {
       totalQuantity: number;
     }
   >inventoryDO;
-  if (!skuId) {
+  if (!arg.skuId) {
     return icTotalQuantity;
   }
-  return skuQuantity[skuId].quantity;
+  return skuQuantity[arg.skuId].quantity;
 }
 
 export async function getGoodsCollection(page = 1) {

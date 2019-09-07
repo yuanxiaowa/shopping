@@ -155,6 +155,9 @@ export async function getCouponEdetail(url: string) {
   );
   var [data] = res[res.meta.resultListPath];
   var { couponActivityId, itemId, couponKey, retStatus } = data;
+  if (!itemId) {
+    throw new Error("宝贝不见了");
+  }
   var res = await requestData(
     "mtop.alimama.union.xt.en.api.entry",
     {

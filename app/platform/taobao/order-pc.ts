@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-06 10:10:54
+ * @LastEditTime: 2019-09-07 09:14:33
  */
 import {
   delay,
@@ -26,10 +26,11 @@ export class TaobaoOrderPc {
       skuId?: string;
       id: string;
       quantity: number;
+      url: string;
     },
     duration: number
   ): Promise<any> {
-    var quantity = await getStock(args.id, args.skuId);
+    var quantity = await getStock(args);
     return {
       success: quantity >= args.quantity
     };
@@ -62,7 +63,8 @@ export class TaobaoOrderPc {
           {
             id: getItemId(arg.url),
             quantity: arg.quantity,
-            skuId: form.skuId
+            skuId: form.skuId,
+            url: arg.url
           },
           arg.jianlou
         ).then(() =>

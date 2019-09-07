@@ -6,6 +6,7 @@
  */
 import setting from "./setting";
 import cheerio = require("cheerio");
+import qs = require("querystring");
 
 export async function getStoreCollection(page = 1) {
   var _tb_token_: any;
@@ -40,7 +41,7 @@ export async function getStoreCollection(page = 1) {
     .get();
   return {
     items,
-    more: items.length > 0
+    more: items.length >= 6
   };
 }
 
@@ -48,14 +49,15 @@ export async function delStoreCollection(items: any[]) {
   var text: string = await setting.req.post(
     `https://shoucang.taobao.com/favorite/api/CollectOperating.htm`,
     {
-      form: {
+      body: qs.stringify({
         _tb_token_: items[0]._tb_token_,
         _input_charset: "utf-8",
         favType: 0,
         "favIdArr[]": items.map(({ id }) => id),
         operateType: "delete"
-      },
+      }),
       headers: {
+        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
         "X-Requested-With": "XMLHttpRequest",
         Referer:
           "https://shoucang.taobao.com/shop_collect_list.htm?spm=a21bo.2017.1997525053.3.5af911d930HH1R"

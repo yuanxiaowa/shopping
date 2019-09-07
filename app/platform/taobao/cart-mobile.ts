@@ -1,6 +1,7 @@
 import { requestData } from "./tools";
 import setting from "./setting";
 import { getGoodsInfo } from "./goods-mobile";
+import { jar } from "../../common/config";
 
 export interface CartItemBase {
   id: string;

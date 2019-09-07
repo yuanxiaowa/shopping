@@ -37,6 +37,7 @@ import { jingDongComment } from "./comment";
 import { getShopJindou, getStoreCollection, delStoreCollection } from "./store";
 import { jingDongOrder } from "./order";
 import { login, loginAction } from "./member";
+import setting from "./setting";
 
 export class Jingdong extends AutoShop {
   state_other_urls = [
@@ -50,8 +51,9 @@ export class Jingdong extends AutoShop {
       name: "jingdong",
       login_url:
         "https://wq.jd.com/mlogin/mpage/Login?rurl=https%3A%2F%2Fwqs.jd.com%2Fevent%2Fpromote%2Fmobile8%2Findex.shtml%3Fptag%3D17036.106.1%26ad_od%3D4%26cu%3Dtrue%26cu%3Dtrue%26utm_source%3Dkong%26utm_medium%3Djingfen%26utm_campaign%3Dt_2011246109_%26utm_term%3D5adc74e4969b47088e630d31139d99f1%26scpos%3D%23st%3D911",
-      state_url:
-        "https://home.m.jd.com/myJd/newhome.action?sid=a0726f04feb43ee99a9f7a4af7c605a3",
+      state_urls: [
+        "https://home.m.jd.com/myJd/newhome.action?sid=a0726f04feb43ee99a9f7a4af7c605a3"
+      ],
       handlers: jingdongHandlers,
       // https://m.jr.jd.com/member/rightsCenter/?cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=4fa157535d65429cbdd4a80e012d3f86#/
       coupon_handlers: jingdongCouponHandlers
@@ -95,7 +97,7 @@ export class Jingdong extends AutoShop {
     // 2:待收货 3:全部 5:已取消 6:已完成 7:有效订单 8:待评价
     // return getCommentList(data.type, data.page);
     // var page = await newPage();
-    var text = await this.req.get(
+    var text = await setting.req.get(
       `https://club.jd.com/myJdcomments/myJdcomment.action?sort=0&page=${data.page}`
     );
     // var text = await page.content();
@@ -195,7 +197,7 @@ export class Jingdong extends AutoShop {
   onFirstLogin() {
     getShopJindou();
     // getVideoHongbao();
-    this.req.get("https://vip.jd.com/sign/index");
+    setting.req.get("https://vip.jd.com/sign/index");
     getCouponCenterQuanpinList().then(async couponList => {
       for (let item of couponList) {
         await getCouponCenterQuanpin(item.key).then(console.log);
@@ -205,6 +207,6 @@ export class Jingdong extends AutoShop {
   }
 
   onAfterLogin() {
-    setReq(this.req, this.cookie);
+    setReq();
   }
 }

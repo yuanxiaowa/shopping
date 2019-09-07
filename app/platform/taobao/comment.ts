@@ -13,7 +13,7 @@ export class TaobaoComment {
     var {
       data: { group, meta }
     } = await requestData(
-      "mtop.order.queryboughtlist",
+      "mtop.order.queryBoughtList",
       {
         appName: "tborder",
         appVersion: "1.0",

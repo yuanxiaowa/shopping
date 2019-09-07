@@ -8,7 +8,7 @@ import AutoShop from "../auto-shop";
 import { delay } from "../../../utils/tools";
 import { Page } from "puppeteer";
 import taobaoHandlers from "./handlers";
-import { resolveUrl } from "./tools";
+import { resolveUrl, setReq } from "./tools";
 import { newPage } from "../../../utils/page";
 import { readJSONSync } from "fs-extra";
 import { ArgBuyDirect, ArgCoudan } from "../struct";
@@ -45,8 +45,11 @@ export class Taobao extends AutoShop {
     super({
       name: "taobao",
       login_url: "https://login.taobao.com/member/login.jhtml",
-      state_url:
+      state_urls: [
         "https://main.m.taobao.com/mytaobao/index.html?spm=a215s.7406091.toolbar.i2",
+        "https://www.tmall.com/?spm=a220l.1.a2226n0.1.2eb57f33VEJPSZ",
+        "https://shoucang.taobao.com/item_collect.htm?spm=a220o.1000855.a2226mz.14.6dc03983D0Mtm6"
+      ],
       handlers: taobaoHandlers,
       coupon_handlers: taobaoCouponHandlers
     });
@@ -177,9 +180,9 @@ export class Taobao extends AutoShop {
   }
 
   onAfterLogin() {
-    bus_global.emit("taobao:cookie", this.req, this.cookie);
     setting.spm = `a1z0d.6639537.1997196601.${(Math.random() * 100) >>
       0}.412f7484UFYI5e`;
+    setReq();
   }
 
   async testOrder(args) {

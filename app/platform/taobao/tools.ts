@@ -6,10 +6,11 @@
  */
 import request = require("request-promise-native");
 import { newPage } from "../../../utils/page";
-import { logFileWrapper, getCookie } from "../../../utils/tools";
+import { logFileWrapper } from "../../../utils/tools";
 import signData from "./h";
 import bus_global from "../../common/bus";
 import setting from "./setting";
+import { jar } from "../../common/config";
 
 export async function resolveTaokouling(text: string) {
   var data: string = await request.post(
@@ -55,17 +56,16 @@ export function getGoodsUrl(itemId: string) {
   return `https://detail.m.tmall.com/item.htm?id=${itemId}`;
 }
 
-export function setReq(req: request.RequestPromiseAPI, _cookie: string) {
-  setting.cookie = _cookie;
-  setting.req = req.defaults({
-    headers: {
-      "user-agent":
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1"
-    }
-  });
+export function setReq() {
+  setting.token = getCookie("_m_h5_tk");
 }
 
-bus_global.on("taobao:cookie", setReq);
+export function getCookie(key: string) {
+  var item = jar
+    .getCookies("https://www.taobao.com")
+    .find(item => item.key === key);
+  return item ? item.value : "";
+}
 
 export async function requestData(
   api: string,
@@ -77,7 +77,7 @@ export async function requestData(
   var t = Date.now();
   var data_str = JSON.stringify(data);
   var form: any;
-  var token = getCookie("_m_h5_tk", setting.cookie);
+  var token = setting.token;
   token = token && token.split("_")![0];
   var qs: any = {
     jsv: "2.4.7",

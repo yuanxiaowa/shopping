@@ -5,6 +5,7 @@
  * @LastEditTime: 2019-08-26 14:57:11
  */
 import request = require("request-promise-native");
+import { global_req } from "../../common/config";
 
 interface Setting {
   req: request.RequestPromiseAPI;
@@ -15,7 +16,8 @@ interface Setting {
 
 const setting = <Setting>{
   eid: "",
-  fp: "0a2d744505998993736ee93c5880c826"
+  fp: "0a2d744505998993736ee93c5880c826",
+  req: global_req
 };
 
 export default setting;

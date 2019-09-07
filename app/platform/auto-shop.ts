@@ -4,26 +4,16 @@
  * @LastEditors: oudingy1in
  * @LastEditTime: 2019-09-03 16:26:49
  */
-import { RequestAPI, RequiredUriUrl, Response } from "request";
-import request = require("request-promise-native");
-import { RequestPromise, RequestPromiseOptions } from "request-promise-native";
-import { writeFile, ensureDir, readFileSync } from "fs-extra";
 import { Page } from "puppeteer";
-import { newPage, getPageCookie } from "../../utils/page";
-import iconv = require("iconv-lite");
-import cookieManager, { Cookie } from "../common/cookie-manager";
-import {
-  ArgBuyDirect,
-  ArgOrder,
-  ArgCartBuy,
-  ArgSearch,
-  ArgCoudan
-} from "./struct";
+import { newPage } from "../../utils/page";
+import { ArgBuyDirect, ArgCartBuy, ArgSearch, ArgCoudan } from "./struct";
+import { jar, global_req } from "../common/config";
+import { Cookie } from "tough-cookie";
 
 interface AutoShopOptions {
   name: string;
   ua?: string;
-  state_url: string;
+  state_urls: string[];
   login_url: string;
   handlers: Record<
     string,
@@ -44,9 +34,8 @@ interface AutoShopOptions {
 export default abstract class AutoShop implements AutoShopOptions {
   login_url!: string;
   name!: string;
-  ua =
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1";
-  state_url!: string;
+  ua?: string;
+  state_urls!: string[];
   handlers!: Record<
     string,
     {
@@ -54,50 +43,15 @@ export default abstract class AutoShop implements AutoShopOptions {
       handler(num: number, page: Page): Promise<any>;
     }
   >;
-  state_other_urls?: string[];
   coupon_handlers!: Record<
     string,
     { test(url: string): boolean; handler(url: string): Promise<any> }
   >;
-  req!: RequestAPI<RequestPromise<any>, RequestPromiseOptions, RequiredUriUrl>;
-  cookie!: string;
-  cookier!: Cookie;
   interval_check = 1000 * 60 * 60;
   onAfterLogin() {}
   constructor(data: AutoShopOptions) {
     Object.assign(this, data);
     this.init();
-  }
-  setCookie(cookie: string) {
-    this.cookie = cookie;
-    var opts: RequestPromiseOptions = {
-      headers: {
-        "Accept-Encoding": "br, gzip, deflate",
-        Cookie: cookie,
-        // Accept: '*/*',
-        "User-Agent": this.ua
-        // Referer: 'https://bean.m.jd.com/continuity/index',
-        // 'Accept-Language': 'en-us'
-      },
-      gzip: true,
-      encoding: null,
-      transform(body: any, { headers }: Response) {
-        var ctype = headers["content-type"]!;
-        if (/charset=([-\w]+)/i.test(ctype)) {
-          if (RegExp.$1 && RegExp.$1.toLowerCase() !== "utf-8") {
-            return iconv.decode(body, RegExp.$1);
-          }
-        }
-        if (body instanceof Buffer) {
-          return String(body);
-        }
-        return body;
-      },
-      jar: request.jar()
-    };
-    this.req = request.defaults(opts);
-    cookieManager[this.name].set(cookie);
-    this.onAfterLogin();
   }
   abstract resolveUrl(url: string): Promise<string>;
   async qiangquan(url: string): Promise<string | Page | undefined> {
@@ -156,7 +110,9 @@ export default abstract class AutoShop implements AutoShopOptions {
       await page.waitForNavigation({
         timeout: 0
       });
-      await page.goto(this.state_url);
+      for (let state_url of this.state_urls) {
+        await page.goto(state_url);
+      }
       cb && cb();
       this.is_prev_login = true;
     })();
@@ -180,7 +136,7 @@ export default abstract class AutoShop implements AutoShopOptions {
   }
   private async preserveState() {
     var page = await newPage();
-    var logined = await this.checkUrl(this.state_url, page);
+    var logined = await this.checkUrl(this.state_urls[0], page);
     setTimeout(this.preserveState.bind(this), this.interval_check);
     if (!logined) {
       try {
@@ -197,33 +153,52 @@ export default abstract class AutoShop implements AutoShopOptions {
         return;
       }
     }
-    await page.goto(this.state_url);
-    if (this.state_other_urls) {
-      for (let url of this.state_other_urls) {
-        await page.goto(url);
-      }
-    }
-    this.setCookie(await getPageCookie(page));
+    // await page.goto(this.state_url);
+    // console.log(await page.cookies());
+    // if (this.state_other_urls) {
+    //   for (let url of this.state_other_urls) {
+    //     await page.goto(url);
+    //   }
+    // }
+    await this.setDatas(page);
     await page.close();
   }
-  init() {
-    this.cookier = cookieManager[this.name];
-    this.setCookie(this.cookier.get());
-    return ensureDir(".data/" + this.name);
+  setCookies(cookies: any[], url: string) {
+    var t = new Date("2018-12-31 23:59:59");
+    cookies.forEach(item => {
+      jar.setCookie(
+        new Cookie({
+          key: item.name,
+          value: item.value,
+          domain: item.domain,
+          path: item.path,
+          // expires: item.expires < t ? undefined : new Date(item.expires),
+          httpOnly: item.httpOnly,
+          secure: item.secure
+        }).toString(),
+        url
+      );
+    });
   }
+  init() {}
   async checkStatus() {
     var page = await newPage();
-    var logined = await this.checkUrl(this.state_url, page);
+    var logined = await this.checkUrl(this.state_urls[0], page);
     var p: any;
     if (!logined) {
       p = await this.login(page);
     } else {
-      (async () => {
-        await page.goto(this.state_url);
-        this.setCookie(await getPageCookie(page));
-        await page.close();
-      })();
+      this.setDatas(page).then(() => page.close());
     }
     return p;
+  }
+
+  async setDatas(page: Page) {
+    for (let state_url of this.state_urls) {
+      await page.goto(state_url);
+      var cookies = await page.cookies();
+      this.setCookies(cookies, page.url());
+    }
+    this.onAfterLogin();
   }
 }

@@ -5711,13 +5711,13 @@ pumpify@^1.3.5:
     inherits "^2.0.3"
     pump "^2.0.0"
 
+punycode@>=0.2.0, punycode@^2.1.0, punycode@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.npm.taobao.org/punycode/download/punycode-2.1.1.tgz#b58b010ac40c22c5657616c8d2c2c02c7bf479ec"
+
 punycode@^1.4.1:
   version "1.4.1"
   resolved "https://registry.npm.taobao.org/punycode/download/punycode-1.4.1.tgz#c0d5a63b2718800ad8e1eb0fa5269c84dd41845e"
-
-punycode@^2.1.0, punycode@^2.1.1:
-  version "2.1.1"
-  resolved "https://registry.npm.taobao.org/punycode/download/punycode-2.1.1.tgz#b58b010ac40c22c5657616c8d2c2c02c7bf479ec"
 
 puppeteer-chromium-resolver@^1.0.12:
   version "1.0.12"
@@ -6647,12 +6647,24 @@ toidentifier@1.0.0:
   version "1.0.0"
   resolved "https://registry.npm.taobao.org/toidentifier/download/toidentifier-1.0.0.tgz#7e1be3470f1e77948bc43d94a3c8f4d7752ba553"
 
+tough-cookie-filestore@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.npm.taobao.org/tough-cookie-filestore/download/tough-cookie-filestore-0.0.1.tgz#0bf2308ed293a50ba0733ed7d6289601485570b6"
+  dependencies:
+    tough-cookie "~0.12.1"
+
 tough-cookie@^2.3.3, tough-cookie@^2.3.4:
   version "2.5.0"
   resolved "https://registry.npm.taobao.org/tough-cookie/download/tough-cookie-2.5.0.tgz#cd9fb2a0aa1d5a12b473bd9fb96fa3dcff65ade2"
   dependencies:
     psl "^1.1.28"
     punycode "^2.1.1"
+
+tough-cookie@~0.12.1:
+  version "0.12.1"
+  resolved "https://registry.npm.taobao.org/tough-cookie/download/tough-cookie-0.12.1.tgz#8220c7e21abd5b13d96804254bd5a81ebf2c7d62"
+  dependencies:
+    punycode ">=0.2.0"
 
 tough-cookie@~2.4.3:
   version "2.4.3"
@@ -6945,10 +6957,6 @@ verror@1.10.0:
     assert-plus "^1.0.0"
     core-util-is "1.0.2"
     extsprintf "^1.2.0"
-
-vue-router@^3.1.2:
-  version "3.1.2"
-  resolved "https://registry.npm.taobao.org/vue-router/download/vue-router-3.1.2.tgz#2e0904703545dabdd42b2b7a2e617f02f99a1969"
 
 w3c-hr-time@^1.0.1:
   version "1.0.1"

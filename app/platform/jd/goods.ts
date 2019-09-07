@@ -98,9 +98,7 @@ export async function getGoodsList(args: ArgSearch): Promise<any> {
   };
   var data = await reqJsonpData(
     "https://so.m.jd.com/list/couponSearch._m2wq_list",
-    {
-      qs: _qs
-    }
+    _qs
   );
   var items = data.searchm.Paragraph.map(item => {
     return Object.assign(

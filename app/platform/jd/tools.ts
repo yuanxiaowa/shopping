@@ -23,6 +23,8 @@ import {
 import { RequestAPI, RequiredUriUrl } from "request";
 import { getGoodsInfo } from "./goods";
 import setting, { setSetting } from "./setting";
+import { jar, UA } from "../../common/config";
+import bus_global from "../../common/bus";
 
 export const executer = createScheduler(3000);
 
@@ -71,17 +73,13 @@ export function getBaseData() {
   };
 }
 
-export function setReq(
-  _req: RequestAPI<
-    request.RequestPromise<any>,
-    request.RequestPromiseOptions,
-    RequiredUriUrl
-  >,
-  _cookie: string
-) {
-  setSetting("cookie", _cookie);
-  setSetting("eid", getCookie("3AB9D23F7A4B3C9B"));
-  setSetting("req", _req);
+export function setReq() {
+  setSetting(
+    "eid",
+    jar
+      .getCookies("https://www.jd.com")
+      .find(item => item.key === "3AB9D23F7A4B3C9B")!.value
+  );
 }
 
 export function goGetCookie(url: string) {
@@ -246,12 +244,13 @@ export async function reqJsonpData(url: string, qs?: any) {
     qs,
     headers: {
       Referer:
-        "https://wqs.jd.com/my/fav/goods_fav.shtml?ptag=7155.1.8&sceneval=2"
+        "https://so.m.jd.com/list/couponSearch.action?ptag=37070.3.2&couponbatch=248760090&coupon_shopid=0",
+      "user-agent": UA.wap
     }
   });
-  var { iRet, errMsg, data } = getJsonpData(text);
-  if (Number(iRet) !== 0) {
+  var { iRet, retcode, errMsg, data } = getJsonpData(text);
+  /* if (Number(iRet) !== 0) {
     throw new Error(errMsg);
-  }
+  } */
   return data;
 }

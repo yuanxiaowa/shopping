@@ -17,6 +17,7 @@ var delayMap: Record<
       time: string;
       platform: string;
       comment: string;
+      url?: string;
     };
     cancel(): void;
   }
@@ -30,9 +31,19 @@ function delay(
     time: string;
     platform: string;
     comment: string;
+    url?: string;
   }
 ) {
   return new Promise<void>((resolve, reject) => {
+    if (typeof data.url === "string") {
+      for (let key in delayMap) {
+        if (delayMap[key].data.url === data.url) {
+          return reject(
+            "已存在该任务 " + JSON.stringify(data.comment, null, 2)
+          );
+        }
+      }
+    }
     var id = counter++;
     var timerId = setTimeout(() => {
       delete delayMap[id];
@@ -191,7 +202,8 @@ export default class ShopController extends Controller {
           type: `直接购买`,
           time: t,
           platform,
-          comment: data._comment
+          comment: data._comment,
+          url: data.url
         });
         data.seckill = true;
         ins.buyDirect(data, p);

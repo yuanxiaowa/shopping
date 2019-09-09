@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-12 15:37:17
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-02 10:20:29
+ * @LastEditTime: 2019-09-09 18:09:52
  */
 import {
   logFile,
@@ -356,6 +356,8 @@ export async function obtainActivityCoupon(data: {
         obtainActivityCoupon(data)
       );
     })();
+  } else {
+    console.log(resData.subCodeMsg, resData.subCode);
   }
   return resData;
 }

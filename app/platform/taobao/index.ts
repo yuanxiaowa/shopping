@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-03 16:26:57
+ * @LastEditTime: 2019-09-09 18:23:42
  */
 import AutoShop from "../auto-shop";
 import { delay } from "../../../utils/tools";
@@ -47,8 +47,7 @@ export class Taobao extends AutoShop {
       login_url: "https://login.taobao.com/member/login.jhtml",
       state_urls: [
         "https://main.m.taobao.com/mytaobao/index.html?spm=a215s.7406091.toolbar.i2",
-        "https://www.tmall.com/?spm=a220l.1.a2226n0.1.2eb57f33VEJPSZ",
-        "https://shoucang.taobao.com/item_collect.htm?spm=a220o.1000855.a2226mz.14.6dc03983D0Mtm6"
+        "https://www.tmall.com/?spm=a220l.1.a2226n0.1.2eb57f33VEJPSZ"
       ],
       handlers: taobaoHandlers,
       coupon_handlers: taobaoCouponHandlers

@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-12 15:34:45
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-06 17:05:46
+ * @LastEditTime: 2019-09-09 18:19:45
  */
 import request = require("request-promise-native");
 
@@ -97,21 +97,13 @@ export function time33(str: string) {
   return hash & 0x7fffffff;
 }
 export function getCookie(name: string) {
-  var reg = new RegExp("(^| )" + name + "(?:=([^;]*))?(;|$)"),
-    val = setting.cookie.match(reg);
-  if (!val || !val[2]) {
-    return "";
+  var item = jar
+    .getCookies("https://www.jd.com/")
+    .find(item => item.key === name);
+  if (item) {
+    return item.value;
   }
-  var res = val[2];
-  try {
-    if (/(%[0-9A-F]{2}){2,}/.test(res)) {
-      return decodeURIComponent(res);
-    } else {
-      return unescape(res);
-    }
-  } catch (e) {
-    return unescape(res);
-  }
+  return "";
 }
 
 export function getUuid() {

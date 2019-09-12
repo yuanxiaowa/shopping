@@ -37,8 +37,8 @@ export class JingDongOrder {
     var data = await getGoodsInfo(skuId);
     if (args.diejia) {
       if (args.quantity === 1) {
-        let num = (199 / data.price.p) >> 0;
-        if (199 - num * data.price.p > 1) {
+        let num = (args.diejia / data.price.p) >> 0;
+        if (args.diejia - num * data.price.p > 1) {
           num++;
         }
         args.quantity = num;

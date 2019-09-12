@@ -52,11 +52,15 @@ export class TaobaoOrderPc {
     try {
       var type = "tmall";
       var addr_url = "https:";
-      if (form.etm === "" && detail.isHkItem) {
-        addr_url += tradeConfig[tradeType];
+      if (form.etm === "") {
+        if (detail.isHkItem) {
+          addr_url += tradeConfig[tradeType];
+        } else {
+          addr_url += tradeConfig[1];
+          type = "taobao";
+        }
       } else {
-        addr_url += tradeConfig[1];
-        type = "taobao";
+        addr_url += tradeConfig[2];
       }
       if (arg.jianlou) {
         this.waitForStock(

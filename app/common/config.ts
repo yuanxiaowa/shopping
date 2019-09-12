@@ -1,7 +1,13 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-07-01 09:10:22
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-07-01 09:10:22
+ */
 import FileCookieStore = require("tough-cookie-filestore");
 import request = require("request-promise-native");
 import iconv = require("iconv-lite");
-import { ensureDirSync, ensureFileSync } from "fs-extra";
+import { ensureDirSync, ensureFileSync, writeFileSync } from "fs-extra";
 
 export const config = {
   isSubmitOrder: true
@@ -19,8 +25,10 @@ export const DT = {
   jingdong: 0
 };
 
-ensureFileSync(".data/_cookie.txt");
-export const jar = request.jar(new FileCookieStore(".data/_cookie.txt"));
+var filename = ".data/_cookie.txt";
+writeFileSync(filename, "");
+ensureFileSync(filename);
+export const jar = request.jar(new FileCookieStore(filename));
 
 export const global_req = request.defaults({
   jar,

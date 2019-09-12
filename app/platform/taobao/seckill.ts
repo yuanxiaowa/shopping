@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-08-26 09:17:48
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-09-12 10:11:30
+ */
 import moment = require("moment");
 import { requestData } from "./tools";
 import setting from "./setting";
@@ -50,14 +56,37 @@ export async function seckillList(url: string) {
   } else {
     // https://pages.tmall.com/wow/heihe/act/0820try?wh_biz=tm&ali_trackid=&ttid=700407%40taobao_android_8.8.0&e=sAsX_E3tJPiE5IjwFinSo3L6giCjJea-weShZufnUyzEva656Um3Ys7jbpc07vXg_piy-bl83AJfnG9gZa3lEIRqxKSGsgCT8sviUM61dt2gxEj7ajbEb4gLMZYNRhg2HXKHH0u77i-I6M_vqqSeLITsM14S2xgD1l7GcW5FttZw2qH-L52L1aTWVSTo88aB5YQ_egZY-KdaQJhxUPUeEtKYMBXg69krrlYyo_QbwE_DG_1N5hlzNg&type=2&tk_cps_param=127911237&tkFlag=0&tk_cps_ut=2&sourceType=other&suid=97d48507-afd2-4516-aa0a-69ca4f3deafe&ut_sk=1.XK%2BQ06Gx8KwDAHyGAUJXIrJu_21646297_1566366482399.Copy.ushare1103&un=04ec1ab5583d2c369eedd86203cf18d8&share_crt_v=1&sp_tk=77+ldGxJUFk5VFdLM2Hvv6U=&ali_trackid=2:mm_130931909_605300319_109124700033:1566374448_118_919207070
     let html = await setting.req.get(url);
-    let text = /\{"pageInfo":.*/.exec(html)![0];
-    let { data, modules } = JSON.parse(text);
-    let { dataId } = modules.find(
+    let pageInfo = /\{"pageInfo":.*/.exec(html);
+    let resData: any;
+    if (!pageInfo) {
+      let { resultValue } = await requestData(
+        "mtop.tmall.kangaroo.core.service.route.PageRecommendService",
+        {
+          url,
+          cookie: "sm4=320506;hng=CN|zh-CN|CNY|156",
+          schemaVersion: "44785e93-9e98-4fa8-83b4-75b330c76fce",
+          device: "phone",
+          backupParams: "device"
+        },
+        "get",
+        "1.0"
+      );
+      resData = resultValue;
+    } else {
+      resData = JSON.parse(pageInfo[0]);
+    }
+    let { data, modules } = resData;
+    let _item = modules.find(
       item => item.name === "pmod-zebra-brand-on-time-wb"
     );
-    let {
-      params: { itemIds }
-    } = data[dataId];
+    let dataId: string;
+    if (!pageInfo) {
+      dataId = _item.uuid;
+    } else {
+      dataId = _item.dataId;
+    }
+    let { params } = data[dataId];
+    let itemIds: string[] = params.itemIds;
     let res = await requestData(
       "mtop.ju.seiya.selection.get",
       {

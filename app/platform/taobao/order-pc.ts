@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-07 09:14:33
+ * @LastEditTime: 2019-09-12 22:37:39
  */
 import {
   delay,
@@ -519,7 +519,7 @@ export class TaobaoOrderPc {
         this.submitOrder(args, type, retryCount + 1);
       }
     })();
-    return delay(50);
+    return delay(100);
   }
 }
 

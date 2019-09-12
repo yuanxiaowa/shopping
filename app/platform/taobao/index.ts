@@ -12,9 +12,7 @@ import { resolveUrl, setReq } from "./tools";
 import { newPage } from "../../../utils/page";
 import { readJSONSync } from "fs-extra";
 import { ArgBuyDirect, ArgCoudan } from "../struct";
-import cheerio = require("cheerio");
 import taobaoCouponHandlers from "./coupon-map";
-import bus_global from "../../common/bus";
 import { getCartList as getCartListFromPc } from "./cart-pc";
 import {
   getCartList as getCartListFromMobile,

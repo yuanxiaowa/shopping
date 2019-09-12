@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-12 15:37:17
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-09 18:09:52
+ * @LastEditTime: 2019-09-11 13:55:50
  */
 import {
   logFile,
@@ -259,7 +259,10 @@ export async function queryActivityCoupons(url: string) {
       .filter(key => data[key].couponList)
       .map(key =>
         data[key].couponList
-          .filter(({ status }) => status === "0" || status === "5")
+          .filter(
+            ({ status }) =>
+              typeof status === "undefined" || status === "0" || status === "5"
+          )
           .map(item =>
             Object.assign(item, {
               activityId,
@@ -325,8 +328,15 @@ export async function obtainActivityCoupon(data: {
   // A7:您来早了，活动还没开始哟，请稍后再来~
   // D2:本时段优惠券已抢完，请10:00再来吧！
   // A1:领取成功！感谢您的参与，祝您购物愉快~
+  // A15:此券已经被抢完了，下次记得早点来哟~
+  // A39:很抱歉，只有专属用户可以领取哦，看看其他活动吧！
+  // A12:您已经参加过此活动，别太贪心哟，下次再来~
   console.log(data.discount + "," + data.limit);
-  if (resData.subCode === "A7" || resData.subCode === "A28") {
+  if (
+    resData.subCode === "A7" ||
+    resData.subCode === "A28" ||
+    resData.subCode === "A15"
+  ) {
     console.log(resData.subCodeMsg);
     (() => {
       let hours = ["08", "10", "12", "14", "16", "18", "20"];

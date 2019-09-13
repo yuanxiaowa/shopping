@@ -234,10 +234,7 @@ export async function queryActivityCoupons(url: string) {
     data = data.activityData.floorList;
   }
   let activityId = /active\/(\w+)/.exec(url)![1];
-  let simpleCoupons = arr[2].match(/\/\/jrmkt\.jd\.com\/[^"]+/g) || [];
-  simpleCoupons = simpleCoupons.concat(
-    arr[2].match(/\/\/btmkt\.jd\.com\/[^"]+/g) || []
-  );
+  let simpleCoupons = arr[2].match(/\/\/(jrmkt|btmkt)\.jd\.com\/[^"]+/g) || [];
   simpleCoupons = simpleCoupons.map(url => `https:${url}`);
   let items: {
     cpId: string;

@@ -456,11 +456,13 @@ export class TaobaoOrderPc {
                   item.fields.value = taobao.mobile;
                 } else if (item.tag === "itemInfoPC") {
                   let { priceInfo, quantity } = item.fields;
-                  priceInfo.valueStyles.bold = true;
-                  quantity.min = +quantity.min;
-                  quantity.quantity = +quantity.quantity;
-                  quantity.step = +quantity.step;
-                  quantity.max = +quantity.max;
+                  if (quantity) {
+                    priceInfo.valueStyles.bold = true;
+                    quantity.min = +quantity.min;
+                    quantity.quantity = +quantity.quantity;
+                    quantity.step = +quantity.step;
+                    quantity.max = +quantity.max;
+                  }
                 }
                 state[name] = item;
               }

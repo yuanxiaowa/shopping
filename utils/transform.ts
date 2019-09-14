@@ -36,4 +36,4 @@ function getSortedData(data) {
 }
 
 handleTextData("data.txt");
-handleFormData("data2.json");
+// handleFormData("data2.json");

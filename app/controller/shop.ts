@@ -116,9 +116,8 @@ export default class ShopController extends Controller {
         });
         data.seckill = true;
         (async () => {
-          await p;
           console.log(platform, "开始从购物车下单");
-          await app[platform].cartBuy(data);
+          await app[platform].cartBuy(data, p);
         })();
         ctx.body = {
           code: 0,

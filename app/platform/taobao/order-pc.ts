@@ -17,6 +17,7 @@ import { config } from "../../common/config";
 import moment = require("moment");
 import { getGoodsInfo, getStock } from "./goods-pc";
 import iconv = require("iconv-lite");
+import { newPage } from "../../../utils/page";
 const { taobao } = require("../../../.data/user.json");
 
 export class TaobaoOrderPc {
@@ -112,18 +113,22 @@ export class TaobaoOrderPc {
     }
   }
 
-  async cartBuy(args: {
-    items: {
-      sellerId: string;
-      cartId: string;
-      skuId: string;
-      itemId: string;
-      quantity: number;
-      createTime: string;
-      attr: string;
-      toBuy: string;
-    }[];
-  }) {
+  async cartBuy(
+    args: {
+      items: {
+        sellerId: string;
+        cartId: string;
+        skuId: string;
+        itemId: string;
+        quantity: number;
+        createTime: string;
+        attr: string;
+        toBuy: string;
+      }[];
+      from_browser?: boolean;
+    },
+    p?: Promise<void>
+  ) {
     var goods = args.items;
     var cartIdStr = goods.map(({ cartId }) => cartId).join(",");
     var sellerIdStr = [...new Set(goods.map(({ sellerId }) => sellerId))].join(
@@ -180,6 +185,20 @@ export class TaobaoOrderPc {
         addr_url: `https://buy.tmall.com/order/confirm_order.htm?spm=a1z0d.6639537.0.0.undefined`,
         Referer: `https://cart.taobao.com/cart.htm?spm=a220o.1000855.a2226mz.12.5ada2389fIdDSp&from=btop`
       };
+    }
+    if (args.from_browser) {
+      return this.submitOrderFromBrowser(
+        {
+          data,
+          other: {},
+          ...args
+        },
+        type,
+        p
+      );
+    }
+    if (p) {
+      await p;
     }
     return this.submitOrder(
       {
@@ -480,7 +499,7 @@ export class TaobaoOrderPc {
     }
     (async () => {
       try {
-        let p = setting.req.post(submit_url, {
+        let p = require("request-promise-native").post(submit_url, {
           qs: qs_data,
           form: formData,
           headers: {
@@ -493,8 +512,10 @@ export class TaobaoOrderPc {
             "Accept-Encoding": "gzip, deflate, br",
             "Accept-Language": "zh-CN,zh;q=0.9",
             "Upgrade-Insecure-Requests": "1",
-            "cache-control": "no-cache",
-            pragma: "no-cache"
+            // "cache-control": "no-cache",
+            // pragma: "no-cache",
+            // cookie:
+            //   "cna=P1uzFa+lx0UCAXLYXz0zDpJR; sm4=320506; ubn=p; ucn=center; lid=yuanxiaowaer; hng=CN%7Czh-CN%7CCNY%7C156; enc=C2JKJTyVi5rv9fZzGrCsctbG7wED%2F74f7JEftmCzqaZEOd69vwlxaQDdSe8cBD9xeulaoUtmhfL98EtXGDhB9Q%3D%3D; _bl_uid=g1jsFzn9ua9198531qp0vO6i1e82; dnk=yuanxiaowaer; uc1=tag=8&cookie14=UoTaECDSKJYHzg%3D%3D&pas=0&cookie21=WqG3DMC9Fbxq&cookie15=W5iHLLyFOGW7aA%3D%3D&cookie16=V32FPkk%2FxXMk5UvIbNtImtMfJQ%3D%3D&lng=zh_CN&existShop=false; uc3=nk2=Gh6VT7X9cESW5Bav&id2=W80qN4V3GqCv&lg2=VFC%2FuZ9ayeYq2g%3D%3D&vt3=F8dByuKwBA1bxA20fWg%3D; tracknick=yuanxiaowaer; uc4=nk4=0%40GJJeVHtXcnJImf8jH6j1S0uANAXEVLQ%3D&id4=0%40We5hgrFpKEIMRVD3AVPA1HU0W9M%3D; _l_g_=Ug%3D%3D; unb=842405758; lgc=yuanxiaowaer; cookie1=Vv6bWmeYv86mmEqDzTiNqknTnpFlk5e11%2BTyi5eXquQ%3D; login=true; cookie17=W80qN4V3GqCv; cookie2=18c331700a85e415ab2c3961e41bb03c; _nk_=yuanxiaowaer; t=08dd795cd89e14737715e44ab9a3c605; sg=r8d; csg=869f8a25; _tb_token_=83f0e663af53; l=cBTWs5nRqrQ6DRmEKOCZlurza77TbIRxBuPzaNbMi_5hY6L_V57OkycQ4Fp6DfXdtzLBq2XfR429-etbj8pTY-bwDFec.; isg=BBoatHtyE2oy1J-V1BHw47oCa8Y8S54lUmGI7SST3a14l7rRDNshNXJtZiquFha9"
           },
           followAllRedirects: true
         });
@@ -529,6 +550,59 @@ export class TaobaoOrderPc {
     })();
     return delay(50);
   }
+
+  async submitOrderFromBrowser(
+    args: ArgOrder<{
+      form: Record<string, any>;
+      addr_url: string;
+      Referer: string;
+    }>,
+    type: string,
+    p?: Promise<void>
+  ) {
+    var {
+      data: { form, addr_url, Referer }
+    } = args;
+    var page = await newPage();
+    await page.setRequestInterception(true);
+    page.on("request", request => {
+      var type = request.resourceType();
+      if (type === "image" || type === "stylesheet" || type === "font") {
+        request.respond({
+          body: ""
+        });
+      } else {
+        request.continue();
+      }
+    });
+    await page.goto(Referer);
+    await page.evaluate(createForm, form, addr_url);
+    if (p) {
+      await p;
+    }
+    page.evaluate(() => {
+      document.querySelector<HTMLFormElement>("#_form")!.submit();
+    });
+    await page.waitForNavigation();
+    page.click(".go-btn");
+    await page.waitForNavigation();
+    // await page.evaluate(() => {})
+    await page.type("#payPassword_rsainput", "199202");
+    await page.click("#J_authSubmit");
+  }
+}
+
+function createForm(data, action) {
+  var form = document.createElement("form");
+  form.action = action;
+  form.method = "post";
+  Object.keys(data).forEach(key => {
+    var input = document.createElement("input");
+    input.name = key;
+    input.value = data[key];
+    form.appendChild(input);
+  });
+  document.body.appendChild(form);
 }
 
 export const taobaoOrderPc = new TaobaoOrderPc();

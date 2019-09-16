@@ -79,7 +79,10 @@ export class JingDongOrder {
     }
     return next();
   }
-  async cartBuy(data: any) {
+  async cartBuy(data: any, p?: Promise<void>) {
+    if (p) {
+      await p
+    }
     return this.submitOrder(
       Object.assign(
         {

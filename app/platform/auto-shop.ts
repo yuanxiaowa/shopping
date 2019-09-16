@@ -63,7 +63,7 @@ export default abstract class AutoShop implements AutoShopOptions {
   }
   abstract coudan(data: ArgCoudan): Promise<any>;
   abstract cartList(args: { from_pc: boolean }): Promise<any>;
-  abstract cartBuy(data: ArgCartBuy): Promise<any>;
+  abstract cartBuy(data: ArgCartBuy, p?: Promise<void>): Promise<any>;
   async cartToggle(data: { items: any; checked: boolean }): Promise<any> {}
   async cartToggleAll(data: any): Promise<any> {}
   abstract cartAdd(data: any): Promise<any>;
@@ -186,7 +186,7 @@ export default abstract class AutoShop implements AutoShopOptions {
     var logined = await this.checkUrl(this.state_urls[0], page);
     var p: any;
     if (!logined) {
-      p = await this.login(page);
+      p = await this.login(page, () => this.setDatas(page).then(() => page.close()));
     } else {
       this.setDatas(page).then(() => page.close());
     }

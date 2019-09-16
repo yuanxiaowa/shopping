@@ -271,7 +271,10 @@ export class TaobaoOrderMobile {
     return this.cartBuy({ items: datas });
   }
 
-  cartBuy(args: { items: any[] }) {
+  async cartBuy(args: { items: any[] }, p?: Promise<void>) {
+    if (p) {
+      await p
+    }
     return this.submitOrder({
       data: {
         buyNow: "false",

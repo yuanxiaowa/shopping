@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-09 18:23:42
+ * @LastEditTime: 2019-09-16 11:46:44
  */
 import AutoShop from "../auto-shop";
 import { delay } from "../../../utils/tools";
@@ -10,7 +10,7 @@ import { Page } from "puppeteer";
 import taobaoHandlers from "./handlers";
 import { resolveUrl, setReq } from "./tools";
 import { newPage } from "../../../utils/page";
-import { readJSONSync } from "fs-extra";
+import { readJSONSync, readFileSync } from "fs-extra";
 import { ArgBuyDirect, ArgCoudan } from "../struct";
 import taobaoCouponHandlers from "./coupon-map";
 import { getCartList as getCartListFromPc } from "./cart-pc";
@@ -34,6 +34,8 @@ import { sixtyCourseList, sixtyCourseReply } from "./activity";
 import { seckillList } from "./seckill";
 import { getStoreCollection, delStoreCollection } from "./store";
 import { getGoodsCollection, delGoodsCollection } from "./goods-pc";
+import path = require("path");
+import iconv = require("iconv-lite");
 
 export class Taobao extends AutoShop {
   mobile = true;
@@ -183,27 +185,40 @@ export class Taobao extends AutoShop {
   }
 
   async testOrder(args) {
+    var dirname = path.dirname(args.file);
+    var body: any;
+    var url: string;
+    var test_fn: Function;
+    if (path.basename(dirname).startsWith("pc-")) {
+      body = readFileSync(args.file, "utf8");
+      let i = body.indexOf("\n");
+      url = body.substring(0, i);
+      body = iconv.encode(body.substring(i), "gb2312");
+      test_fn = _url => _url === url;
+    } else {
+      body = JSON.stringify({
+        api: RegExp.$1,
+        ret: ["SUCCESS::调用成功"],
+        data: readJSONSync(args.file)
+      });
+      url =
+        "https://buy.m.tmall.com/order/confirm_order_wap.htm?enc=%E2%84%A2&itemId=538364857603&exParams=%7B%22addressId%22%3A%229607477385%22%2C%22etm%22%3A%22%22%7D&skuId=3471693791586&quantity=1&divisionCode=320583&userId=842405758&buyNow=true&_input_charset=utf-8&areaId=320583&addressId=9607477385&x-itemid=538364857603&x-uid=842405758";
+      test_fn = (url: string) =>
+        /\/(mtop.trade.buildorder.h5|mtop.trade.order.build.h5)\//.test(url);
+    }
     var page = await newPage();
     await page.setRequestInterception(true);
     page.on("request", e => {
-      if (
-        /\/(mtop.trade.buildorder.h5|mtop.trade.order.build.h5)\//.test(e.url())
-      ) {
+      if (test_fn(e.url())) {
         e.respond({
           status: 200,
-          body: JSON.stringify({
-            api: RegExp.$1,
-            ret: ["SUCCESS::调用成功"],
-            data: readJSONSync(args.file)
-          })
+          body
         });
       } else {
         e.continue();
       }
     });
-    page.goto(
-      "https://buy.m.tmall.com/order/confirm_order_wap.htm?enc=%E2%84%A2&itemId=538364857603&exParams=%7B%22addressId%22%3A%229607477385%22%2C%22etm%22%3A%22%22%7D&skuId=3471693791586&quantity=1&divisionCode=320583&userId=842405758&buyNow=true&_input_charset=utf-8&areaId=320583&addressId=9607477385&x-itemid=538364857603&x-uid=842405758"
-    );
+    page.goto(url);
     return;
   }
 

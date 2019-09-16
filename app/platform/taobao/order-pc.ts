@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-13 02:33:37
+ * @LastEditTime: 2019-09-16 11:23:56
  */
 import {
   delay,
@@ -177,7 +177,7 @@ export class TaobaoOrderPc {
           page_from: "cart",
           source_time: Date.now()
         },
-        addr_url: `https://buy.tmall.com/order/confirm_order.htm?spm=aa1z0d.6639537.0.0.undefined`,
+        addr_url: `https://buy.tmall.com/order/confirm_order.htm?spm=a1z0d.6639537.0.0.undefined`,
         Referer: `https://cart.taobao.com/cart.htm?spm=a220o.1000855.a2226mz.12.5ada2389fIdDSp&from=btop`
       };
     }
@@ -492,7 +492,9 @@ export class TaobaoOrderPc {
             "Sec-Fetch-Site": "same-origin",
             "Accept-Encoding": "gzip, deflate, br",
             "Accept-Language": "zh-CN,zh;q=0.9",
-            "Upgrade-Insecure-Requests": "1"
+            "Upgrade-Insecure-Requests": "1",
+            "cache-control": "no-cache",
+            pragma: "no-cache"
           },
           followAllRedirects: true
         });

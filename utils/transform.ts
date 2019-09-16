@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-09-13 02:33:00
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-09-13 02:33:00
+ */
 const fs = require("fs");
 const qs = require("querystring");
 
@@ -35,5 +41,5 @@ function getSortedData(data) {
     }, {});
 }
 
-handleTextData("data.txt");
-// handleFormData("data2.json");
+handleTextData("form_params.txt");
+handleFormData("my-params.json");

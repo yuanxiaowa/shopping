@@ -2,13 +2,14 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-23 09:46:53
+ * @LastEditTime: 2019-09-16 10:58:12
  */
 import puppeteer = require("puppeteer");
 import { Browser, Page } from "puppeteer";
 import resolver = require("puppeteer-chromium-resolver");
 import fs = require("fs-extra");
 import path = require("path");
+import { UA } from "../app/common/config";
 
 var browser: Browser;
 var defaultPage: Page;
@@ -51,6 +52,7 @@ export async function bootstrapBrowser() {
 
 export async function newPage() {
   var page = await browser.newPage();
+  page.setUserAgent(UA.pc);
   await page.setViewport({
     width: 400,
     height: 573

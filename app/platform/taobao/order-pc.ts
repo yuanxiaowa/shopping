@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-16 11:23:56
+ * @LastEditTime: 2019-09-17 18:50:47
  */
 import {
   delay,
@@ -499,7 +499,8 @@ export class TaobaoOrderPc {
     }
     (async () => {
       try {
-        let p = require("request-promise-native").post(submit_url, {
+        await delay(Math.min(1200 - time_diff, 800));
+        let p = setting.req.post(submit_url, {
           qs: qs_data,
           form: formData,
           headers: {
@@ -511,7 +512,7 @@ export class TaobaoOrderPc {
             "Sec-Fetch-Site": "same-origin",
             "Accept-Encoding": "gzip, deflate, br",
             "Accept-Language": "zh-CN,zh;q=0.9",
-            "Upgrade-Insecure-Requests": "1",
+            "Upgrade-Insecure-Requests": "1"
             // "cache-control": "no-cache",
             // pragma: "no-cache",
             // cookie:
@@ -566,6 +567,26 @@ export class TaobaoOrderPc {
     var page = await newPage();
     await page.setRequestInterception(true);
     page.on("request", request => {
+      if (
+        request
+          .url()
+          .startsWith(
+            "https://cashierstl.alipay.com/standard/fastpay/channelExtInfo.json"
+          )
+      ) {
+        (async () => {
+          await page.waitForSelector("#J_authSubmit");
+          await page.evaluate(() => {
+            var ele = document.querySelector<HTMLInputElement>(
+              "#payPassword_rsainput"
+            )!;
+            console.log(ele);
+            ele.value = "870092";
+          });
+          // await page.type("#payPassword_rsainput", "870092");
+          await page.click("#J_authSubmit");
+        })();
+      }
       var type = request.resourceType();
       if (type === "image" || type === "stylesheet" || type === "font") {
         request.respond({
@@ -581,14 +602,11 @@ export class TaobaoOrderPc {
       await p;
     }
     page.evaluate(() => {
-      document.querySelector<HTMLFormElement>("#_form")!.submit();
+      document.querySelector<HTMLFormElement>("#__form")!.submit();
     });
     await page.waitForNavigation();
+    await delay(30);
     page.click(".go-btn");
-    await page.waitForNavigation();
-    // await page.evaluate(() => {})
-    await page.type("#payPassword_rsainput", "199202");
-    await page.click("#J_authSubmit");
   }
 }
 
@@ -596,6 +614,7 @@ function createForm(data, action) {
   var form = document.createElement("form");
   form.action = action;
   form.method = "post";
+  form.id = "__form";
   Object.keys(data).forEach(key => {
     var input = document.createElement("input");
     input.name = key;

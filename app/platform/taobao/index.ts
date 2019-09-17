@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-16 11:46:44
+ * @LastEditTime: 2019-09-17 10:59:11
  */
 import AutoShop from "../auto-shop";
 import { delay } from "../../../utils/tools";
@@ -22,7 +22,7 @@ import {
 } from "./cart-mobile";
 import { taobaoComment } from "./comment";
 import { taobaoOrderMobile } from "./order-mobile";
-import setting from "./setting";
+import setting, { setCookie } from "./setting";
 import { taobaoOrderPc } from "./order-pc";
 import {
   getGoodsInfo,
@@ -272,5 +272,15 @@ export class Taobao extends AutoShop {
     page.evaluate(() => {
       document.querySelector<HTMLInputElement>(".answer-input")!.focus();
     });
+  }
+  setCookies(cookies: any[], url: string) {
+    super.setCookies(cookies, url);
+    if (url.includes(".taobao.com")) {
+      setCookie(
+        cookies
+          .map(cookie => cookie.name + "=" + encodeURIComponent(cookie.value))
+          .join("; ")
+      );
+    }
   }
 }

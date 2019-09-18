@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-17 18:50:47
+ * @LastEditTime: 2019-09-18 23:41:11
  */
 import {
   delay,
@@ -499,7 +499,7 @@ export class TaobaoOrderPc {
     }
     (async () => {
       try {
-        await delay(Math.min(1200 - time_diff, 800));
+        await delay(Math.min(1200 - time_diff, 750));
         let p = setting.req.post(submit_url, {
           qs: qs_data,
           form: formData,
@@ -567,26 +567,26 @@ export class TaobaoOrderPc {
     var page = await newPage();
     await page.setRequestInterception(true);
     page.on("request", request => {
-      if (
-        request
-          .url()
-          .startsWith(
-            "https://cashierstl.alipay.com/standard/fastpay/channelExtInfo.json"
-          )
-      ) {
-        (async () => {
-          await page.waitForSelector("#J_authSubmit");
-          await page.evaluate(() => {
-            var ele = document.querySelector<HTMLInputElement>(
-              "#payPassword_rsainput"
-            )!;
-            console.log(ele);
-            ele.value = "870092";
-          });
-          // await page.type("#payPassword_rsainput", "870092");
-          await page.click("#J_authSubmit");
-        })();
-      }
+      // if (
+      //   request
+      //     .url()
+      //     .startsWith(
+      //       "https://cashierstl.alipay.com/standard/fastpay/channelExtInfo.json"
+      //     )
+      // ) {
+      //   (async () => {
+      //     await page.waitForSelector("#J_authSubmit");
+      //     await page.evaluate(() => {
+      //       var ele = document.querySelector<HTMLInputElement>(
+      //         "#payPassword_rsainput"
+      //       )!;
+      //       console.log(ele);
+      //       ele.value = "870092";
+      //     });
+      //     // await page.type("#payPassword_rsainput", "870092");
+      //     await page.click("#J_authSubmit");
+      //   })();
+      // }
       var type = request.resourceType();
       if (type === "image" || type === "stylesheet" || type === "font") {
         request.respond({

@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-17 10:59:11
+ * @LastEditTime: 2019-09-19 09:47:55
  */
 import AutoShop from "../auto-shop";
 import { delay } from "../../../utils/tools";
@@ -113,11 +113,11 @@ export class Taobao extends AutoShop {
     return taobaoOrderMobile.coudan(data);
   }
 
-  cartBuy(args: any) {
+  cartBuy(args: any, p: Promise<void>) {
     if (args.from_pc) {
-      return taobaoOrderPc.cartBuy(args);
+      return taobaoOrderPc.cartBuy(args, p);
     }
-    return taobaoOrderMobile.cartBuy(args);
+    return taobaoOrderMobile.cartBuy(args, p);
   }
 
   getGoodsInfo = getGoodsInfo;

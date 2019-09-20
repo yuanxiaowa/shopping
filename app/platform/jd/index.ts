@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-06 15:08:24
+ * @LastEditTime: 2019-09-19 09:48:23
  */
 import { newPage } from "../../../utils/page";
 import AutoShop from "../auto-shop";
@@ -142,8 +142,8 @@ export class Jingdong extends AutoShop {
     return jingDongOrder.buyDirect(args, p);
   }
 
-  cartBuy(data: any) {
-    return jingDongOrder.cartBuy(data);
+  cartBuy(data: any, p: Promise<void>) {
+    return jingDongOrder.cartBuy(data, p);
   }
 
   async getGoodsInfo(url: string, skus?: number[] | undefined): Promise<any> {

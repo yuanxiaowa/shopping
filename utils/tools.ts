@@ -139,7 +139,7 @@ export function getCookie(name: string, cookie: string) {
 
 export function logFileWrapper(name: string) {
   return async (content: any, label: string, ext = ".txt") => {
-    if (typeof content === "string") {
+    if (typeof content !== "string") {
       content = JSON.stringify(content);
     }
     var now = moment();

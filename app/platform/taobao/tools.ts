@@ -80,7 +80,7 @@ export async function requestData(
   var token = setting.token;
   token = token && token.split("_")![0];
   var qs: any = {
-    jsv: "2.4.7",
+    jsv: "2.5.1",
     appKey: setting.appKey,
     api,
     v: version,

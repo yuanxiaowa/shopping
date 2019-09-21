@@ -91,7 +91,8 @@ export async function requestData(
     ttid,
     AntiFlood: true,
     LoginRequest: true,
-    H5Request: true
+    H5Request: true,
+    post: method === "post" ? 1 : undefined
   };
   var sign = signData([token, t, setting.appKey, data_str].join("&"));
   qs.sign = sign;

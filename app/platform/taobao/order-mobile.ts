@@ -24,84 +24,104 @@ const request_tags = {
   postageInsurance: true
 };
 
-function transformOrderData(orderdata: any, args: ArgOrder<any>) {
+function transformOrderData(
+  orderdata: any,
+  args: ArgOrder<any>,
+  operator?: string
+) {
   var {
     data,
     linkage,
     hierarchy: { structure, root },
     endpoint
   } = orderdata;
-  var invalids = structure[root].filter(name => name.startsWith("invalid"));
-  if (invalids.length > 0) {
-    throwError("有失效宝贝");
-  }
   var dataSubmitOrder = data.submitOrder_1;
-  /* if (dataSubmitOrder.hidden) {
+  var price = 0;
+  if (dataSubmitOrder.hidden) {
     // var realPay = data.realPay_1;
-    if (typeof args.expectedPrice === "number") {
-      if (
-        Number(args.expectedPrice) <
-        Number(dataSubmitOrder.hidden.extensionMap.showPrice)
-      ) {
-        throwError("价格太高了，买不起");
-      }
-    }
     var orderData = Object.keys(data).reduce(
       (state, name) => {
         var item = data[name];
         // item._request = request_tags[item.tag];
         if (item.submit) {
-          let [tag, id] = name.split("_");
-          item.fields.value = args.other[item.tag];
-          item.tag = tag;
+          let i = name.indexOf("_");
+          let tag = name.substring(0, i);
+          let id = name.substring(i + 1);
+          item.fields.value = args.other[item.tag] || item.fields.value;
           item.id = id;
+          item.tag = tag;
           state[name] = item;
         }
         return state;
       },
       <any>{}
     );
-  } else { */
-  var realPay = data.realPay_1;
-  endpoint = undefined;
-  if (typeof args.expectedPrice === "number") {
-    if (Number(args.expectedPrice) < Number(realPay.fields.price)) {
-      throwError("价格太高了，买不起");
+    price = dataSubmitOrder.hidden.extensionMap.showPrice;
+  } else {
+    let realPay = data.realPay_1;
+    endpoint = undefined;
+    price = realPay.fields.price;
+    var orderData = Object.keys(data).reduce(
+      (state, name) => {
+        var item = data[name];
+        item._request = request_tags[item.tag];
+        if (item.submit) {
+          item.fields.value = args.other[item.tag];
+          state[name] = item;
+        }
+        return state;
+      },
+      <any>{}
+    );
+    var address = data.address_1;
+    realPay.fields.currencySymbol = "￥";
+    dataSubmitOrder._realPay = realPay;
+    if (address) {
+      let { fields } = address;
+      fields.info = {
+        value: fields.options[0].deliveryAddressId.toString()
+      };
+      fields.url =
+        "//buy.m.tmall.com/order/addressList.htm?enableStation=true&requestStationUrl=%2F%2Fstationpicker-i56.m.taobao.com%2Finland%2FshowStationInPhone.htm&_input_charset=utf8&hidetoolbar=true&bridgeMessage=true";
+      fields.title = "管理收货地址";
+      dataSubmitOrder._address = address;
+    }
+    var coupon = data.coupon_3;
+    if (coupon && coupon.fields.totalValue) {
+      coupon.fields.value =
+        "-" + Number(/￥(.*)/.exec(coupon.fields.totalValue)![1]).toFixed(2);
     }
   }
-  var orderData = Object.keys(data).reduce(
-    (state, name) => {
-      var item = data[name];
-      item._request = request_tags[item.tag];
-      if (item.submit) {
-        item.fields.value = args.other[item.tag];
-        state[name] = item;
-      }
-      return state;
-    },
-    <any>{}
-  );
-  var address = data.address_1;
-  realPay.fields.currencySymbol = "￥";
-  dataSubmitOrder._realPay = realPay;
-  if (address) {
-    let { fields } = address;
-    fields.info = {
-      value: fields.options[0].deliveryAddressId.toString()
-    };
-    fields.url =
-      "//buy.m.tmall.com/order/addressList.htm?enableStation=true&requestStationUrl=%2F%2Fstationpicker-i56.m.taobao.com%2Finland%2FshowStationInPhone.htm&_input_charset=utf8&hidetoolbar=true&bridgeMessage=true";
-    fields.title = "管理收货地址";
-    dataSubmitOrder._address = address;
-  }
-  var coupon = data.coupon_3;
-  if (coupon && coupon.fields.totalValue) {
-    coupon.fields.value =
-      "-" + Number(/￥(.*)/.exec(coupon.fields.totalValue)![1]).toFixed(2);
-  }
-  // }
   var ua =
     "120#bX1bSbnosGDVHyn4GCwVLGU/qhVnPz7gXEWbpeS3BWDqxvHnn5lbFazGrvimIXiCHD7UAc0M2w+P7Kfq6seiXL43dPZhT8GsVJxqI1hO5pn0FZqOHHxEb+SDknLFlAPg9GwNUK3PYbkIPXIbbUDONee/P8Lw6HPIbOrA46pVSxtkOyzBz7iDwUM4AoTzGn/90yrFLO3G+rJ6P7+sMwCXDz/N0SfEPlbi7PrCoAFDGtdGZpidU604NtyrUhPPrZdWgGjYcB/El9OAzLmzmr8y2dwGHV7jQ62eEmmJAXLdZR1O1HN659N54xjQn5DvPxZn+QOZlmhE4x82LuhqpkBfqONOw6/Q6bqc3gRTExBUAhYLsjDquA1eIjj7oJ8cHNZp8qRhrqjTLybJadlqKxiCGXED2IYBiu1GrDmVtJFidJHXe3/z83vuWtU9AtSUM1xzE+Zj5Nja2aXk8qxB+WUy0WHZ8XlEmG3+Cn6lVxy1X9rjaZiolupmFWAyWixVo6oNo9t/JU+9x1vuy/Y+SOPcmLNSHhHUI82BO6C3fnGKeanPtZ5eA8T60dCWiXGdNcG0MXaPjwR5fYl7BjrcOb/z4UX1tN7uBZR1RVY6/En0Wj0DvpNy2sUG353sdPT9g4YTsgRcuJA1g9RJySfifhuNEh/Hh2pciXhwrpJUPV3R2aFW//d8UpQbXM+oOjKaDcVQJEMBEqZYjoQDIe6b/aYjfNtpDMsM8O+9jI1QgwXdsId5V2AkxiYFzPNUzsnPgzoO1OpA+yDFf9JEXPOTnzF2TX/a7R0phyFAFGuMBNfqHcQN24fqstfOO0A=";
+  if (operator === "address_1") {
+    orderData = Object.keys(orderData).reduce((state, key) => {
+      if (
+        ["address", "memo", "service", "submitOrder"].includes(
+          orderData[key].tag
+        )
+      ) {
+        state[key] = orderData[key];
+      }
+      return state;
+    }, {});
+    endpoint = undefined;
+    let selectedId = orderData.address_1.hidden.extensionMap.selectedId;
+    let info = {
+      value: selectedId,
+      addressId: selectedId
+    };
+    let desc =
+      orderData.address_1.fields.name + "：" + orderData.address_1.fields.value;
+    orderData.address_1.fields.cornerType = "both";
+    [
+      orderData.address_1.fields,
+      ...orderData.address_1.events.itemClick.map(item => item.fields.params)
+    ].forEach(item => {
+      item.info = info;
+      item.desc = desc;
+    });
+  }
   var postdata = {
     params: JSON.stringify({
       data: JSON.stringify(orderData),
@@ -116,10 +136,31 @@ function transformOrderData(orderdata: any, args: ArgOrder<any>) {
           validateParams: linkage.common.validateParams
         },
         signature: linkage.signature
-      })
+      }),
+      operator
     }),
     ua
   };
+  if (operator === "address_1") {
+    return postdata;
+  }
+  if (typeof args.expectedPrice === "number") {
+    if (Number(args.expectedPrice) < Number(price)) {
+      throw {
+        data: postdata,
+        msg: "价格太高，买不起",
+        code: 2
+      };
+    }
+  }
+  var invalids = structure[root].filter(name => name.startsWith("invalid"));
+  if (invalids.length > 0) {
+    throw {
+      data: postdata,
+      msg: "有失效宝贝",
+      code: 2
+    };
+  }
   return postdata;
 }
 
@@ -177,13 +218,7 @@ export class TaobaoOrderMobile {
     console.log("-------------已经进入手机订单结算页-------------");
     logFile(data1, "手机订单结算页", ".json");
     console.log("-------------进入手机订单结算页，准备提交-------------");
-    var postdata = transformOrderData(data1, args);
-    logFile(postdata, "订单结算页提交的数据", ".json");
-    /* writeFile("a1.json", getTransformData(postdata));
-  writeFile("a2.json", getTransformData(await getPageData(args))); */
-    if (!config.isSubmitOrder) {
-      return;
-    }
+    var postdata;
     async function handler(retryCount = 0) {
       try {
         r = Date.now();
@@ -212,7 +247,36 @@ export class TaobaoOrderMobile {
         throw e;
       }
     }
-    return handler();
+    let f1 = async (t?: number) => {
+      try {
+        postdata = transformOrderData(data1, args);
+        logFile(postdata, "订单结算页提交的数据", ".json");
+        /* writeFile("a1.json", getTransformData(postdata));
+  writeFile("a2.json", getTransformData(await getPageData(args))); */
+        if (!config.isSubmitOrder) {
+          return;
+        }
+        return handler();
+      } catch (e) {
+        if (e.code === 2 && t && Date.now() < t) {
+          let { params } = transformOrderData(data1, args, "address_1");
+          data1 = await requestData(
+            "mtop.trade.order.adjust.h5",
+            {
+              params,
+              feature: `{"gzip":"false"}`
+            },
+            "post",
+            "4.0",
+            "#t#ip##_h5_2019"
+          );
+          return f1(t);
+        }
+      }
+    };
+    let now = Date.now();
+    let t = args.jianlou ? now + 1000 * 60 * args.jianlou : undefined;
+    return f1(t);
   }
 
   getNextDataByGoodsInfo({ delivery, skuId, itemId }, quantity: number) {
@@ -253,45 +317,45 @@ export class TaobaoOrderMobile {
       throwError("重复下单");
     }
     this.prev_id = data.itemId;
-    if (data.quantity < args.quantity) {
-      if (args.jianlou) {
-        let p = this.waitForStock(args, args.jianlou);
-        p.then(async () => {
-          console.log("有库存了，开始去下单");
-          if (args.from_cart) {
-            /* let id = await this.cartAdd({
-              url: args.url,
-              quantity: args.quantity,
-              skus: args.skus
-            }); */
-            return this.coudan({
-              urls: [args.url],
-              quantities: [args.quantity],
-              expectedPrice: args.expectedPrice!
-            });
-          }
-          return this.submitOrder(
-            Object.assign(args, {
-              data: this.getNextDataByGoodsInfo(data, args.quantity)
-            })
-          );
-        });
-      } else {
-        throwError("无库存了");
-      }
-    } else {
-      if (!data.buyEnable) {
-        throwError(data.msg || "不能购买");
-      }
-      if (p) {
-        await p;
-      }
-      return this.submitOrder(
-        Object.assign(args, {
-          data: this.getNextDataByGoodsInfo(data, args.quantity)
-        })
-      );
+    // if (data.quantity < args.quantity) {
+    //   if (args.jianlou) {
+    //     let p = this.waitForStock(args, args.jianlou);
+    //     p.then(async () => {
+    //       console.log("有库存了，开始去下单");
+    //       if (args.from_cart) {
+    //         /* let id = await this.cartAdd({
+    //           url: args.url,
+    //           quantity: args.quantity,
+    //           skus: args.skus
+    //         }); */
+    //         return this.coudan({
+    //           urls: [args.url],
+    //           quantities: [args.quantity],
+    //           expectedPrice: args.expectedPrice!
+    //         });
+    //       }
+    //       return this.submitOrder(
+    //         Object.assign(args, {
+    //           data: this.getNextDataByGoodsInfo(data, args.quantity)
+    //         })
+    //       );
+    //     });
+    //   } else {
+    //     throwError("无库存了");
+    //   }
+    // } else {
+    if (!data.buyEnable) {
+      throwError(data.msg || "不能购买");
     }
+    if (p) {
+      await p;
+    }
+    return this.submitOrder(
+      Object.assign(args, {
+        data: this.getNextDataByGoodsInfo(data, args.quantity)
+      })
+    );
+    // }
   }
 
   async coudan(data: ArgCoudan): Promise<any> {
@@ -315,7 +379,10 @@ export class TaobaoOrderMobile {
     return this.cartBuy({ items: datas });
   }
 
-  async cartBuy(args: { items: any[] }, p?: Promise<void>) {
+  async cartBuy(
+    args: { items: any[]; jianlou?: number; expectedPrice?: number },
+    p?: Promise<void>
+  ) {
     if (p) {
       await p;
     }
@@ -325,7 +392,9 @@ export class TaobaoOrderMobile {
         buyParam: args.items.map(({ settlement }) => settlement).join(","),
         spm: setting.spm
       },
-      other: {}
+      other: {},
+      jianlou: args.jianlou,
+      expectedPrice: args.expectedPrice
     });
   }
 }

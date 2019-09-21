@@ -22,6 +22,7 @@ export interface ArgOrder<T> {
   expectedPrice?: number;
   noinvalid?: boolean;
   seckill?: boolean;
+  jianlou?:number
 }
 
 export interface ArgCartBuy {

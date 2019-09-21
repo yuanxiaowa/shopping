@@ -47,6 +47,9 @@ import { DT } from "../../common/config";
 const user = require("../../../.data/user.json");
 
 export class JingrongUtil {
+  /**
+   * @deprecated
+   */
   @daily()
   @log("检查参加活动领金豆")
   async doWelfareActions() {
@@ -214,7 +217,7 @@ export async function doAll() {
   }
 
   jingrongUtil.doJinguo();
-  jingrongUtil.doWelfareActions();
+  // jingrongUtil.doWelfareActions();
   jingrongUtil.doFanpai();
   jingrongUtil.doLottery();
   jingrongUtil.doHealthInsured();

@@ -9,6 +9,7 @@ import { newPage } from "../../utils/page";
 import { ArgBuyDirect, ArgCartBuy, ArgSearch, ArgCoudan } from "./struct";
 import { jar, global_req } from "../common/config";
 import { Cookie } from "tough-cookie";
+import { timer } from '../../utils/decorators';
 
 interface AutoShopOptions {
   name: string;
@@ -47,7 +48,6 @@ export default abstract class AutoShop implements AutoShopOptions {
     string,
     { test(url: string): boolean; handler(url: string): Promise<any> }
   >;
-  interval_check = 1000 * 60 * 60;
   onAfterLogin() {}
   constructor(data: AutoShopOptions) {
     Object.assign(this, data);
@@ -103,13 +103,10 @@ export default abstract class AutoShop implements AutoShopOptions {
   is_prev_login = true;
   async login(page: Page, cb?: Function) {
     this.is_prev_login = false;
-    page.goto(this.login_url);
+    await page.goto(this.login_url);
     let p = this.loginAction(page);
-    await page.waitForNavigation();
+    await p;
     (async () => {
-      await page.waitForNavigation({
-        timeout: 0
-      });
       for (let state_url of this.state_urls) {
         await page.goto(state_url);
       }
@@ -134,10 +131,10 @@ export default abstract class AutoShop implements AutoShopOptions {
     await page.goto(url);
     return page.url() === url;
   }
+  @timer(1000 * 10 * 60)
   private async preserveState() {
     var page = await newPage();
     var logined = await this.checkUrl(this.state_urls[0], page);
-    setTimeout(this.preserveState.bind(this), this.interval_check);
     if (!logined) {
       try {
         setTimeout(() => {

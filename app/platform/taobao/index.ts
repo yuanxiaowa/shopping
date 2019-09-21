@@ -38,8 +38,6 @@ import path = require("path");
 import iconv = require("iconv-lite");
 
 export class Taobao extends AutoShop {
-  mobile = true;
-  interval_check = 1000 * 10 * 60;
 
   constructor() {
     super({

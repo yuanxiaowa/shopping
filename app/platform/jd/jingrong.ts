@@ -510,6 +510,13 @@ interface WelfareRes<T> {
   data: T;
 }
 
+/**
+ * 
+ * @param url 
+ * @param qs 
+ * @param form
+ * @deprecated 
+ */
 async function requestWelfare<T>(url: string, qs: any, form?: any) {
   var { data, code, msg } = await requestJsonp<WelfareRes<T>>(url, qs, form);
   if (code === "00000") {
@@ -518,6 +525,9 @@ async function requestWelfare<T>(url: string, qs: any, form?: any) {
   throw new Error(msg);
 }
 
+/**
+ * @deprecated
+ */
 export async function getWelfareList() {
   interface T {
     welActList: {
@@ -942,50 +952,53 @@ export async function getJTLuckyInfo() {
   }
 }
 
+/**
+ * @deprecated
+ */
 export async function zuanlingqian() {
-  var datas = await requestData<
-    {
-      rewardTimesDayLimit: number;
-      alreadyRewardTimesDay: number;
-      rewardRuleShow: string;
-      id: number;
-      bizLine: number;
-    }[]
-  >(
-    "https://ms.jr.jd.com/gw/generic/zc/h5/m/getCollectActListByFirstPage",
-    { bizLine: 2, clientType: "sms", clientVersion: "11.0" },
-    true
-  );
-  for (let item of datas) {
-    for (
-      let i = 0;
-      i < item.rewardTimesDayLimit - item.alreadyRewardTimesDay;
-      i++
-    ) {
-      console.log(item.rewardRuleShow);
-      await delay(62 * 1000);
-      await requestData(
-        "https://ms.jr.jd.com/gw/generic/zc/h5/m/completeZJAct",
-        {
-          bizLine: item.bizLine,
-          actId: item.id,
-          extRule: null
-        }
-      );
-      let text = await req.get("https://gia.jd.com/m.html");
-      await requestData("https://ms.jr.jd.com/gw/generic/zc/h5/m/rewardGift", {
-        bizLine: item.bizLine,
-        actId: item.id,
-        deviceInfo: {
-          eid:
-            "ZXHJWSWBJENX73DQAH7BW3RFGBNXZFMPJG6FFUDG3F26WRTNTZLAEVZEAERLMWPHRZGFKKG5YCL5XRQYJ7WB6F3NKE",
-          fp: "51a11bb8515839fa3ba154e9bc9c8d98",
-          token: /'(.*?)'/.exec(text)![1],
-          optType: "https://jddx.jd.com/m/jddnew/money/index.html"
-        },
-        clientType: "sms",
-        clientVersion: "11.0"
-      });
-    }
-  }
+  // var datas = await requestData<
+  //   {
+  //     rewardTimesDayLimit: number;
+  //     alreadyRewardTimesDay: number;
+  //     rewardRuleShow: string;
+  //     id: number;
+  //     bizLine: number;
+  //   }[]
+  // >(
+  //   "https://ms.jr.jd.com/gw/generic/zc/h5/m/getCollectActListByFirstPage",
+  //   { bizLine: 2, clientType: "sms", clientVersion: "11.0" },
+  //   true
+  // );
+  // for (let item of datas) {
+  //   for (
+  //     let i = 0;
+  //     i < item.rewardTimesDayLimit - item.alreadyRewardTimesDay;
+  //     i++
+  //   ) {
+  //     console.log(item.rewardRuleShow);
+  //     await delay(62 * 1000);
+  //     await requestData(
+  //       "https://ms.jr.jd.com/gw/generic/zc/h5/m/completeZJAct",
+  //       {
+  //         bizLine: item.bizLine,
+  //         actId: item.id,
+  //         extRule: null
+  //       }
+  //     );
+  //     let text = await req.get("https://gia.jd.com/m.html");
+  //     await requestData("https://ms.jr.jd.com/gw/generic/zc/h5/m/rewardGift", {
+  //       bizLine: item.bizLine,
+  //       actId: item.id,
+  //       deviceInfo: {
+  //         eid:
+  //           "ZXHJWSWBJENX73DQAH7BW3RFGBNXZFMPJG6FFUDG3F26WRTNTZLAEVZEAERLMWPHRZGFKKG5YCL5XRQYJ7WB6F3NKE",
+  //         fp: "51a11bb8515839fa3ba154e9bc9c8d98",
+  //         token: /'(.*?)'/.exec(text)![1],
+  //         optType: "https://jddx.jd.com/m/jddnew/money/index.html"
+  //       },
+  //       clientType: "sms",
+  //       clientVersion: "11.0"
+  //     });
+  //   }
+  // }
 }

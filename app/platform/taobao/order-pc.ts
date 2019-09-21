@@ -36,11 +36,16 @@ export class TaobaoOrderPc {
       success: quantity >= args.quantity
     };
   }
+  prev_id = ''
   async buyDirect(arg: ArgBuyDirect, p?: Promise<void>) {
     var { itemDO, tradeConfig, tradeType, form, detail } = await getGoodsInfo(
       arg.url,
       true
     );
+    if (this.prev_id === itemDO.itemId) {
+      throwError('重复下单')
+    }
+    this.prev_id = itemDO.itemId
     Object.assign(form, {
       quantity: arg.quantity
     });

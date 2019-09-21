@@ -139,15 +139,15 @@ export function getCookie(name: string, cookie: string) {
 
 export function logFileWrapper(name: string) {
   return async (content: any, label: string, ext = ".txt") => {
+    if (typeof content === "string") {
+      content = JSON.stringify(content);
+    }
     var now = moment();
     var filename = `.data/${name}/${now.format(
       moment.HTML5_FMT.DATE
     )}/${label}/${now.format("HH_mm_ss.SSS") + ext}`;
     await fs.ensureFile(filename);
-    if (typeof content === "string") {
-      return writeFile(filename, content);
-    }
-    return writeJSON(filename, content);
+    return writeFile(filename, content);
   };
 }
 

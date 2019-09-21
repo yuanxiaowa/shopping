@@ -5,7 +5,7 @@
  * @LastEditTime: 2019-09-02 14:16:07
  */
 import { ArgOrder, ArgBuyDirect, ArgCoudan } from "../struct";
-import { requestData, logFile } from "./tools";
+import { requestData, logFile, getItemId } from "./tools";
 import { config } from "../../common/config";
 import { Serial, TimerCondition, throwError } from "../../../utils/tools";
 import { getGoodsInfo } from "./goods-mobile";
@@ -28,53 +28,58 @@ function transformOrderData(orderdata: any, args: ArgOrder<any>) {
   var {
     data,
     linkage,
-    hierarchy: { structure, root }
+    hierarchy: { structure, root },
+    endpoint
   } = orderdata;
   var invalids = structure[root].filter(name => name.startsWith("invalid"));
   if (invalids.length > 0) {
     throwError("有失效宝贝");
   }
-  var realPay = data.realPay_1;
+  var dataSubmitOrder = data.submitOrder_1;
+  // var realPay = data.realPay_1;
   if (typeof args.expectedPrice === "number") {
-    if (Number(args.expectedPrice) < Number(realPay.fields.price)) {
+    if (Number(args.expectedPrice) < Number(dataSubmitOrder.hidden.extensionMap.showPrice)) {
       throwError("价格太高了，买不起");
     }
   }
   var orderData = Object.keys(data).reduce(
     (state, name) => {
       var item = data[name];
-      item._request = request_tags[item.tag];
+      // item._request = request_tags[item.tag];
       if (item.submit) {
+        let [tag, id] = name.split('_')
         item.fields.value = args.other[item.tag];
+        item.tag = tag
+        item.id = id
         state[name] = item;
       }
       return state;
     },
     <any>{}
   );
-  var dataSubmitOrder = data.submitOrder_1;
-  var address = data.address_1;
-  realPay.fields.currencySymbol = "￥";
-  dataSubmitOrder._realPay = realPay;
-  if (address) {
-    let { fields } = address;
-    fields.info = {
-      value: fields.options[0].deliveryAddressId.toString()
-    };
-    fields.url =
-      "//buy.m.tmall.com/order/addressList.htm?enableStation=true&requestStationUrl=%2F%2Fstationpicker-i56.m.taobao.com%2Finland%2FshowStationInPhone.htm&_input_charset=utf8&hidetoolbar=true&bridgeMessage=true";
-    fields.title = "管理收货地址";
-    dataSubmitOrder._address = address;
-  }
-  var coupon = data.coupon_3;
-  if (coupon && coupon.fields.totalValue) {
-    coupon.fields.value =
-      "-" + Number(/￥(.*)/.exec(coupon.fields.totalValue)![1]).toFixed(2);
-  }
-  var ua = "";
+  // var address = data.address_1;
+  // realPay.fields.currencySymbol = "￥";
+  // dataSubmitOrder._realPay = realPay;
+  // if (address) {
+  //   let { fields } = address;
+  //   fields.info = {
+  //     value: fields.options[0].deliveryAddressId.toString()
+  //   };
+  //   fields.url =
+  //     "//buy.m.tmall.com/order/addressList.htm?enableStation=true&requestStationUrl=%2F%2Fstationpicker-i56.m.taobao.com%2Finland%2FshowStationInPhone.htm&_input_charset=utf8&hidetoolbar=true&bridgeMessage=true";
+  //   fields.title = "管理收货地址";
+  //   dataSubmitOrder._address = address;
+  // }
+  // var coupon = data.coupon_3;
+  // if (coupon && coupon.fields.totalValue) {
+  //   coupon.fields.value =
+  //     "-" + Number(/￥(.*)/.exec(coupon.fields.totalValue)![1]).toFixed(2);
+  // }
+  var ua = "120#bX1bSbnosGDVHyn4GCwVLGU/qhVnPz7gXEWbpeS3BWDqxvHnn5lbFazGrvimIXiCHD7UAc0M2w+P7Kfq6seiXL43dPZhT8GsVJxqI1hO5pn0FZqOHHxEb+SDknLFlAPg9GwNUK3PYbkIPXIbbUDONee/P8Lw6HPIbOrA46pVSxtkOyzBz7iDwUM4AoTzGn/90yrFLO3G+rJ6P7+sMwCXDz/N0SfEPlbi7PrCoAFDGtdGZpidU604NtyrUhPPrZdWgGjYcB/El9OAzLmzmr8y2dwGHV7jQ62eEmmJAXLdZR1O1HN659N54xjQn5DvPxZn+QOZlmhE4x82LuhqpkBfqONOw6/Q6bqc3gRTExBUAhYLsjDquA1eIjj7oJ8cHNZp8qRhrqjTLybJadlqKxiCGXED2IYBiu1GrDmVtJFidJHXe3/z83vuWtU9AtSUM1xzE+Zj5Nja2aXk8qxB+WUy0WHZ8XlEmG3+Cn6lVxy1X9rjaZiolupmFWAyWixVo6oNo9t/JU+9x1vuy/Y+SOPcmLNSHhHUI82BO6C3fnGKeanPtZ5eA8T60dCWiXGdNcG0MXaPjwR5fYl7BjrcOb/z4UX1tN7uBZR1RVY6/En0Wj0DvpNy2sUG353sdPT9g4YTsgRcuJA1g9RJySfifhuNEh/Hh2pciXhwrpJUPV3R2aFW//d8UpQbXM+oOjKaDcVQJEMBEqZYjoQDIe6b/aYjfNtpDMsM8O+9jI1QgwXdsId5V2AkxiYFzPNUzsnPgzoO1OpA+yDFf9JEXPOTnzF2TX/a7R0phyFAFGuMBNfqHcQN24fqstfOO0A=";
   var postdata = {
     params: JSON.stringify({
       data: JSON.stringify(orderData),
+      endpoint,
       hierarchy: JSON.stringify({
         structure
       }),
@@ -207,8 +212,13 @@ export class TaobaoOrderMobile {
     };
   }
 
+  prev_id = ''
   async buyDirect(args: ArgBuyDirect, p?: Promise<void>) {
     var data = await getGoodsInfo(args.url, args.skus);
+    if (this.prev_id === data.itemId) {
+      throwError('重复下单')
+    }
+    this.prev_id = data.itemId
     if (data.quantity < args.quantity) {
       if (args.jianlou) {
         let p = this.waitForStock(args, args.jianlou);

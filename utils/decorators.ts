@@ -21,10 +21,10 @@ export function log(label: string) {
 export function timer(t = 60 * 1000, count = Infinity) {
   return (target: any, key: string, desc: PropertyDescriptor) => {
     var old_f: Function = desc.value;
-    desc.value = (...args: any[]) => {
+    desc.value = function(...args: any[]) {
       var c = 0;
       var func = () => {
-        var ret = old_f.apply(target, args);
+        var ret = old_f.apply(this, args);
         if (++c < count) {
           setTimeout(func, t);
         }

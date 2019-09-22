@@ -200,7 +200,7 @@ export class Taobao extends AutoShop {
         data: readJSONSync(args.file)
       });
       url =
-        "https://buy.m.tmall.com/order/confirm_order_wap.htm?enc=%E2%84%A2&itemId=538364857603&exParams=%7B%22addressId%22%3A%229607477385%22%2C%22etm%22%3A%22%22%7D&skuId=3471693791586&quantity=1&divisionCode=320583&userId=842405758&buyNow=true&_input_charset=utf-8&areaId=320583&addressId=9607477385&x-itemid=538364857603&x-uid=842405758";
+        "https://main.m.taobao.com/order/index.html?buyNow=false&buyParam=601897585216_1_4210849008339_null_0_null_null_1514914344292_null_null_null_0_null_buyerCondition~0~~dpbUpgrade~null~~cartCreateTime~1568983417000_0_0_null_null_null_null_null_null_null_null_null&spm=a21202.12579950.settlement-bar.0";
       test_fn = (url: string) =>
         /\/(mtop.trade.buildorder.h5|mtop.trade.order.build.h5)\//.test(url);
     }

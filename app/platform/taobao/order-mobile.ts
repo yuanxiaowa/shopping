@@ -7,10 +7,11 @@
 import { ArgOrder, ArgBuyDirect, ArgCoudan } from "../struct";
 import { requestData, logFile, getItemId } from "./tools";
 import { config, UA } from "../../common/config";
-import { Serial, TimerCondition, throwError } from "../../../utils/tools";
+import { Serial, TimerCondition, throwError, delay } from "../../../utils/tools";
 import { getGoodsInfo } from "./goods-mobile";
 import { getCartList, addCart } from "./cart-mobile";
 import setting from "./setting";
+import moment = require('moment');
 
 const request_tags = {
   agencyPay: true,
@@ -94,6 +95,7 @@ function transformOrderData(
   }
   var ua =
     "120#bX1bSbnosGDVHyn4GCwVLGU/qhVnPz7gXEWbpeS3BWDqxvHnn5lbFazGrvimIXiCHD7UAc0M2w+P7Kfq6seiXL43dPZhT8GsVJxqI1hO5pn0FZqOHHxEb+SDknLFlAPg9GwNUK3PYbkIPXIbbUDONee/P8Lw6HPIbOrA46pVSxtkOyzBz7iDwUM4AoTzGn/90yrFLO3G+rJ6P7+sMwCXDz/N0SfEPlbi7PrCoAFDGtdGZpidU604NtyrUhPPrZdWgGjYcB/El9OAzLmzmr8y2dwGHV7jQ62eEmmJAXLdZR1O1HN659N54xjQn5DvPxZn+QOZlmhE4x82LuhqpkBfqONOw6/Q6bqc3gRTExBUAhYLsjDquA1eIjj7oJ8cHNZp8qRhrqjTLybJadlqKxiCGXED2IYBiu1GrDmVtJFidJHXe3/z83vuWtU9AtSUM1xzE+Zj5Nja2aXk8qxB+WUy0WHZ8XlEmG3+Cn6lVxy1X9rjaZiolupmFWAyWixVo6oNo9t/JU+9x1vuy/Y+SOPcmLNSHhHUI82BO6C3fnGKeanPtZ5eA8T60dCWiXGdNcG0MXaPjwR5fYl7BjrcOb/z4UX1tN7uBZR1RVY6/En0Wj0DvpNy2sUG353sdPT9g4YTsgRcuJA1g9RJySfifhuNEh/Hh2pciXhwrpJUPV3R2aFW//d8UpQbXM+oOjKaDcVQJEMBEqZYjoQDIe6b/aYjfNtpDMsM8O+9jI1QgwXdsId5V2AkxiYFzPNUzsnPgzoO1OpA+yDFf9JEXPOTnzF2TX/a7R0phyFAFGuMBNfqHcQN24fqstfOO0A=";
+  var common: any;
   if (operator === "address_1") {
     orderData = Object.keys(orderData).reduce((state, key) => {
       if (
@@ -105,22 +107,42 @@ function transformOrderData(
       }
       return state;
     }, {});
+    let { address_1 } = orderData;
+    let baseDeliverAddressDO = JSON.parse(
+      address_1.hidden.extensionMap.options
+    )[0].baseDeliverAddressDO;
     endpoint = undefined;
-    let selectedId = orderData.address_1.hidden.extensionMap.selectedId;
+    let selectedId = address_1.hidden.extensionMap.selectedId;
     let info = {
       value: selectedId,
       addressId: selectedId
     };
     let desc =
-      orderData.address_1.fields.name + "：" + orderData.address_1.fields.value;
-    orderData.address_1.fields.cornerType = "both";
+      baseDeliverAddressDO.fullName +
+      "：" +
+      baseDeliverAddressDO.province +
+      baseDeliverAddressDO.city +
+      baseDeliverAddressDO.area +
+      baseDeliverAddressDO.addressDetail;
+    address_1.fields.cornerType = "both";
     [
-      orderData.address_1.fields,
-      ...orderData.address_1.events.itemClick.map(item => item.fields.params)
+      address_1.fields,
+      ...address_1.events.itemClick.map(item => item.fields.params)
     ].forEach(item => {
       item.info = info;
       item.desc = desc;
     });
+    common = {
+      compress: linkage.common.compress,
+      queryParams: linkage.common.queryParams,
+      validateParams: linkage.common.validateParams
+    };
+  } else {
+    common = {
+      compress: linkage.common.compress,
+      submitParams: linkage.common.submitParams,
+      validateParams: linkage.common.validateParams
+    };
   }
   var postdata = {
     params: JSON.stringify({
@@ -130,11 +152,7 @@ function transformOrderData(
         structure
       }),
       linkage: JSON.stringify({
-        common: {
-          compress: linkage.common.compress,
-          submitParams: linkage.common.submitParams,
-          validateParams: linkage.common.validateParams
-        },
+        common,
         signature: linkage.signature
       }),
       operator
@@ -260,7 +278,9 @@ export class TaobaoOrderMobile {
       } catch (e) {
         if (e.code === 2 && t && Date.now() < t) {
           let { params } = transformOrderData(data1, args, "address_1");
-          data1 = await requestData(
+          console.log(moment().format(), '淘宝刷单中')
+          await delay(30)
+          let data = await requestData(
             "mtop.trade.order.adjust.h5",
             {
               params,
@@ -270,6 +290,14 @@ export class TaobaoOrderMobile {
             "4.0",
             "#t#ip##_h5_2019"
           );
+          ['endpoint', 'linkage', 'hierarchy'].forEach(key => {
+            if (data[key]) {
+              data1[key]=data[key]
+            }
+          })
+          if (data.data.submitOrder_1) {
+            data1.data = data.data
+          }
           return f1(t);
         }
       }

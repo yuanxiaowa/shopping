@@ -2,16 +2,21 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-02 14:16:07
+ * @LastEditTime: 2019-09-23 10:03:33
  */
 import { ArgOrder, ArgBuyDirect, ArgCoudan } from "../struct";
 import { requestData, logFile, getItemId } from "./tools";
 import { config, UA } from "../../common/config";
-import { Serial, TimerCondition, throwError, delay } from "../../../utils/tools";
+import {
+  Serial,
+  TimerCondition,
+  throwError,
+  delay
+} from "../../../utils/tools";
 import { getGoodsInfo } from "./goods-mobile";
 import { getCartList, addCart } from "./cart-mobile";
 import setting from "./setting";
-import moment = require('moment');
+import moment = require("moment");
 
 const request_tags = {
   agencyPay: true,
@@ -166,7 +171,7 @@ function transformOrderData(
     if (Number(args.expectedPrice) < Number(price)) {
       throw {
         data: postdata,
-        msg: "价格太高，买不起",
+        message: "价格太高，买不起",
         code: 2
       };
     }
@@ -175,7 +180,7 @@ function transformOrderData(
   if (invalids.length > 0) {
     throw {
       data: postdata,
-      msg: "有失效宝贝",
+      message: "有失效宝贝",
       code: 2
     };
   }
@@ -278,8 +283,8 @@ export class TaobaoOrderMobile {
       } catch (e) {
         if (e.code === 2 && t && Date.now() < t) {
           let { params } = transformOrderData(data1, args, "address_1");
-          console.log(moment().format(), '淘宝刷单中')
-          await delay(30)
+          console.log(moment().format(), "淘宝刷单中");
+          await delay(30);
           let data = await requestData(
             "mtop.trade.order.adjust.h5",
             {
@@ -290,15 +295,17 @@ export class TaobaoOrderMobile {
             "4.0",
             "#t#ip##_h5_2019"
           );
-          ['endpoint', 'linkage', 'hierarchy'].forEach(key => {
+          ["endpoint", "linkage", "hierarchy"].forEach(key => {
             if (data[key]) {
-              data1[key]=data[key]
+              data1[key] = data[key];
             }
-          })
+          });
           if (data.data.submitOrder_1) {
-            data1.data = data.data
+            data1.data = data.data;
           }
           return f1(t);
+        } else {
+          throw e;
         }
       }
     };

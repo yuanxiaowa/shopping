@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-11 18:00:06
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-08-28 17:55:06
+ * @LastEditTime: 2019-09-23 09:38:06
  */
 import { Controller } from "egg";
 import moment = require("moment");
@@ -85,7 +85,7 @@ async function sysTime(platform: string) {
     (dt > 0 ? "慢了" : "快了") + Math.abs(dt) + "ms"
   );
   console.log(platform + "单程时间", rtl + "ms");
-  DT[platform] = dt + rtl;
+  DT[platform] = dt + rtl - 50;
 }
 
 sysTime("taobao");

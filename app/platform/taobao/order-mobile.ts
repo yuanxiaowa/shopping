@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-23 10:03:33
+ * @LastEditTime: 2019-09-25 09:51:21
  */
 import { ArgOrder, ArgBuyDirect, ArgCoudan } from "../struct";
 import { requestData, logFile, getItemId } from "./tools";
@@ -305,7 +305,7 @@ export class TaobaoOrderMobile {
           }
           return f1(t);
         } else {
-          throw e;
+          throw new Error(e.message);
         }
       }
     };

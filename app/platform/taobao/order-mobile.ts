@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-25 09:51:21
+ * @LastEditTime: 2019-09-27 18:07:07
  */
 import { ArgOrder, ArgBuyDirect, ArgCoudan } from "../struct";
 import { requestData, logFile, getItemId } from "./tools";
@@ -102,17 +102,16 @@ function transformOrderData(
     "120#bX1bSbnosGDVHyn4GCwVLGU/qhVnPz7gXEWbpeS3BWDqxvHnn5lbFazGrvimIXiCHD7UAc0M2w+P7Kfq6seiXL43dPZhT8GsVJxqI1hO5pn0FZqOHHxEb+SDknLFlAPg9GwNUK3PYbkIPXIbbUDONee/P8Lw6HPIbOrA46pVSxtkOyzBz7iDwUM4AoTzGn/90yrFLO3G+rJ6P7+sMwCXDz/N0SfEPlbi7PrCoAFDGtdGZpidU604NtyrUhPPrZdWgGjYcB/El9OAzLmzmr8y2dwGHV7jQ62eEmmJAXLdZR1O1HN659N54xjQn5DvPxZn+QOZlmhE4x82LuhqpkBfqONOw6/Q6bqc3gRTExBUAhYLsjDquA1eIjj7oJ8cHNZp8qRhrqjTLybJadlqKxiCGXED2IYBiu1GrDmVtJFidJHXe3/z83vuWtU9AtSUM1xzE+Zj5Nja2aXk8qxB+WUy0WHZ8XlEmG3+Cn6lVxy1X9rjaZiolupmFWAyWixVo6oNo9t/JU+9x1vuy/Y+SOPcmLNSHhHUI82BO6C3fnGKeanPtZ5eA8T60dCWiXGdNcG0MXaPjwR5fYl7BjrcOb/z4UX1tN7uBZR1RVY6/En0Wj0DvpNy2sUG353sdPT9g4YTsgRcuJA1g9RJySfifhuNEh/Hh2pciXhwrpJUPV3R2aFW//d8UpQbXM+oOjKaDcVQJEMBEqZYjoQDIe6b/aYjfNtpDMsM8O+9jI1QgwXdsId5V2AkxiYFzPNUzsnPgzoO1OpA+yDFf9JEXPOTnzF2TX/a7R0phyFAFGuMBNfqHcQN24fqstfOO0A=";
   var common: any;
   if (operator === "address_1") {
-    orderData = Object.keys(orderData).reduce((state, key) => {
-      if (
-        ["address", "memo", "service", "submitOrder"].includes(
-          orderData[key].tag
-        )
-      ) {
-        state[key] = orderData[key];
-      }
-      return state;
-    }, {});
     let { address_1 } = orderData;
+    orderData = linkage.input.reduce(
+      (state, key) => {
+        state[key] = orderData[key];
+        return state;
+      },
+      {
+        address_1
+      }
+    );
     let baseDeliverAddressDO = JSON.parse(
       address_1.hidden.extensionMap.options
     )[0].baseDeliverAddressDO;
@@ -295,7 +294,7 @@ export class TaobaoOrderMobile {
             "4.0",
             "#t#ip##_h5_2019"
           );
-          ["endpoint", "linkage", "hierarchy"].forEach(key => {
+          [/* "endpoint",  */ "linkage" /* , "hierarchy" */].forEach(key => {
             if (data[key]) {
               data1[key] = data[key];
             }
@@ -303,6 +302,7 @@ export class TaobaoOrderMobile {
           if (data.data.submitOrder_1) {
             data1.data = data.data;
           }
+          // data1 = data;
           return f1(t);
         } else {
           throw new Error(e.message);

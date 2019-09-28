@@ -311,7 +311,8 @@ export class TaobaoOrderMobile {
     };
     let now = Date.now();
     let t = args.jianlou ? now + 1000 * 60 * args.jianlou : undefined;
-    return f1(t);
+    f1(t);
+    return delay(50);
   }
 
   getNextDataByGoodsInfo({ delivery, skuId, itemId }, quantity: number) {

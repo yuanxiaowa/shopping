@@ -370,6 +370,7 @@ export class TaskManager {
             console.log(moment().format(), `${data.platform}-${data.name}`);
             let r = await data.handler!();
             if (r) {
+              this.removeTask(id);
               return resolve();
             }
             f();

@@ -2,63 +2,13 @@
  * @Author: oudingyin
  * @Date: 2019-07-11 18:00:06
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-27 09:57:51
+ * @LastEditTime: 2019-09-29 10:57:42
  */
 import { Controller } from "egg";
 import moment = require("moment");
-import { sysTaobaoTime, sysJingdongTime } from "../../utils/tools";
+import { sysTaobaoTime, sysJingdongTime, taskManager } from "../../utils/tools";
 import { DT } from "../common/config";
-
-var delayMap: Record<
-  number,
-  {
-    data: {
-      type: string;
-      time: string;
-      platform: string;
-      comment: string;
-      url?: string;
-    };
-    cancel(): void;
-  }
-> = {};
-
-var counter = 0;
-function delay(
-  t: number,
-  data: {
-    type: string;
-    time: string;
-    platform: string;
-    comment: string;
-    url?: string;
-  }
-) {
-  return new Promise<void>((resolve, reject) => {
-    if (typeof data.url === "string") {
-      for (let key in delayMap) {
-        if (delayMap[key].data.url === data.url) {
-          return reject(
-            "已存在该任务 " + JSON.stringify(data.comment, null, 2)
-          );
-        }
-      }
-    }
-    var id = counter++;
-    var timerId = setTimeout(() => {
-      delete delayMap[id];
-      resolve();
-    }, t);
-    delayMap[id] = {
-      data,
-      cancel() {
-        reject(new Error("手动取消任务 " + data.type));
-        clearTimeout(timerId);
-        delete delayMap[id];
-      }
-    };
-  });
-}
+import R = require("ramda");
 
 async function handle(p: any, msg?: string) {
   try {
@@ -108,15 +58,18 @@ export default class ShopController extends Controller {
       let toTime = moment(t);
       let dt = toTime.diff(moment()) - DT[platform];
       if (dt > 0) {
-        let p = delay(dt, {
-          type: `从购物车下单`,
-          time: t,
-          platform,
-          comment: data._comment
-        });
+        let p = taskManager.registerTask(
+          {
+            name: `从购物车下单`,
+            time: t,
+            platform,
+            comment: data._comment
+          },
+          dt
+        );
         data.seckill = true;
         (async () => {
-          console.log(platform, "开始从购物车下单");
+          console.log(platform, t + "从购物车下单");
           await app[platform].cartBuy(data, p);
         })();
         ctx.body = {
@@ -158,7 +111,7 @@ export default class ShopController extends Controller {
     var data = ctx.request.body;
     ctx.body = await handle(app[platform].cartUpdateQuantity(data), "更新成功");
   }
-  public async buyDirect(args: any) {
+  public async buyDirect() {
     const { ctx, app } = this;
     var { platform, t } = ctx.query;
     var data = ctx.request.body;
@@ -197,13 +150,16 @@ export default class ShopController extends Controller {
       let toTime = moment(t);
       let dt = toTime.diff(moment()) - DT[platform];
       if (dt > 0) {
-        let p = delay(dt, {
-          type: `直接购买`,
-          time: t,
-          platform,
-          comment: data._comment,
-          url: data.url
-        });
+        let p = taskManager.registerTask(
+          {
+            name: `直接购买`,
+            time: t,
+            platform,
+            comment: data._comment,
+            url: data.url
+          },
+          dt
+        );
         data.seckill = true;
         ins.buyDirect(data, p);
         ctx.body = {
@@ -229,12 +185,15 @@ export default class ShopController extends Controller {
       let toTime = moment(t);
       let dt = toTime.diff(moment()) - DT[platform];
       if (dt > 0) {
-        let p = delay(dt, {
-          type: `抢券`,
-          time: t,
-          platform,
-          comment: data._comment
-        });
+        let p = taskManager.registerTask(
+          {
+            name: `抢券`,
+            time: t,
+            platform,
+            comment: data._comment
+          },
+          dt
+        );
         (async () => {
           await p;
           app[platform].qiangquan(data);
@@ -322,23 +281,25 @@ export default class ShopController extends Controller {
   public async taskList() {
     const { ctx } = this;
     ctx.body = await handle(
-      Object.keys(delayMap)
-        .map(id => Object.assign({ id }, delayMap[id].data))
-        .sort((a, b) => moment(a.time).valueOf() - moment(b.time).valueOf())
+      R.sort(
+        (a, b) => moment(a.time).valueOf() - moment(b.time).valueOf(),
+        taskManager.items
+      )
     );
   }
 
   public async taskCancel() {
     const { ctx } = this;
     var { id } = ctx.query;
-    if (!delayMap[id]) {
+    let item = taskManager.items.find(R.propEq("id", Number(id)));
+    if (!item) {
       ctx.body = {
         code: 1,
         msg: "指定任务不存在"
       };
       return;
     }
-    ctx.body = await handle(delayMap[id].cancel());
+    ctx.body = await handle(taskManager.cancelTask(item.id));
   }
 
   public async getMyCoupons() {

@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-02 16:37:37
+ * @LastEditTime: 2019-09-29 17:43:00
  */
 import fs = require("fs-extra");
 import { join } from "path";
@@ -305,69 +305,121 @@ export function createScheduler(t = 1500) {
   };
 }
 
-export async function createDailyTask(handler: () => any, hours?: number[]) {
-  if (!hours) {
-    await handler();
-  } else {
-    for (let hour of hours) {
-      if (new Date().getHours() < hour) {
-        await delay(moment(hour, "HH").diff(moment()));
-        await handler();
-      }
-    }
-  }
-  await delay(
-    moment("00", "HH")
-      .add("d", 1)
-      .diff(moment())
-  );
-  return createDailyTask(handler, hours);
-}
-
-export const taskManager: {
-  tasks: {
-    label: string;
-    group: string;
-    status: string;
-    time: string;
-    count: number;
-  }[];
-  register(data: {
-    label: string;
-    group: string;
-    t?: number[] | number;
-    handler: () => any;
-  });
-} = {
-  tasks: [],
-  register(data) {
-    var item = {
-      label: data.label,
-      group: data.group,
-      status: "等待处理",
-      time: moment().format(moment.defaultFormat),
-      count: 0
-    };
-    if (data.t) {
-      if (Array.isArray(data.t)) {
-        item.status = `定点任务 ${data.t}`;
-        createDailyTask(() => {
-          item.count++;
-          return data.handler();
-        }, data.t);
-      } else {
-        item.status = `定时任务 ${data.t}`;
-        timer(data.t)(() => {
-          item.count++;
-          return data.handler();
-        });
-      }
-    }
-    this.tasks.push(item);
-  }
-};
-
 export function throwError(msg: string) {
   console.error(moment().toString(), msg);
   throw new Error(msg);
 }
+
+interface TaskItem {
+  id: number;
+  name: string;
+  platform: string;
+  comment: string;
+  url?: string;
+  time?: number | string;
+  timer?: any;
+  cancel: () => void;
+  handler?: () => Promise<any>;
+}
+
+export class TaskManager {
+  private tasks: TaskItem[] = [];
+  private id = 0;
+  registerTask(
+    data: Pick<
+      TaskItem,
+      "name" | "platform" | "comment" | "url" | "handler" | "time"
+    >,
+    t: number
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      var id = this.id++;
+      var timer: any;
+      var time = moment(data.time).valueOf();
+      var status = "pending";
+      var rejectHandler = () => {
+        status = "reject";
+      };
+      if (!data.handler) {
+        if (data.url) {
+          if (this.tasks.find(task => task.url === data.url)) {
+            return reject(
+              "已存在该任务 " + JSON.stringify(data.comment, null, 2)
+            );
+          }
+        }
+        timer = setTimeout(() => {
+          this.removeTask(id);
+          resolve();
+        }, t);
+      } else {
+        let f = async () => {
+          try {
+            if (status === "reject") {
+              throw new Error(`${data.platform}-${data.name} 任务取消`);
+            }
+            if (data.time) {
+              if (Date.now() < time) {
+                if (t) {
+                  await delay(t);
+                }
+              } else {
+                throw new Error(`${data.platform}-${data.name} 超时了`);
+              }
+            }
+            console.log(moment().format(), `${data.platform}-${data.name}`);
+            let r = await data.handler!();
+            if (r) {
+              return resolve();
+            }
+            f();
+          } catch (e) {
+            this.removeTask(id);
+            reject(e);
+          }
+        };
+        f();
+      }
+      this.tasks.push({
+        id,
+        name: data.name,
+        platform: data.platform,
+        comment: data.comment,
+        url: data.url,
+        cancel: rejectHandler,
+        time: moment(time).format(),
+        timer
+      });
+    });
+  }
+  cancelTask(id: number) {
+    var i = this.tasks.findIndex(item => item.id === id);
+    if (i > -1) {
+      let { timer, cancel } = this.tasks[i];
+      cancel();
+      if (timer) {
+        clearTimeout(timer);
+      }
+      this.tasks.splice(i, 1);
+    }
+  }
+  removeTask(id: number) {
+    var i = this.tasks.findIndex(item => item.id === id);
+    if (i > -1) {
+      this.tasks.splice(i, 1);
+    }
+  }
+
+  get items() {
+    return this.tasks.map(({ id, name, platform, comment, url, time }) => ({
+      id,
+      name,
+      platform,
+      comment,
+      url,
+      time
+    }));
+  }
+}
+
+export const taskManager = new TaskManager();

@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-27 18:07:07
+ * @LastEditTime: 2019-09-29 18:01:22
  */
 import { ArgOrder, ArgBuyDirect, ArgCoudan } from "../struct";
 import { requestData, logFile, getItemId } from "./tools";
@@ -11,7 +11,8 @@ import {
   Serial,
   TimerCondition,
   throwError,
-  delay
+  delay,
+  taskManager
 } from "../../../utils/tools";
 import { getGoodsInfo } from "./goods-mobile";
 import { getCartList, addCart } from "./cart-mobile";
@@ -241,7 +242,7 @@ export class TaobaoOrderMobile {
     logFile(data1, "手机订单结算页", ".json");
     console.log("-------------进入手机订单结算页，准备提交-------------");
     var postdata;
-    async function handler(retryCount = 0) {
+    async function submit(retryCount = 0) {
       try {
         r = Date.now();
         console.time("订单提交" + r);
@@ -264,54 +265,68 @@ export class TaobaoOrderMobile {
           e.message.includes("被挤爆")
         ) {
           console.log(e.message, "正在重试");
-          return handler(retryCount + 1);
+          return submit(retryCount + 1);
         }
         throw e;
       }
     }
-    let f1 = async (t?: number) => {
-      try {
+    (async () => {
+      function f() {
         postdata = transformOrderData(data1, args);
         logFile(postdata, "订单结算页提交的数据", ".json");
-        /* writeFile("a1.json", getTransformData(postdata));
-  writeFile("a2.json", getTransformData(await getPageData(args))); */
-        if (!config.isSubmitOrder) {
-          return;
-        }
-        return handler();
-      } catch (e) {
-        if (e.code === 2 && t && Date.now() < t) {
-          let { params } = transformOrderData(data1, args, "address_1");
-          console.log(moment().format(), "淘宝刷单中");
-          await delay(30);
-          let data = await requestData(
-            "mtop.trade.order.adjust.h5",
-            {
-              params,
-              feature: `{"gzip":"false"}`
-            },
-            "post",
-            "4.0",
-            "#t#ip##_h5_2019"
-          );
-          [/* "endpoint",  */ "linkage" /* , "hierarchy" */].forEach(key => {
-            if (data[key]) {
-              data1[key] = data[key];
-            }
-          });
-          if (data.data.submitOrder_1) {
-            data1.data = data.data;
-          }
-          // data1 = data;
-          return f1(t);
-        } else {
-          throw new Error(e.message);
-        }
       }
-    };
-    let now = Date.now();
-    let t = args.jianlou ? now + 1000 * 60 * args.jianlou : undefined;
-    f1(t);
+      if (args.jianlou) {
+        taskManager.registerTask(
+          {
+            name: "捡漏",
+            platform: "taobao-mobile",
+            comment: "",
+            handler: async () => {
+              try {
+                f();
+                /* writeFile("a1.json", getTransformData(postdata));
+        writeFile("a2.json", getTransformData(await getPageData(args))); */
+                return true;
+              } catch (e) {
+                if (e.code === 2) {
+                  let { params } = transformOrderData(data1, args, "address_1");
+                  let data = await requestData(
+                    "mtop.trade.order.adjust.h5",
+                    {
+                      params,
+                      feature: `{"gzip":"false"}`
+                    },
+                    "post",
+                    "4.0",
+                    "#t#ip##_h5_2019"
+                  );
+                  [/* "endpoint",  */ "linkage" /* , "hierarchy" */].forEach(
+                    key => {
+                      if (data[key]) {
+                        data1[key] = data[key];
+                      }
+                    }
+                  );
+                  if (data.data.submitOrder_1) {
+                    data1.data = data.data;
+                  }
+                } else {
+                  throw new Error(e.message);
+                }
+              }
+            },
+            time: Date.now() + 1000 * 60 * args.jianlou
+          },
+          30
+        );
+      } else {
+        f();
+      }
+      if (!config.isSubmitOrder) {
+        return;
+      }
+      return submit();
+    })();
     return delay(50);
   }
 

@@ -11,13 +11,15 @@ import {
   delay,
   TimerCondition,
   throwError,
-  Serial
+  Serial,
+  taskManager
 } from "../../../utils/tools";
 import { getStock, getGoodsInfo } from "./goods";
 import { newPage } from "../../../utils/page";
 import { config } from "../../common/config";
 import qs = require("querystring");
 import { Page } from "puppeteer";
+import moment = require("moment");
 const user = require("../../../.data/user.json").jingdong;
 
 export class JingDongOrder {
@@ -81,7 +83,7 @@ export class JingDongOrder {
   }
   async cartBuy(data: any, p?: Promise<void>) {
     if (p) {
-      await p
+      await p;
     }
     return this.submitOrder(
       Object.assign(
@@ -137,65 +139,69 @@ export class JingDongOrder {
     }
     await page.evaluate(pass => {
       document.querySelector<HTMLInputElement>("#shortPassInput")!.value = pass;
-      document.querySelector<HTMLElement>("#btnPayOnLine")!.click();
     }, user.paypass);
-    var res = await page.waitForResponse(res =>
-      res.url().startsWith("https://wqdeal.jd.com/deal/msubmit/confirm?")
-    );
-    var text = await res.text();
-    console.log(text);
-    if (text.includes("您要购买的商品无货了")) {
-      console.log("开始刷库存");
-      let {
-        order: { address, venderCart }
-        // @ts-ignore
-      } = await page.evaluate(() => window.dealData);
-      var skulist: any[] = [];
-      venderCart.forEach(({ products }) => {
-        products.forEach(({ mainSku }) => {
-          skulist.push({
-            skuId: mainSku.id,
-            num: mainSku.num
+    let action = async () => {
+      page.evaluate(() => {
+        document.querySelector<HTMLElement>("#btnPayOnLine")!.click();
+      });
+      var res = await page.waitForResponse(res =>
+        res.url().startsWith("https://wqdeal.jd.com/deal/msubmit/confirm?")
+      );
+      var text = await res.text();
+      console.log(text);
+      return text;
+    };
+    let submit = async () => {
+      let text = await action();
+      if (text.includes("您要购买的商品无货了") && args.jianlou) {
+        console.log(moment().format(), "开始刷库存");
+        let {
+          order: { address, venderCart }
+          // @ts-ignore
+        } = await page.evaluate(() => window.dealData);
+        var skulist: any[] = [];
+        venderCart.forEach(({ products }) => {
+          products.forEach(({ mainSku }) => {
+            skulist.push({
+              skuId: mainSku.id,
+              num: mainSku.num
+            });
           });
         });
-      });
-      let f = async () => {
-        var result = await getStock(skulist, address);
-        var n = Object.keys(result).find(key =>
-          result[key].status.includes("无货")
+        await taskManager.registerTask(
+          {
+            name: "刷库存",
+            platform: "jingdong",
+            comment: "",
+            async handler() {
+              var result = await getStock(skulist, address);
+              var n = Object.keys(result).find(key =>
+                result[key].status.includes("无货")
+              );
+              return !n;
+            },
+            time: Date.now() + args.jianlou * 1000 * 60
+          },
+          0
         );
-        if (n) {
-          f();
-        } else {
-          await page.evaluate(pass => {
-            document.querySelector<HTMLInputElement>(
-              "#shortPassInput"
-            )!.value = pass;
-            document.querySelector<HTMLElement>("#btnPayOnLine")!.click();
-          }, user.paypass);
-          var res = await page.waitForResponse(res =>
-            res.url().startsWith("https://wqdeal.jd.com/deal/msubmit/confirm")
-          );
-          var text = await res.text();
-          if (text.includes("您要购买的商品无货了")) {
-            console.log("机会稍纵即逝，继续来");
-            f();
-          } else {
-            console.log("下单成功");
-          }
-        }
-      };
-      f();
-      return;
-    } else if (text.includes("多次提交过快，请稍后再试")) {
+        return submit();
+      }
+      throw new Error(text);
+    };
+    try {
+      await submit();
+      console.log("下单成功");
+      await page.waitForNavigation();
+    } catch (e) {
+      if (e.message.includes("多次提交过快，请稍后再试")) {
+        await delay(2000);
+        console.log("retry");
+        return this.submitOrder(args);
+      }
+      throw e;
+    } finally {
       await page.close();
-      await delay(2000);
-      console.log("retry");
-      return this.submitOrder(args);
     }
-    console.log("下单成功");
-    await page.waitForNavigation();
-    await page.close();
     // "errId":"9075","errMsg":"您的下单操作过于频繁，请稍后再试."
     // "errId":"8730","errMsg":"您要购买的商品无货了，换个收货地址或者其他款式的商品试试"
   }

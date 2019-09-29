@@ -35,11 +35,10 @@ async function sysTime(platform: string) {
     (dt > 0 ? "慢了" : "快了") + Math.abs(dt) + "ms"
   );
   console.log(platform + "单程时间", rtl + "ms");
-  DT[platform] = dt /* + rtl - 100 */;
+  DT[platform] = dt + (platform === "taobao" ? 0 : rtl);
 }
 
-sysTime("taobao");
-sysTime("jingdong");
+sysTime("taobao").then(() => sysTime("jingdong"));
 
 export default class ShopController extends Controller {
   public async cartList() {

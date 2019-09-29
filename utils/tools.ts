@@ -376,6 +376,7 @@ export class TaskManager {
             f();
           } catch (e) {
             this.removeTask(id);
+            console.log(moment().format(), `${data.platform}-${data.name} 任务已取消`);
             reject(e);
           }
         };

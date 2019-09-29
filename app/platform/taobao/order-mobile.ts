@@ -276,7 +276,7 @@ export class TaobaoOrderMobile {
         logFile(postdata, "订单结算页提交的数据", ".json");
       }
       if (args.jianlou) {
-        taskManager.registerTask(
+        await taskManager.registerTask(
           {
             name: "捡漏",
             platform: "taobao-mobile",

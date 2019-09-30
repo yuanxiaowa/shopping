@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-12 15:48:14
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-06 11:30:50
+ * @LastEditTime: 2019-09-30 11:58:22
  */
 import request = require("request-promise-native");
 import { newPage } from "../../../utils/page";
@@ -117,7 +117,7 @@ export async function requestData(
   var msg = arr_msg[arr_msg.length - 1];
   if (code !== "SUCCESS") {
     let err = new Error(msg);
-    err.name = code;
+    err.name = api + code;
     logFile(text, "_err-" + api);
     throw err;
   }

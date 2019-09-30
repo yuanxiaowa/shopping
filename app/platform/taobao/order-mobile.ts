@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 09:17:48
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-29 18:01:22
+ * @LastEditTime: 2019-09-30 14:06:34
  */
 import { ArgOrder, ArgBuyDirect, ArgCoudan } from "../struct";
 import { requestData, logFile, getItemId } from "./tools";
@@ -271,56 +271,63 @@ export class TaobaoOrderMobile {
       }
     }
     (async () => {
-      function f() {
+      async function f() {
+        try {
+          postdata = transformOrderData(data1, args);
+          logFile(postdata, "订单结算页提交的数据", ".json");
+          /* writeFile("a1.json", getTransformData(postdata));
+  writeFile("a2.json", getTransformData(await getPageData(args))); */
+          return true;
+        } catch (e) {
+          if (e.code === 2) {
+            let { params } = transformOrderData(data1, args, "address_1");
+            let data = await requestData(
+              "mtop.trade.order.adjust.h5",
+              {
+                params,
+                feature: `{"gzip":"false"}`
+              },
+              "post",
+              "4.0",
+              "#t#ip##_h5_2019"
+            );
+            [/* "endpoint",  */ "linkage" /* , "hierarchy" */].forEach(key => {
+              if (data[key]) {
+                data1[key] = data[key];
+              }
+            });
+            if (data.data.submitOrder_1) {
+              data1.data = data.data;
+            }
+          } else {
+            throw new Error(e.message);
+          }
+        }
+      }
+      try {
         postdata = transformOrderData(data1, args);
         logFile(postdata, "订单结算页提交的数据", ".json");
-      }
-      if (args.jianlou) {
-        await taskManager.registerTask(
-          {
-            name: "捡漏",
-            platform: "taobao-mobile",
-            comment: "",
-            handler: async () => {
-              try {
-                f();
-                /* writeFile("a1.json", getTransformData(postdata));
-        writeFile("a2.json", getTransformData(await getPageData(args))); */
-                return true;
-              } catch (e) {
-                if (e.code === 2) {
-                  let { params } = transformOrderData(data1, args, "address_1");
-                  let data = await requestData(
-                    "mtop.trade.order.adjust.h5",
-                    {
-                      params,
-                      feature: `{"gzip":"false"}`
-                    },
-                    "post",
-                    "4.0",
-                    "#t#ip##_h5_2019"
-                  );
-                  [/* "endpoint",  */ "linkage" /* , "hierarchy" */].forEach(
-                    key => {
-                      if (data[key]) {
-                        data1[key] = data[key];
-                      }
-                    }
-                  );
-                  if (data.data.submitOrder_1) {
-                    data1.data = data.data;
-                  }
-                } else {
-                  throw new Error(e.message);
-                }
-              }
+      } catch (e) {
+        if (args.jianlou) {
+          await taskManager.registerTask(
+            {
+              name: "捡漏",
+              platform: "taobao-mobile",
+              comment: (() => {
+                var { data } = data1;
+                return Object.keys(data)
+                  .filter(key => data[key].tag === "itemInfo")
+                  .map(key => data[key].fields.title)
+                  .join("~");
+              })(),
+              handler: f,
+              time: Date.now() + 1000 * 60 * args.jianlou
             },
-            time: Date.now() + 1000 * 60 * args.jianlou
-          },
-          30
-        );
-      } else {
-        f();
+            30
+          );
+        } else {
+          throw e;
+        }
       }
       if (!config.isSubmitOrder) {
         return;

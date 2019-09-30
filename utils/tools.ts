@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-29 17:43:00
+ * @LastEditTime: 2019-09-30 11:15:12
  */
 import fs = require("fs-extra");
 import { join } from "path";
@@ -340,6 +340,7 @@ export class TaskManager {
       var rejectHandler = () => {
         status = "reject";
       };
+      var title = [data.platform, data.name, data.comment].join("-");
       if (!data.handler) {
         if (data.url) {
           if (this.tasks.find(task => task.url === data.url)) {
@@ -356,7 +357,13 @@ export class TaskManager {
         let f = async () => {
           try {
             if (status === "reject") {
-              throw new Error(`${data.platform}-${data.name} 任务取消`);
+              throw new Error(`${title} 任务取消`);
+            }
+            console.log(moment().format(), `${title}`);
+            let r = await data.handler!();
+            if (r) {
+              this.removeTask(id);
+              return resolve();
             }
             if (data.time) {
               if (Date.now() < time) {
@@ -364,19 +371,13 @@ export class TaskManager {
                   await delay(t);
                 }
               } else {
-                throw new Error(`${data.platform}-${data.name} 超时了`);
+                throw new Error(`${title} 超时了`);
               }
-            }
-            console.log(moment().format(), `${data.platform}-${data.name}`);
-            let r = await data.handler!();
-            if (r) {
-              this.removeTask(id);
-              return resolve();
             }
             f();
           } catch (e) {
             this.removeTask(id);
-            console.log(moment().format(), `${data.platform}-${data.name} 任务已取消`);
+            console.log(moment().format(), `${title} 任务已取消`);
             reject(e);
           }
         };

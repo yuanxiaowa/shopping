@@ -154,47 +154,61 @@ export async function getCouponEdetail(url: string) {
     "1.0"
   );
   var [data] = res[res.meta.resultListPath];
-  var { couponActivityId, itemId, couponKey, retStatus } = data;
+  var { couponActivityId, itemId, couponKey, retStatus, nCouponInfoMap } = data;
   if (!itemId) {
     throw new Error("宝贝不见了");
   }
-  var res = await requestData(
-    "mtop.alimama.union.xt.en.api.entry",
-    {
-      variableMap: JSON.stringify(
-        Object.assign(
+  var keys = [couponKey];
+  if (nCouponInfoMap) {
+    keys.push(nCouponInfoMap.couponKeys);
+  }
+  var recoveryId = `201_11.1.228.74_6456882_${Date.now()}`;
+  for (let key of keys) {
+    var res = await requestData(
+      "mtop.alimama.union.xt.en.api.entry",
+      {
+        variableMap: JSON.stringify(
+          Object.assign(
+            {
+              couponKey: key,
+              af: "1",
+              pid,
+              st: "39",
+              ulandSrc: recoveryId,
+              recoveryId,
+              umidToken:
+                "TE31913E427F435E86363DE377D124A1A16824AFB854138DC99D70FA124",
+              union_lens: searchParams.get("union_lens"),
+              itemId,
+              mteeAsac: "1A19322J4Z3PLXO583LRB6",
+              mteeType: "sdk",
+              mteeUa:
+                "120#bX1bSSanxLp5FnZyySqwjzvbP6vJtVwmR7r/No8CJkKLWTNmwkCmvhlmU+AOBcmPriP/Hb87mLwtmBvP21efq0n8oBwirW68N3lNXor8/E8Ht7Qa2FPMKMaVdzqs+53n3ZoSEcL2m0KsIOKJ7vjBcFA5I4+MetpU4t+sDzyUokW6UbcelO9HrpTEb+SDknLFlAPg9GwNUK3PTC9bPXubsly6XqPhL1bV75GPN0k/b1SOyq/C0NIbbgvpNqMzybxb75QyNPc/bkL0Y1UZSkR842uVSxtkOyzBzBjHlvO12zdt4/fhn9MgIloXwclXaywNgcM+pJ/PLOGkpv450nRduYvGV6IrNcfwusoJV90ClSVupI1oFlFagxoeDdqOLuqP84PI51S3pUFdKBZT3G/oMiVFW+SHtdi+heWtnFY1D8sOzJgk1YhHEAUJEPReDTEOQrWVO1uRojTmBK/tkuxHERlRyhr0DpRU/mlMM9Vd718JCg8SXhvrhtIMf1kQJF8P6o3CNcez8/rau820YZEYK3VicIdN/u2IvrMRPwD0iymS3zXYuGVX3KMQq5HbiZ93oo4RpY0TFVh6a1niSw2CLGmX4W1fkPr9wn0i8Tv56VCW7FXgtnOfJ9vvAiArt17CpFSM1ZD4zmnNEMOULIUQrjXi96Vz9qW13VyN2iVqGWHppVJpY9kiMHK2zRAtA3dv5vMTd/P+9BvkEySK0Psu3HgNNjMTzK1b40QneDGzYxx0cavHVq8XcTpyDyq6svJRJF8eGHBJsdN/AbM9MXHiyIdOLwt9U1Qg5Hjsoj1L5wS+hXCW70WgbIuQfuSj7HUiEq1+TtsQAfkgCtofPqEawcJbdrJuyo5w5LXvDDn19JLI9Lp/tGaPrZu7vm4yJPcwdQPAZY6Zu1GwTENN7vgnrmgwTfdMjZZjyF05+xb58I5F5Wis+CHG0tfijRaDdAR93k7i/p7QyJHYZaOGXceB+SE8ylrGRrGXANgT2Tz2iEkeFBED7B1EhT26vysvpjptTD2OyyUf57TP5HqlW+pIpJjvDm0EzAXdsbY6/zV2Tjc1530eaeAY824mbVhQ1wv02/ocxVtElMukYFWjyGyyg6M3wqKTEkQyO6z9uyyOMiY8zjRKFT9a8fauIUPjGarIRZ92cDnhOrEOJwKNthrk2OD4VwDMq2manUG5+9WEqUwlALV0lgcylyfAS/lCF+GtA6s3oLUpXS8H6lnsITyMEF7evU6ZIEtuXvT+DiBg/d7c1v=="
+            },
+            setting.mteeInfo
+          )
+        ),
+        floorId: "13352"
+      },
+      "get",
+      "1.0"
+    );
+    var {
+      applyCoupon,
+      recommend: {
+        resultList: [
           {
-            couponKey,
-            af: "1",
-            pid,
-            st: "39",
-            ulandSrc: "201_11.1.228.74_6456882_1563377267124",
-            itemId,
-            mteeAsac: "1A19322J4Z3PLXO583LRB6",
-            mteeType: "sdk"
-          },
-          setting.mteeInfo
-        )
-      ),
-      floorId: "13352"
-    },
-    "get",
-    "1.0"
-  );
-  var {
-    applyCoupon,
-    recommend: {
-      resultList: [
-        {
-          coupon: {
-            // 0:成功 4:抽风 1:买家领取单张券限制
-            retStatus,
-            msg
+            coupon: {
+              // 0:成功 4:抽风 1:买家领取单张券限制
+              retStatus,
+              msg
+            }
           }
-        }
-      ]
-    }
-  } = res;
+        ]
+      }
+    } = res;
+  }
+
   logFile(res, "领取uland-优惠券");
   return {
     success: retStatus === 0 || retStatus === 1,

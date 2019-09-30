@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-30 11:15:12
+ * @LastEditTime: 2019-09-30 16:56:19
  */
 import fs = require("fs-extra");
 import { join } from "path";
@@ -418,7 +418,7 @@ export class TaskManager {
       id,
       name,
       platform,
-      comment,
+      text: comment,
       url,
       time
     }));

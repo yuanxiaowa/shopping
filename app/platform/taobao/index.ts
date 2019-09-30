@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-19 09:47:55
+ * @LastEditTime: 2019-09-30 16:45:00
  */
 import AutoShop from "../auto-shop";
 import { delay } from "../../../utils/tools";
@@ -22,7 +22,7 @@ import {
 } from "./cart-mobile";
 import { taobaoComment } from "./comment";
 import { taobaoOrderMobile } from "./order-mobile";
-import setting, { setCookie } from "./setting";
+import setting from "./setting";
 import { taobaoOrderPc } from "./order-pc";
 import {
   getGoodsInfo,
@@ -38,7 +38,6 @@ import path = require("path");
 import iconv = require("iconv-lite");
 
 export class Taobao extends AutoShop {
-
   constructor() {
     super({
       name: "taobao",
@@ -273,12 +272,12 @@ export class Taobao extends AutoShop {
   }
   setCookies(cookies: any[], url: string) {
     super.setCookies(cookies, url);
-    if (url.includes(".taobao.com")) {
+    /* if (url.includes(".taobao.com")) {
       setCookie(
         cookies
           .map(cookie => cookie.name + "=" + encodeURIComponent(cookie.value))
           .join("; ")
       );
-    }
+    } */
   }
 }

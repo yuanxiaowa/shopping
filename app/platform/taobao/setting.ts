@@ -1,3 +1,9 @@
+/*
+ * @Author: oudingyin
+ * @Date: 2019-08-26 09:17:48
+ * @LastEditors: oudingy1in
+ * @LastEditTime: 2019-09-30 16:47:07
+ */
 import request = require("request-promise-native");
 import iconv = require("iconv-lite");
 import { UA, global_req } from "../../common/config";
@@ -5,7 +11,6 @@ import { UA, global_req } from "../../common/config";
 interface Setting {
   spm: string;
   req: request.RequestPromiseAPI;
-  order_req: request.RequestPromiseAPI;
   appKey: string;
   mteeInfo: any;
   cookie: string;
@@ -24,36 +29,12 @@ var setting: Setting = {
     ulandSrc: "201_11.230.188.217_8942114_1563529853358",
     umidToken: "T1B909C1008F917EC23F10509E607EFB7EF74F21A9C621A9A956FAEDC63"
   },
-  req: global_req
-};
-
-export function setCookie(cookie: string) {
-  setting.order_req = request.defaults({
+  req: global_req.defaults({
     headers: {
-      "Accept-Encoding": "br, gzip, deflate",
-      // Accept: '*/*',
-      "User-Agent": UA.pc,
-      cookie
-      // Referer: 'https://bean.m.jd.com/continuity/index',
-      // 'Accept-Language': 'en-us'
-    },
-    gzip: true,
-    encoding: null,
-    // @ts-ignore
-    transform(body: any, { headers }: Response) {
-      var ctype = headers["content-type"]!;
-      if (/charset=([-\w]+)/i.test(ctype)) {
-        if (RegExp.$1 && RegExp.$1.toLowerCase() !== "utf-8") {
-          return iconv.decode(body, RegExp.$1);
-        }
-      }
-      if (body instanceof Buffer) {
-        return String(body);
-      }
-      return body;
+      "User-Agent": UA.wap
     }
-  });
-}
+  })
+};
 
 export default setting;
 

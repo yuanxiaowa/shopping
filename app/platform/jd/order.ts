@@ -188,20 +188,23 @@ export class JingDongOrder {
       }
       throw new Error(text);
     };
-    try {
-      await submit();
-      console.log("下单成功");
-      await page.waitForNavigation();
-    } catch (e) {
-      if (e.message.includes("多次提交过快，请稍后再试")) {
-        await delay(2000);
-        console.log("retry");
-        return this.submitOrder(args);
+    (async () => {
+      try {
+        await submit();
+        console.log("下单成功");
+        await page.waitForNavigation();
+      } catch (e) {
+        if (e.message.includes("多次提交过快，请稍后再试")) {
+          await delay(2000);
+          console.log("retry");
+          return this.submitOrder(args);
+        }
+        throw e;
+      } finally {
+        await page.close();
       }
-      throw e;
-    } finally {
-      await page.close();
-    }
+    })();
+    return delay(50)
     // "errId":"9075","errMsg":"您的下单操作过于频繁，请稍后再试."
     // "errId":"8730","errMsg":"您要购买的商品无货了，换个收货地址或者其他款式的商品试试"
   }

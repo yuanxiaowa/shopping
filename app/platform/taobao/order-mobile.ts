@@ -371,7 +371,7 @@ export class TaobaoOrderMobile {
   prev_id = "";
   async buyDirect(args: ArgBuyDirect, p?: Promise<void>) {
     var data = await getGoodsInfo(args.url, args.skus);
-    if (this.prev_id === data.itemId) {
+    if (!args.ignoreRepeat && this.prev_id === data.itemId) {
       throwError("重复下单");
     }
     this.prev_id = data.itemId;

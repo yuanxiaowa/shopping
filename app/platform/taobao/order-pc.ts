@@ -36,18 +36,20 @@ export class TaobaoOrderPc {
       success: quantity >= args.quantity
     };
   }
-  prev_id = ''
-  async buyDirect(arg: ArgBuyDirect, p?: Promise<void>) {
+  prev_id = "";
+  async buyDirect(args: ArgBuyDirect, p?: Promise<void>) {
     var { itemDO, tradeConfig, tradeType, form, detail } = await getGoodsInfo(
-      arg.url,
+      args.url,
       true
     );
-    if (this.prev_id === itemDO.itemId) {
-      throwError('重复下单')
+    if (!args.ignoreRepeat) {
+      if (this.prev_id === itemDO.itemId) {
+        throwError("重复下单");
+      }
     }
-    this.prev_id = itemDO.itemId
+    this.prev_id = itemDO.itemId;
     Object.assign(form, {
-      quantity: arg.quantity
+      quantity: args.quantity
     });
     if (!p && !itemDO.isOnline) {
       throwError("商品已下架");
@@ -68,15 +70,15 @@ export class TaobaoOrderPc {
       } else {
         addr_url += tradeConfig[2];
       }
-      if (arg.jianlou) {
+      if (args.jianlou) {
         this.waitForStock(
           {
-            id: getItemId(arg.url),
-            quantity: arg.quantity,
+            id: getItemId(args.url),
+            quantity: args.quantity,
             skuId: form.skuId,
-            url: arg.url
+            url: args.url
           },
-          arg.jianlou
+          args.jianlou
         ).then(() =>
           this.submitOrder(
             Object.assign(
@@ -84,11 +86,11 @@ export class TaobaoOrderPc {
                 data: {
                   form,
                   addr_url,
-                  Referer: arg.url
+                  Referer: args.url
                 },
                 other: {}
               },
-              arg
+              args
             ),
             type
           )
@@ -101,11 +103,11 @@ export class TaobaoOrderPc {
             data: {
               form,
               addr_url,
-              Referer: arg.url
+              Referer: args.url
             },
             other: {}
           },
-          arg
+          args
         ),
         type
       );

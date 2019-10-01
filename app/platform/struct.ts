@@ -14,6 +14,7 @@ export interface ArgBuyDirect {
   from_cart?: boolean;
   from_pc?: boolean;
   diejia?: number;
+  ignoreRepeat?: boolean;
 }
 
 export interface ArgOrder<T> {
@@ -22,7 +23,7 @@ export interface ArgOrder<T> {
   expectedPrice?: number;
   noinvalid?: boolean;
   seckill?: boolean;
-  jianlou?:number
+  jianlou?: number;
 }
 
 export interface ArgCartBuy {

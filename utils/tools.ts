@@ -376,6 +376,10 @@ export class TaskManager {
             }
             f();
           } catch (e) {
+            if (e.name === "RequestError") {
+              f();
+              return;
+            }
             this.removeTask(id);
             console.log(moment().format(), `${title} 任务已取消`);
             reject(e);

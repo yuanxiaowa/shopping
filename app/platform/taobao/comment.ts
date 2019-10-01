@@ -7,50 +7,91 @@
 import { requestData } from "./tools";
 import { getComment } from "../comment-tpl";
 import { Serial } from "../../../utils/tools";
+import setting from "../jd/setting";
 
 export class TaobaoComment {
   async getCommentList(page = 1) {
-    var {
-      data: { group, meta }
-    } = await requestData(
-      "mtop.order.queryBoughtList",
+    var html = await setting.req.post(
+      "https://buyertrade.taobao.com/trade/itemlist/asyncBought.htm?action=itemlist/BoughtQueryAction&event_submit_do_query=1&_input_charset=utf8&sm",
       {
-        appName: "tborder",
-        appVersion: "1.0",
-        tabCode: "waitRate",
-        page
-      },
-      "get",
-      "4.0",
-      "##h5"
+        form: {
+          lastStartRow: "",
+          options: "0",
+          orderStatus: "ALL",
+          pageNum: page,
+          pageSize: "15",
+          queryBizType: "",
+          queryOrder: "desc",
+          rateStatus: "I_HAS_NOT_COMMENT",
+          tabCode: "waitRate",
+          prePageNo: page - 1 || 2
+        },
+        headers: {
+          'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-Requested-With': 'XMLHttpRequest',
+          'referer': 'https://buyertrade.taobao.com/trade/itemlist/list_bought_items.htm?action=itemlist/BoughtQueryAction&event_submit_do_query=1&tabCode=waitRate'
+        }
+      }
     );
-    let items = group.map(obj => {
-      let id = Object.keys(obj)[0];
-      let list = obj[id].filter(
-        ({ cellType, cellData }) => cellType === "sub" && cellData[0].fields.pic
-      );
-      let title = list
-        .map(({ cellData }) => cellData[0].fields.title)
-        .join(",");
-      let img = list[0].cellData[0].fields.pic;
-      let url = list[0].cellData[0].fields.pic;
-      return {
+    var {
+      mainOrders,
+      page: { currentPage, totalPage }
+    } = JSON.parse(html);
+    var items = mainOrders.map(({ id, subOrders }) => ({
+      id,
+      items: subOrders.map(({ itemInfo }) => ({
         id,
-        items: [
-          {
-            id,
-            title,
-            img,
-            url
-          }
-        ]
-      };
-    });
+        title: itemInfo.title,
+        img: "https:" + itemInfo.pic,
+        url: "https:" + itemInfo.itemUrl
+      }))
+    }));
     return {
       items,
       page,
-      more: page < Number(meta.page.fields.totalPage)
-    };
+      more: currentPage<totalPage
+    }
+    // var {
+    //   data: { group, meta }
+    // } = await requestData(
+    //   "mtop.order.queryBoughtList",
+    //   {
+    //     appName: "tborder",
+    //     appVersion: "1.0",
+    //     tabCode: "waitRate",
+    //     page
+    //   },
+    //   "get",
+    //   "4.0",
+    //   "##h5"
+    // );
+    // let items = group.map(obj => {
+    //   let id = Object.keys(obj)[0];
+    //   let list = obj[id].filter(
+    //     ({ cellType, cellData }) => cellType === "sub" && cellData[0].fields.pic
+    //   );
+    //   let title = list
+    //     .map(({ cellData }) => cellData[0].fields.title)
+    //     .join(",");
+    //   let img = list[0].cellData[0].fields.pic;
+    //   let url = list[0].cellData[0].fields.pic;
+    //   return {
+    //     id,
+    //     items: [
+    //       {
+    //         id,
+    //         title,
+    //         img,
+    //         url
+    //       }
+    //     ]
+    //   };
+    // });
+    // return {
+    //   items,
+    //   page,
+    //   more: page < Number(meta.page.fields.totalPage)
+    // };
   }
 
   async commentOrder(orderId: string) {

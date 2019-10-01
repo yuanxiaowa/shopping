@@ -168,11 +168,16 @@ export class JingDongOrder {
             });
           });
         });
+        var comment = await page.evaluate(() => {
+          return Array.from(
+            document.querySelectorAll<HTMLLinkElement>(".fn strong")
+          ).map(link => link.textContent!.trim()).join('~').substring(0, 50);
+        });
         await taskManager.registerTask(
           {
             name: "刷库存",
             platform: "jingdong",
-            comment: "",
+            comment,
             async handler() {
               var result = await getStock(skulist, address);
               var n = Object.keys(result).find(key =>
@@ -204,7 +209,7 @@ export class JingDongOrder {
         await page.close();
       }
     })();
-    return delay(50)
+    return delay(50);
     // "errId":"9075","errMsg":"您的下单操作过于频繁，请稍后再试."
     // "errId":"8730","errMsg":"您要购买的商品无货了，换个收货地址或者其他款式的商品试试"
   }

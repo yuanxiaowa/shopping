@@ -8,6 +8,7 @@ import fs = require("fs-extra");
 import { join } from "path";
 import moment = require("moment");
 import { writeFile, writeJSON } from "fs-extra";
+const { Spinner } = require("cli-spinner");
 
 export function remain(h: number, m = 0) {
   var now = new Date();
@@ -354,12 +355,15 @@ export class TaskManager {
           resolve();
         }, t);
       } else {
+        let spinner = new Spinner("processing.. %s");
+        // spinner.setSpinnerString('|/-\\');
+        spinner.start();
         let f = async () => {
           try {
             if (status === "reject") {
               throw new Error(`${title} 任务取消`);
             }
-            console.log(moment().format(), `${title}`);
+            spinner.setSpinnerTitle(  `${moment().format()} ${title}`);
             let r = await data.handler!();
             if (r) {
               this.removeTask(id);
@@ -381,7 +385,8 @@ export class TaskManager {
               return;
             }
             this.removeTask(id);
-            console.log(moment().format(), `${title} 任务已取消`);
+            spinner.setSpinnerTitle(moment().format() + ` ${title} 任务已取消`);
+            spinner.stop();
             reject(e);
           }
         };

@@ -382,11 +382,11 @@ export class TaskManager {
         };
         rejectHandler = (msg = `${moment().format()} 取消任务 ${title}`) => {
           status = "reject";
-          update(-1)
-          this.removeTask(id)
+          update(-1);
+          this.removeTask(id);
           reject(new Error(msg));
         };
-        update(1)
+        update(1);
         let f = async () => {
           try {
             if (status === "reject") {
@@ -395,10 +395,9 @@ export class TaskManager {
             this.spinner.setSpinnerTitle(`${moment().format()} ${title}`);
             let r = await data.handler!();
             if (r) {
-              update(-1)
-              console.log(
-                moment().format() + ` ${title} 任务已完成`
-              );
+              update(-1);
+              this.removeTask(id);
+              console.log(moment().format() + ` ${title} 任务已完成`);
               return resolve();
             }
             if (data.time) {
@@ -407,7 +406,7 @@ export class TaskManager {
                   await delay(t);
                 }
               } else {
-                return rejectHandler(`${title} 超时了`)
+                return rejectHandler(`${title} 超时了`);
               }
             }
             f();
@@ -416,12 +415,10 @@ export class TaskManager {
               f();
               return;
             }
-            rejectHandler(
-              moment().format() + ` ${title} 任务已取消`
-            );
+            rejectHandler(moment().format() + ` ${title} 任务已取消`);
           }
         };
-        console.log(`${moment().format()} 开始任务 ${title}`)
+        console.log(`${moment().format()} 开始任务 ${title}`);
         f();
         if (data.interval) {
           timer = setTimeout(data.interval.handler, data.interval.t);

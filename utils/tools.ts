@@ -363,10 +363,14 @@ export class TaskManager {
             if (status === "reject") {
               throw new Error(`${title} 任务取消`);
             }
-            spinner.setSpinnerTitle(  `${moment().format()} ${title}`);
+            spinner.setSpinnerTitle(`${moment().format()} ${title}`);
             let r = await data.handler!();
             if (r) {
               this.removeTask(id);
+              spinner.setSpinnerTitle(
+                moment().format() + ` ${title} 任务已取消`
+              );
+              spinner.stop();
               return resolve();
             }
             if (data.time) {

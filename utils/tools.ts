@@ -5,10 +5,9 @@
  * @LastEditTime: 2019-09-30 16:56:19
  */
 import fs = require("fs-extra");
-import { join } from "path";
 import moment = require("moment");
-import { writeFile, writeJSON } from "fs-extra";
-const { Spinner } = require("cli-spinner");
+import { writeFile } from "fs-extra";
+import { Spinner } from "cli-spinner";
 
 export function remain(h: number, m = 0) {
   var now = new Date();
@@ -88,7 +87,7 @@ export async function logReq(msg: string, handler: Function) {
   }
 }
 
-export function logResult(msg: string) {
+export function logResult() {
   return (target: any, key: string, desc: PropertyDescriptor) => {
     var old_f: Function = desc.value;
     desc.value = async (...args: any[]) => {
@@ -321,31 +320,45 @@ interface TaskItem {
   timer?: any;
   cancel: () => void;
   handler?: () => Promise<any>;
+  interval?: {
+    handler: () => any;
+    t: number;
+  };
 }
 
 export class TaskManager {
   private tasks: TaskItem[] = [];
   private id = 0;
+  private spinner = new Spinner();
+  private count = 0;
   registerTask(
     data: Pick<
       TaskItem,
-      "name" | "platform" | "comment" | "url" | "handler" | "time"
+      "name" | "platform" | "comment" | "url" | "handler" | "time" | "interval"
     >,
     t: number
-  ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      var id = this.id++;
+  ) {
+    var id = this.id++;
+    var p = <
+      Promise<any> & {
+        id: number;
+      }
+    >new Promise((resolve, reject) => {
       var timer: any;
       var time = moment(data.time).valueOf();
       var status = "pending";
-      var rejectHandler = () => {
-        status = "reject";
-      };
+      var rejectHandler: any;
       var title = [data.platform, data.name, data.comment].join("-");
       if (!data.handler) {
+        rejectHandler = (msg: string) => {
+          if (timer) {
+            clearTimeout(timer);
+          }
+          reject(msg);
+        };
         if (data.url) {
           if (this.tasks.find(task => task.url === data.url)) {
-            return reject(
+            return rejectHandler(
               "已存在该任务 " + JSON.stringify(data.comment, null, 2)
             );
           }
@@ -355,22 +368,37 @@ export class TaskManager {
           resolve();
         }, t);
       } else {
-        let spinner = new Spinner("processing.. %s");
-        // spinner.setSpinnerString('|/-\\');
-        spinner.start();
+        let update = (i: number) => {
+          if (i === 1) {
+            if (this.count === 0) {
+              this.spinner.start();
+            }
+          } else {
+            if (this.count === 1) {
+              this.spinner.stop(true);
+            }
+          }
+          this.count += i;
+        };
+        rejectHandler = (msg = `${moment().format()} 取消任务 ${title}`) => {
+          status = "reject";
+          update(-1)
+          this.removeTask(id)
+          reject(new Error(msg));
+        };
+        update(1)
         let f = async () => {
           try {
             if (status === "reject") {
-              throw new Error(`${title} 任务取消`);
+              return;
             }
-            spinner.setSpinnerTitle(`${moment().format()} ${title}`);
+            this.spinner.setSpinnerTitle(`${moment().format()} ${title}`);
             let r = await data.handler!();
             if (r) {
-              this.removeTask(id);
-              spinner.setSpinnerTitle(
-                moment().format() + ` ${title} 任务已取消`
+              update(-1)
+              console.log(
+                moment().format() + ` ${title} 任务已完成`
               );
-              spinner.stop();
               return resolve();
             }
             if (data.time) {
@@ -379,7 +407,7 @@ export class TaskManager {
                   await delay(t);
                 }
               } else {
-                throw new Error(`${title} 超时了`);
+                return rejectHandler(`${title} 超时了`)
               }
             }
             f();
@@ -388,13 +416,16 @@ export class TaskManager {
               f();
               return;
             }
-            this.removeTask(id);
-            spinner.setSpinnerTitle(moment().format() + ` ${title} 任务已取消`);
-            spinner.stop();
-            reject(e);
+            rejectHandler(
+              moment().format() + ` ${title} 任务已取消`
+            );
           }
         };
+        console.log(`${moment().format()} 开始任务 ${title}`)
         f();
+        if (data.interval) {
+          timer = setTimeout(data.interval.handler, data.interval.t);
+        }
       }
       this.tasks.push({
         id,
@@ -407,6 +438,8 @@ export class TaskManager {
         timer
       });
     });
+    p.id = id;
+    return p;
   }
   cancelTask(id: number) {
     var i = this.tasks.findIndex(item => item.id === id);

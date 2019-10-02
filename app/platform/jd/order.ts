@@ -171,9 +171,14 @@ export class JingDongOrder {
         var comment = await page.evaluate(() => {
           return Array.from(
             document.querySelectorAll<HTMLLinkElement>(".fn strong")
-          ).map(link => link.textContent!.trim()).join('~').substring(0, 50);
+          )
+            .map(link => link.textContent!.trim())
+            .join("~")
+            .substring(0, 50);
         });
-        await taskManager.registerTask(
+        var startTime = Date.now();
+        var endTime = startTime + args.jianlou * 1000 * 60;
+        var p = taskManager.registerTask(
           {
             name: "刷库存",
             platform: "jingdong",
@@ -185,10 +190,22 @@ export class JingDongOrder {
               );
               return !n;
             },
-            time: Date.now() + args.jianlou * 1000 * 60
+            time: endTime,
+            interval: {
+              handler: () => {
+                taskManager.cancelTask(p.id);
+                var t = Date.now();
+                if (t < endTime) {
+                  args.jianlou = ((endTime - t) / 1000 / 60) >> 0;
+                  this.submitOrder(args);
+                }
+              },
+              t: 10 * 60 * 1000
+            }
           },
           0
         );
+        await p;
         return submit();
       }
       throw new Error(text);

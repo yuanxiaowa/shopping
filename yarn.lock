@@ -345,6 +345,12 @@
   dependencies:
     "@types/node" "*"
 
+"@types/cli-spinner@^0.2.0":
+  version "0.2.0"
+  resolved "https://registry.npm.taobao.org/@types/cli-spinner/download/@types/cli-spinner-0.2.0.tgz#50304d21d9a3623a878fc2a42c9bfa6921c6d236"
+  dependencies:
+    "@types/node" "*"
+
 "@types/connect@*":
   version "3.4.32"
   resolved "https://registry.npm.taobao.org/@types/connect/download/@types/connect-3.4.32.tgz#aa0e9616b9435ccad02bc52b5b454ffc2c70ba28"

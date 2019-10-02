@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-08-26 15:02:23
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-02 14:21:53
+ * @LastEditTime: 2019-10-02 21:58:57
  */
 import setting from "./setting";
 import { getCookie, time33, getSkuId } from "./tools";
@@ -200,7 +200,7 @@ export class JingDongOrder {
                   this.submitOrder(args);
                 }
               },
-              t: 10 * 60 * 1000
+              t: 30 * 60 * 1000
             }
           },
           0

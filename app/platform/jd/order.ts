@@ -200,6 +200,10 @@ export class JingDongOrder {
                 // page.reload()
                 page.close();
                 page = await this.getOrderPage();
+                page.goto(args.data.submit_url);
+                await page
+                  .waitForResponse(res => res.url().includes("userasset"))
+                  .then(res => res.text());
                 await page.evaluate(pass => {
                   document.querySelector<HTMLInputElement>(
                     "#shortPassInput"
@@ -212,7 +216,7 @@ export class JingDongOrder {
           0
         );
         await p;
-        console.log(moment().format(), 'jingdong刷到库存了，去下单---')
+        console.log(moment().format(), "jingdong刷到库存了，去下单---");
         return submit();
       }
       throw new Error(text);

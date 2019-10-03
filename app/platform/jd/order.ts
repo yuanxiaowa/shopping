@@ -193,12 +193,8 @@ export class JingDongOrder {
             time: endTime,
             interval: {
               handler: () => {
-                taskManager.cancelTask(p.id);
-                var t = Date.now();
-                if (t < endTime) {
-                  args.jianlou = ((endTime - t) / 1000 / 60) >> 0;
-                  this.submitOrder(args);
-                }
+                // taskManager.cancelTask(p.id);
+                page.reload()
               },
               t: 30 * 60 * 1000
             }

@@ -421,7 +421,10 @@ export class TaskManager {
         console.log(`${moment().format()} 开始任务 ${title}`);
         f();
         if (data.interval) {
-          timer = setTimeout(data.interval.handler, data.interval.t);
+          timer = setTimeout(function f() {
+            data.interval!.handler();
+            setTimeout(f, data.interval!.t);
+          }, data.interval.t);
         }
       }
       this.tasks.push({

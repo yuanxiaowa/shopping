@@ -331,6 +331,7 @@ export class TaobaoOrderMobile {
             },
             30
           );
+          console.log(moment().format(), '---淘宝刷到库存了，去下单--------')
         } else {
           throw e;
         }

@@ -212,6 +212,7 @@ export class JingDongOrder {
           0
         );
         await p;
+        console.log(moment().format(), 'jingdong刷到库存了，去下单---')
         return submit();
       }
       throw new Error(text);

@@ -34,7 +34,8 @@ const request_tags = {
 function transformOrderData(
   orderdata: any,
   args: ArgOrder<any>,
-  operator?: string
+  operator?: string,
+  new_structure?: any
 ) {
   var {
     data,
@@ -43,7 +44,24 @@ function transformOrderData(
     endpoint
   } = orderdata;
   var dataSubmitOrder = data.submitOrder_1;
-  var price = 0;
+  var price = dataSubmitOrder.hidden.extensionMap.showPrice;
+  if (operator !== "address_1") {
+    if (typeof args.expectedPrice === "number") {
+      if (Number(args.expectedPrice) < Number(price)) {
+        throw {
+          message: "价格太高，买不起",
+          code: 2
+        };
+      }
+    }
+    var invalids = structure[root].filter(name => name.startsWith("invalid"));
+    if (invalids.length > 0) {
+      throw {
+        message: "有失效宝贝",
+        code: 2
+      };
+    }
+  }
   // if (dataSubmitOrder.hidden) {
   // var realPay = data.realPay_1;
   var orderData = Object.keys(data).reduce(
@@ -63,7 +81,6 @@ function transformOrderData(
     },
     <any>{}
   );
-  price = dataSubmitOrder.hidden.extensionMap.showPrice;
   // } else {
   //   let realPay = data.realPay_1;
   //   endpoint = undefined;
@@ -152,6 +169,9 @@ function transformOrderData(
       submitParams: linkage.common.submitParams,
       validateParams: linkage.common.validateParams
     };
+    if (new_structure) {
+      structure = new_structure;
+    }
   }
   var postdata = {
     params: JSON.stringify({
@@ -168,26 +188,6 @@ function transformOrderData(
     }),
     ua
   };
-  if (operator === "address_1") {
-    return postdata;
-  }
-  if (typeof args.expectedPrice === "number") {
-    if (Number(args.expectedPrice) < Number(price)) {
-      throw {
-        data: postdata,
-        message: "价格太高，买不起",
-        code: 2
-      };
-    }
-  }
-  var invalids = structure[root].filter(name => name.startsWith("invalid"));
-  if (invalids.length > 0) {
-    throw {
-      data: postdata,
-      message: "有失效宝贝",
-      code: 2
-    };
-  }
   return postdata;
 }
 
@@ -246,6 +246,7 @@ export class TaobaoOrderMobile {
     logFile(data1, "手机订单结算页", ".json");
     console.log("-------------进入手机订单结算页，准备提交-------------");
     var postdata;
+    var structure;
     async function submit(retryCount = 0) {
       try {
         r = Date.now();
@@ -277,7 +278,7 @@ export class TaobaoOrderMobile {
     (async () => {
       async function f() {
         try {
-          postdata = transformOrderData(data1, args);
+          postdata = transformOrderData(data1, args, undefined, structure);
           logFile(postdata, "订单结算页提交的数据", ".json");
           /* writeFile("a1.json", getTransformData(postdata));
   writeFile("a2.json", getTransformData(await getPageData(args))); */
@@ -295,11 +296,12 @@ export class TaobaoOrderMobile {
               "4.0",
               "#t#ip##_h5_2019"
             );
-            [/* "endpoint",  */ "linkage" /* , "hierarchy" */].forEach(key => {
+            ["endpoint", "linkage" /* , "hierarchy" */].forEach(key => {
               if (data[key]) {
                 data1[key] = data[key];
               }
             });
+            structure = data.hierarchy.structure;
             if (data.data.submitOrder_1) {
               data1.data = data.data;
             }

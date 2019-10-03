@@ -27,7 +27,7 @@ export async function login(page: Page) {
 export async function loginMobile(page: Page) {
   await page.goto(`https://plogin.m.jd.com/user/login.action`);
   await page.type("#username", user.username);
-  await page.type("#password", user.password);
+  await page.type("#pwd", user.password);
   await page.click("#loginBtn");
   // await page.click("a.quick-qq");
   await page.waitForNavigation();
@@ -36,7 +36,7 @@ export async function loginMobile(page: Page) {
 export async function loginAction(page: Page) {
   console.log("京东手机登录");
   await page.type("#username", user.username);
-  await page.type("#password", user.password);
+  await page.type("#pwd", user.password);
   page.click("#loginBtn");
   await page.waitForNavigation();
 }

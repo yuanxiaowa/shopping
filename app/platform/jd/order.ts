@@ -97,13 +97,7 @@ export class JingDongOrder {
       )
     );
   }
-
-  @Serial(0)
-  async submitOrder(
-    args: ArgOrder<{
-      submit_url: string;
-    }>
-  ): Promise<any> {
+  async getOrderPage() {
     var page = await newPage();
     page.setRequestInterception(true);
     page.on("request", request => {
@@ -116,6 +110,15 @@ export class JingDongOrder {
         request.continue();
       }
     });
+    return page;
+  }
+  @Serial(0)
+  async submitOrder(
+    args: ArgOrder<{
+      submit_url: string;
+    }>
+  ): Promise<any> {
+    var page = await this.getOrderPage();
     page.goto(args.data.submit_url);
     let text_userasset = await page
       .waitForResponse(res => res.url().includes("userasset"))
@@ -192,9 +195,16 @@ export class JingDongOrder {
             },
             time: endTime,
             interval: {
-              handler: () => {
+              handler: async () => {
                 // taskManager.cancelTask(p.id);
-                page.reload()
+                // page.reload()
+                page.close();
+                page = await this.getOrderPage();
+                await page.evaluate(pass => {
+                  document.querySelector<HTMLInputElement>(
+                    "#shortPassInput"
+                  )!.value = pass;
+                }, user.paypass);
               },
               t: 30 * 60 * 1000
             }

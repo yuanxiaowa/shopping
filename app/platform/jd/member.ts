@@ -35,8 +35,12 @@ export async function loginMobile(page: Page) {
 
 export async function loginAction(page: Page) {
   console.log("京东手机登录");
-  await page.type("#username", user.username);
-  await page.type("#pwd", user.password);
-  page.click("#loginBtn");
+  await page.type("#username", user.username, {
+    delay: 20
+  });
+  await page.type("#pwd", user.password, {
+    delay: 20
+  });
+  page.click(".btn");
   await page.waitForNavigation();
 }

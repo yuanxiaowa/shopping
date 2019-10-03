@@ -108,7 +108,8 @@ export async function requestData(
     {
       method,
       qs,
-      form
+      form,
+      timeout: 1000 * 30
     }
   );
   var { data, ret } = JSON.parse(text);

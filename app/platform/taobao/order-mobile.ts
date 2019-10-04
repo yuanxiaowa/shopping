@@ -12,7 +12,8 @@ import {
   TimerCondition,
   throwError,
   delay,
-  taskManager
+  taskManager,
+  sendQQMsg
 } from "../../../utils/tools";
 import { getGoodsInfo } from "./goods-mobile";
 import { getCartList, addCart } from "./cart-mobile";
@@ -260,6 +261,7 @@ export class TaobaoOrderMobile {
         logFile(ret, "手机订单提交成功");
         console.log("----------手机订单提交成功----------");
         console.timeEnd("订单提交" + r);
+        sendQQMsg(JSON.stringify("手机订单提交成功，速度去付款"));
       } catch (e) {
         if (retryCount >= 2) {
           console.error("已经重试三次，放弃治疗");
@@ -331,7 +333,7 @@ export class TaobaoOrderMobile {
             },
             30
           );
-          console.log(moment().format(), '---淘宝刷到库存了，去下单--------')
+          console.log(moment().format(), "---淘宝刷到库存了，去下单--------");
         } else {
           throw e;
         }

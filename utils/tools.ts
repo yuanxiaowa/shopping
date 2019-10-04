@@ -9,6 +9,7 @@ import moment = require("moment");
 import { writeFile } from "fs-extra";
 import { Spinner } from "cli-spinner";
 import { DT } from "../app/common/config";
+import request = require("request-promise-native");
 
 export function remain(h: number, m = 0) {
   var now = new Date();
@@ -514,3 +515,12 @@ export class TaskManager {
 }
 
 export const taskManager = new TaskManager();
+
+export function sendQQMsg(message: string) {
+  request.get("http://localhost:5700/send_private_msg", {
+    qs: {
+      user_id: "870092104",
+      message
+    }
+  });
+}

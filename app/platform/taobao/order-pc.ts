@@ -8,7 +8,8 @@ import {
   delay,
   Serial,
   throwError,
-  TimerCondition
+  TimerCondition,
+  sendQQMsg
 } from "../../../utils/tools";
 import setting from "./setting";
 import { logFile, getItemId } from "./tools";
@@ -547,6 +548,7 @@ export class TaobaoOrderPc {
         // /auction/confirm_order.htm
         logFile(ret, "pc-订单已提交");
         console.log("-----订单提交成功，等待付款----");
+        sendQQMsg(JSON.stringify("pc订单提交成功，速度去付款"));
       } catch (e) {
         console.trace(e);
         if (retryCount >= 3) {

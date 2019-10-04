@@ -12,7 +12,8 @@ import {
   TimerCondition,
   throwError,
   Serial,
-  taskManager
+  taskManager,
+  sendQQMsg
 } from "../../../utils/tools";
 import { getStock, getGoodsInfo } from "./goods";
 import { newPage } from "../../../utils/page";
@@ -221,6 +222,8 @@ export class JingDongOrder {
           await p;
           console.log(moment().format(), "jingdong刷到库存了，去下单---");
           return submit();
+        } else {
+          sendQQMsg(JSON.stringify(text));
         }
         throw new Error(text);
       };

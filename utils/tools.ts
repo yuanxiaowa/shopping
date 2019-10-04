@@ -369,7 +369,19 @@ export class TaskManager {
   private tasks: TaskItem[] = [];
   private id = 0;
   private spinner = new Spinner();
-  private count = 0;
+
+  private titles: string[] = [];
+  private title_index = 0;
+  private title_timer: any = 0;
+  switchSpinTitle() {
+    this.spinner.setSpinnerTitle(
+      `${moment().format(moment.HTML5_FMT.TIME_SECONDS)} ${
+        this.titles[this.title_index++]
+      }`
+    );
+    this.title_index %= this.titles.length;
+    this.title_timer = setTimeout(() => this.switchSpinTitle(), 500);
+  }
   registerTask(
     data: Pick<
       TaskItem,
@@ -420,19 +432,27 @@ export class TaskManager {
           }, toTime.diff(moment()) - dt);
         })();
       } else {
-        let update = (i: number) => {
-          if (i === 1) {
-            if (this.count === 0) {
+        let update = (b: number) => {
+          if (b === 1) {
+            this.titles.push(title);
+            if (this.titles.length === 1) {
               this.spinner.start();
+              this.title_timer = this.switchSpinTitle();
             }
           } else {
-            if (this.count === 1) {
+            let i = this.titles.indexOf(title);
+            this.titles.splice(i, 1);
+            if (this.titles.length === 0) {
               this.spinner.stop(true);
+              clearTimeout(this.title_timer);
             }
           }
-          this.count += i;
         };
-        rejectHandler = (msg = `${moment().format()} 取消任务 ${title}`) => {
+        rejectHandler = (
+          msg = `${moment().format(
+            moment.HTML5_FMT.TIME_SECONDS
+          )} 取消任务 ${title}`
+        ) => {
           status = "reject";
           update(-1);
           this.removeTask(id);
@@ -444,12 +464,14 @@ export class TaskManager {
             if (status === "reject") {
               return;
             }
-            this.spinner.setSpinnerTitle(`${moment().format()} ${title}`);
             let r = await data.handler!();
             if (r) {
               update(-1);
               this.removeTask(id);
-              console.log(moment().format() + ` ${title} 任务已完成`);
+              console.log(
+                moment().format(moment.HTML5_FMT.TIME_SECONDS) +
+                  ` ${title} 任务已完成`
+              );
               return resolve();
             }
             if (data.time) {
@@ -458,7 +480,11 @@ export class TaskManager {
                   await delay(t);
                 }
               } else {
-                return rejectHandler(`${title} 超时了`);
+                return rejectHandler(
+                  `${moment().format(
+                    moment.HTML5_FMT.TIME_SECONDS
+                  )} ${title} 超时了`
+                );
               }
             }
             f();

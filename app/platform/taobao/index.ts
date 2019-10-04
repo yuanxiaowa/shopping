@@ -45,7 +45,7 @@ export class Taobao extends AutoShop {
       state_urls: [
         "https://main.m.taobao.com/mytaobao/index.html?spm=a215s.7406091.toolbar.i2",
         "https://buy.tmall.com/auction/order/TmallConfirmOrderError.htm?__buy_error_code=F-10000-15-15-014&__buy_error_trace_id=b7d515cc15686464991268068e&__buy_error_original_code=F-10000-15-15-014",
-        'https://buyertrade.taobao.com/trade/itemlist/list_bought_items.htm'
+        "https://buyertrade.taobao.com/trade/itemlist/list_bought_items.htm"
       ],
       handlers: taobaoHandlers,
       coupon_handlers: taobaoCouponHandlers
@@ -170,8 +170,20 @@ export class Taobao extends AutoShop {
       await delay(16.66);
     }
     await mouse.up(); */
-    var res = await page.waitForResponse(res =>
-      res.url().startsWith("https://img.alicdn.com/imgextra")
+    /* var url = await page.evaluate(() => {
+      var img = (<HTMLImageElement>document.getElementById('J_QRCodeImg'))
+      if (img) {
+        return img.src
+      }
+    })
+    if (url) {
+      return url
+    } */
+    var res = await page.waitForResponse(
+      res => res.url().endsWith("xcode.png"),
+      {
+        timeout: 0
+      }
     );
     return res.url();
   }

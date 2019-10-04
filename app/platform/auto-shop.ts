@@ -9,7 +9,7 @@ import { newPage } from "../../utils/page";
 import { ArgBuyDirect, ArgCartBuy, ArgSearch, ArgCoudan } from "./struct";
 import { jar, global_req } from "../common/config";
 import { Cookie } from "tough-cookie";
-import { timer } from '../../utils/decorators';
+import { timer } from "../../utils/decorators";
 
 interface AutoShopOptions {
   name: string;
@@ -96,17 +96,20 @@ export default abstract class AutoShop implements AutoShopOptions {
   }
 
   async loginAction(page: Page): Promise<any> {
-    return page.waitForNavigation({
+    /* return page.waitForNavigation({
       timeout: 0
-    });
+    }); */
   }
   is_prev_login = true;
   async login(page: Page, cb?: Function) {
     this.is_prev_login = false;
-    await page.goto(this.login_url);
+    page.goto(this.login_url);
     let p = this.loginAction(page);
-    await p;
     (async () => {
+      await p
+      await page.waitForNavigation({
+        timeout: 0
+      });
       for (let state_url of this.state_urls) {
         await page.goto(state_url);
       }
@@ -183,7 +186,9 @@ export default abstract class AutoShop implements AutoShopOptions {
     var logined = await this.checkUrl(this.state_urls[0], page);
     var p: any;
     if (!logined) {
-      p = await this.login(page, () => this.setDatas(page).then(() => page.close()));
+      p = await this.login(page, () =>
+        this.setDatas(page).then(() => page.close())
+      );
     } else {
       this.setDatas(page).then(() => page.close());
     }

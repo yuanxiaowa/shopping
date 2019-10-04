@@ -6,6 +6,7 @@
  */
 
 import { Page } from "puppeteer";
+import { delay } from "../../../utils/tools";
 const user = require("../../../.data/user.json").jingdong;
 
 export async function login(page: Page) {
@@ -34,7 +35,11 @@ export async function loginMobile(page: Page) {
 }
 
 export async function loginAction(page: Page) {
+  await page.waitForNavigation({
+    timeout: 0
+  });
   console.log("京东手机登录");
+  await delay(3000);
   await page.type("#username", user.username, {
     delay: 20
   });
@@ -42,5 +47,4 @@ export async function loginAction(page: Page) {
     delay: 20
   });
   page.click(".btn");
-  await page.waitForNavigation();
 }

@@ -320,7 +320,7 @@ export async function sysPlatformTime(platform: string) {
     (dt > 0 ? "慢了" : "快了") + Math.abs(dt) + "ms"
   );
   console.log(platform + "单程时间", rtl + "ms");
-  DT[platform] = dt + (platform === "taobao" ? Math.max(0, rtl - 30) : rtl);
+  DT[platform] = dt + (platform === "taobao" ? Math.max(0, rtl - 20) : rtl);
 }
 
 const getDelayTime = (() => {
@@ -340,7 +340,7 @@ const getDelayTime = (() => {
         setTimeout(() => {
           delete map[t];
         }, bt + 5000);
-        resolve(toTime.diff(moment()) - DT[platform]);
+        resolve(DT[platform]);
       }, toTime.diff(moment()) - DT[platform] - bt);
     });
     map[t] = p;
@@ -416,7 +416,7 @@ export class TaskManager {
           taskData.timer = setTimeout(() => {
             this.removeTask(id);
             resolve();
-          }, dt);
+          }, toTime.diff(moment()) - dt);
         })();
       } else {
         let update = (i: number) => {

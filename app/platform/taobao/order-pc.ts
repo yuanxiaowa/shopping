@@ -194,7 +194,7 @@ export class TaobaoOrderPc {
       };
     }
     if (args.from_browser) {
-      return this.submitOrderFromBrowser(
+      return this.submitOrderFromBrowser2(
         {
           data,
           other: {},
@@ -612,7 +612,66 @@ export class TaobaoOrderPc {
       document.querySelector<HTMLFormElement>("#__form")!.submit();
     });
     await page.waitForNavigation();
-    await delay(30);
+    // await delay(30);
+    page.click(".go-btn");
+  }
+
+  async submitOrderFromBrowser2(
+    args: ArgOrder<{
+      form: Record<string, any>;
+      addr_url: string;
+      Referer: string;
+    }>,
+    type: string,
+    p?: Promise<void>
+  ) {
+    var {
+      data: { form, addr_url, Referer }
+    } = args;
+    var page = await newPage();
+    // await page.setRequestInterception(true);
+    // page.on("request", request => {
+    //   // if (
+    //   //   request
+    //   //     .url()
+    //   //     .startsWith(
+    //   //       "https://cashierstl.alipay.com/standard/fastpay/channelExtInfo.json"
+    //   //     )
+    //   // ) {
+    //   //   (async () => {
+    //   //     await page.waitForSelector("#J_authSubmit");
+    //   //     await page.evaluate(() => {
+    //   //       var ele = document.querySelector<HTMLInputElement>(
+    //   //         "#payPassword_rsainput"
+    //   //       )!;
+    //   //       console.log(ele);
+    //   //       ele.value = "870092";
+    //   //     });
+    //   //     // await page.type("#payPassword_rsainput", "870092");
+    //   //     await page.click("#J_authSubmit");
+    //   //   })();
+    //   // }
+    //   var type = request.resourceType();
+    //   if (type === "image" || type === "stylesheet" || type === "font") {
+    //     request.respond({
+    //       body: ""
+    //     });
+    //   } else {
+    //     request.continue();
+    //   }
+    // });
+    await page.goto(Referer);
+    await page.evaluate(createForm, form, addr_url);
+    page.evaluate(() => {
+      document.querySelector<HTMLFormElement>("#__form")!.submit();
+    });
+    await page.waitForNavigation();
+    if (p) {
+      await p;
+    }
+    page.click('.addr-default+div')
+    await page.waitForResponse(res => res.url().startsWith('https://buy.tmall.com/auction/json/async_linkage.do'))
+    await delay(16)
     page.click(".go-btn");
   }
 }

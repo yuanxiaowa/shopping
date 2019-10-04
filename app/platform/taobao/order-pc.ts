@@ -671,10 +671,9 @@ export class TaobaoOrderPc {
     if (p) {
       await p;
     }
-    await page.reload()
-    // page.click('.addr-default+div')
-    // await page.waitForResponse(res => res.url().startsWith('https://buy.tmall.com/auction/json/async_linkage.do'))
-    // await delay(16)
+    page.click('.addr-default+div')
+    await page.waitForResponse(res => res.url().startsWith('https://buy.tmall.com/auction/json/async_linkage.do'))
+    await delay(16)
     page.click(".go-btn");
   }
 }

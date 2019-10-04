@@ -6,9 +6,9 @@
  */
 import { Controller } from "egg";
 import moment = require("moment");
-import { sysTaobaoTime, sysJingdongTime, taskManager } from "../../utils/tools";
-import { DT } from "../common/config";
+import { taskManager, sysPlatformTime } from "../../utils/tools";
 import R = require("ramda");
+import { DT } from '../common/config';
 
 async function handle(p: any, msg?: string) {
   try {
@@ -26,19 +26,7 @@ async function handle(p: any, msg?: string) {
   }
 }
 
-async function sysTime(platform: string) {
-  var handler = platform === "taobao" ? sysTaobaoTime : sysJingdongTime;
-  console.log(platform + "开始同步时钟");
-  var { dt, rtl } = await handler();
-  console.log(
-    platform + "同步时间",
-    (dt > 0 ? "慢了" : "快了") + Math.abs(dt) + "ms"
-  );
-  console.log(platform + "单程时间", rtl + "ms");
-  DT[platform] = dt + (platform === "taobao" ? 0 : rtl);
-}
-
-sysTime("taobao").then(() => sysTime("jingdong"));
+sysPlatformTime("taobao").then(() => sysPlatformTime("jingdong"));
 
 export default class ShopController extends Controller {
   public async cartList() {
@@ -55,8 +43,7 @@ export default class ShopController extends Controller {
     var data = ctx.request.body;
     if (t) {
       let toTime = moment(t);
-      let dt = toTime.diff(moment()) - DT[platform];
-      if (dt > 0) {
+      if (toTime.diff(moment()) > 0) {
         let p = taskManager.registerTask(
           {
             name: `从购物车下单`,
@@ -64,7 +51,7 @@ export default class ShopController extends Controller {
             platform,
             comment: data._comment
           },
-          dt
+          toTime.valueOf()
         );
         data.seckill = true;
         (async () => {
@@ -147,8 +134,7 @@ export default class ShopController extends Controller {
     }
     if (t) {
       let toTime = moment(t);
-      let dt = toTime.diff(moment()) - DT[platform];
-      if (dt > 0) {
+      if (toTime.diff(moment()) > 0) {
         let p = taskManager.registerTask(
           {
             name: `直接购买`,
@@ -157,7 +143,7 @@ export default class ShopController extends Controller {
             comment: data._comment,
             url: data.url
           },
-          dt
+          toTime.valueOf()
         );
         data.seckill = true;
         ins.buyDirect(data, p);
@@ -182,8 +168,7 @@ export default class ShopController extends Controller {
     var { data } = ctx.request.body;
     if (t) {
       let toTime = moment(t);
-      let dt = toTime.diff(moment()) - DT[platform];
-      if (dt > 0) {
+      if (toTime.diff(moment()) > 0) {
         let p = taskManager.registerTask(
           {
             name: `抢券`,
@@ -191,7 +176,7 @@ export default class ShopController extends Controller {
             platform,
             comment: data._comment
           },
-          dt
+          toTime.valueOf()
         );
         (async () => {
           await p;
@@ -274,7 +259,7 @@ export default class ShopController extends Controller {
 
   public async sysTime() {
     const { ctx, app } = this;
-    ctx.body = await handle(sysTime(ctx.query.platform));
+    ctx.body = await handle(sysPlatformTime(ctx.query.platform));
   }
 
   public async taskList() {

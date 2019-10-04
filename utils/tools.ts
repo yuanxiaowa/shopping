@@ -8,6 +8,7 @@ import fs = require("fs-extra");
 import moment = require("moment");
 import { writeFile } from "fs-extra";
 import { Spinner } from "cli-spinner";
+import { DT } from "../app/common/config";
 
 export function remain(h: number, m = 0) {
   var now = new Date();
@@ -310,6 +311,43 @@ export function throwError(msg: string) {
   throw new Error(msg);
 }
 
+export async function sysPlatformTime(platform: string) {
+  var handler = platform === "taobao" ? sysTaobaoTime : sysJingdongTime;
+  console.log(platform + "开始同步时钟");
+  var { dt, rtl } = await handler();
+  console.log(
+    platform + "同步时间",
+    (dt > 0 ? "慢了" : "快了") + Math.abs(dt) + "ms"
+  );
+  console.log(platform + "单程时间", rtl + "ms");
+  DT[platform] = dt + (platform === "taobao" ? Math.max(0, rtl - 50) : rtl);
+}
+
+const getDelayTime = (() => {
+  var map: Record<number, Promise<number>> = {};
+  return async (t: number, platform: string) => {
+    if (map[t]) {
+      return map[t];
+    }
+    let toTime = moment(t);
+    if (toTime.format("mm:ss") !== "00:00") {
+      return toTime.diff(moment()) - DT[platform];
+    }
+    let bt = 1000 * 60 * 10
+    let p = new Promise<number>(resolve => {
+      setTimeout(async () => {
+        await sysPlatformTime(platform);
+        setTimeout(() => {
+          delete map[t]
+        }, bt)
+        resolve(toTime.diff(moment()) - DT[platform]);
+      }, toTime.diff(moment()) - DT[platform] - bt);
+    });
+    map[t] = p;
+    return p;
+  };
+})();
+
 interface TaskItem {
   id: number;
   name: string;
@@ -344,15 +382,25 @@ export class TaskManager {
         id: number;
       }
     >new Promise((resolve, reject) => {
-      var timer: any;
-      var time = moment(data.time).valueOf();
+      var toTime = moment(data.time);
+      var time = toTime.valueOf();
       var status = "pending";
       var rejectHandler: any;
       var title = [data.platform, data.name, data.comment].join("-");
+      var taskData = {
+        id,
+        name: data.name,
+        platform: data.platform,
+        comment: data.comment,
+        url: data.url,
+        cancel: rejectHandler,
+        time: toTime.format(),
+        timer: <any>0
+      };
       if (!data.handler) {
         rejectHandler = (msg: string) => {
-          if (timer) {
-            clearTimeout(timer);
+          if (taskData.timer) {
+            clearTimeout(taskData.timer);
           }
           reject(msg);
         };
@@ -363,10 +411,13 @@ export class TaskManager {
             );
           }
         }
-        timer = setTimeout(() => {
-          this.removeTask(id);
-          resolve();
-        }, t);
+        (async () => {
+          var dt = await getDelayTime(time, data.platform);
+          taskData.timer = setTimeout(() => {
+            this.removeTask(id);
+            resolve();
+          }, dt);
+        })();
       } else {
         let update = (i: number) => {
           if (i === 1) {
@@ -421,22 +472,13 @@ export class TaskManager {
         console.log(`${moment().format()} 开始任务 ${title}`);
         f();
         if (data.interval) {
-          timer = setTimeout(function f() {
+          taskData.timer = setTimeout(function f() {
             data.interval!.handler();
             setTimeout(f, data.interval!.t);
           }, data.interval.t);
         }
       }
-      this.tasks.push({
-        id,
-        name: data.name,
-        platform: data.platform,
-        comment: data.comment,
-        url: data.url,
-        cancel: rejectHandler,
-        time: moment(time).format(),
-        timer
-      });
+      this.tasks.push(taskData);
     });
     p.id = id;
     return p;

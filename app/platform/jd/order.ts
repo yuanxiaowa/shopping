@@ -223,7 +223,7 @@ export class JingDongOrder {
           console.log(moment().format(), "jingdong刷到库存了，去下单---");
           return submit();
         } else {
-          sendQQMsg(JSON.stringify(text));
+          sendQQMsg(text);
         }
         throw new Error(text);
       };

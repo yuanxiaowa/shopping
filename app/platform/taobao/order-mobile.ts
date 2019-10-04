@@ -324,7 +324,7 @@ export class TaobaoOrderMobile {
               comment: (() => {
                 var { data } = data1;
                 return Object.keys(data)
-                  .filter(key => data[key].tag === "itemInfo")
+                  .filter(key => key.startsWith('itemInfo_'))
                   .map(key => data[key].fields.title)
                   .join("~");
               })(),

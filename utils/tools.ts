@@ -2,7 +2,7 @@
  * @Author: oudingyin
  * @Date: 2019-07-01 09:10:22
  * @LastEditors: oudingy1in
- * @LastEditTime: 2019-09-30 16:56:19
+ * @LastEditTime: 2019-10-05 11:58:53
  */
 import fs = require("fs-extra");
 import moment = require("moment");
@@ -505,6 +505,7 @@ export class TaskManager {
           }, data.interval.t);
         }
       }
+      taskData.cancel = rejectHandler;
       this.tasks.push(taskData);
     });
     p.id = id;

@@ -148,9 +148,7 @@ export class JingDongOrder {
         )!.value = pass;
       }, user.paypass);
       let action = async () => {
-        page.evaluate(() => {
-          document.querySelector<HTMLElement>("#btnPayOnLine")!.click();
-        });
+        await page.click('#btnPayOnLine')
         var res = await page.waitForResponse(res =>
           res.url().startsWith("https://wqdeal.jd.com/deal/msubmit/confirm?")
         );

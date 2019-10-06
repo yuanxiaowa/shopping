@@ -374,6 +374,9 @@ export class TaskManager {
   private title_index = 0;
   private title_timer: any = 0;
   switchSpinTitle() {
+    if (this.titles.length === 0) {
+      return;
+    }
     this.spinner.setSpinnerTitle(
       `${moment().format(moment.HTML5_FMT.TIME_SECONDS)} ${
         this.titles[this.title_index++]

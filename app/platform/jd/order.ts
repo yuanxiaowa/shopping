@@ -148,13 +148,20 @@ export class JingDongOrder {
         )!.value = pass;
       }, user.paypass);
       let action = async () => {
-        await page.click('#btnPayOnLine')
-        var res = await page.waitForResponse(res =>
-          res.url().startsWith("https://wqdeal.jd.com/deal/msubmit/confirm?")
-        );
-        var text = await res.text();
-        console.log(text);
-        return text;
+        try {
+          console.log("jingdong开始提交下单");
+          await page.click("#btnPayOnLine");
+          console.log("jingdong点击提交订单按钮，等待回应");
+          var res = await page.waitForResponse(res =>
+            res.url().startsWith("https://wqdeal.jd.com/deal/msubmit/confirm?")
+          );
+          var text = await res.text();
+          console.log(text);
+          return text;
+        } catch (e) {
+          console.error(e);
+          throw e;
+        }
       };
       let submit = async () => {
         let text = await action();

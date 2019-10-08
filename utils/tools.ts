@@ -496,6 +496,7 @@ export class TaskManager {
               f();
               return;
             }
+            console.error(e)
             rejectHandler(moment().format() + ` ${title} 任务已取消`);
           }
         };

@@ -119,7 +119,7 @@ export class JingDongOrder {
       submit_url: string;
     }>
   ): Promise<any> {
-    var page;
+    var page: Page;
     try {
       page = await this.getOrderPage();
       page.goto(args.data.submit_url);
@@ -150,7 +150,9 @@ export class JingDongOrder {
       let action = async () => {
         try {
           console.log("jingdong开始提交下单");
-          await page.click("#btnPayOnLine");
+          await page.evaluate(() => {
+            (<HTMLDivElement>document.getElementById('btnPayOnLine')).click()
+          })
           console.log("jingdong点击提交订单按钮，等待回应");
           var res = await page.waitForResponse(res =>
             res.url().startsWith("https://wqdeal.jd.com/deal/msubmit/confirm?")
@@ -253,8 +255,8 @@ export class JingDongOrder {
       // "errId":"8730","errMsg":"您要购买的商品无货了，换个收货地址或者其他款式的商品试试"
     } catch (e) {
       throwError(e);
-      if (page) {
-        page.close();
+      if (page!) {
+        page!.close();
       }
     }
   }

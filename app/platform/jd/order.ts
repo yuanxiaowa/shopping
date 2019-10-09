@@ -119,8 +119,9 @@ export class JingDongOrder {
       submit_url: string;
     }>
   ): Promise<any> {
+    var page;
     try {
-      var page = await this.getOrderPage();
+      page = await this.getOrderPage();
       page.goto(args.data.submit_url);
       let text_userasset = await page
         .waitForResponse(res => res.url().includes("userasset"))
@@ -133,7 +134,6 @@ export class JingDongOrder {
         } = JSON.parse(/\((.*)\)\}catch/.exec(text_userasset)![1]);
         totalPrice = totalPrice / 100;
         if (args.expectedPrice < totalPrice) {
-          page.close();
           throwError(
             `太贵了，期望价格:${args.expectedPrice}, 实际价格：${totalPrice}`
           );
@@ -253,6 +253,9 @@ export class JingDongOrder {
       // "errId":"8730","errMsg":"您要购买的商品无货了，换个收货地址或者其他款式的商品试试"
     } catch (e) {
       throwError(e);
+      if (page) {
+        page.close();
+      }
     }
   }
 

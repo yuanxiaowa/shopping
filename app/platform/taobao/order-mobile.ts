@@ -50,7 +50,7 @@ function transformOrderData(
     if (typeof args.expectedPrice === "number") {
       if (Number(args.expectedPrice) < Number(price)) {
         throw {
-          message: "价格太高，买不起",
+          message: `价格太高，买不起，期望${args.expectedPrice}，实际${price}`,
           code: 2
         };
       }
@@ -278,6 +278,7 @@ export class TaobaoOrderMobile {
       }
     }
     (async () => {
+      var prev_error_msg;
       async function f() {
         try {
           postdata = transformOrderData(data1, args, undefined, structure);
@@ -287,6 +288,10 @@ export class TaobaoOrderMobile {
           return true;
         } catch (e) {
           if (e.code === 2) {
+            if (e.message !== prev_error_msg) {
+              console.log(e.message);
+              prev_error_msg = e.message;
+            }
             let { params } = transformOrderData(data1, args, "address_1");
             let data = await requestData(
               "mtop.trade.order.adjust.h5",
@@ -324,7 +329,7 @@ export class TaobaoOrderMobile {
               comment: (() => {
                 var { data } = data1;
                 return Object.keys(data)
-                  .filter(key => key.startsWith('itemInfo_'))
+                  .filter(key => key.startsWith("itemInfo_"))
                   .map(key => data[key].fields.title)
                   .join("~");
               })(),
@@ -343,7 +348,7 @@ export class TaobaoOrderMobile {
       }
       return submit();
     })();
-    return delay(50);
+    return delay(70);
   }
 
   getNextDataByGoodsInfo({ delivery, skuId, itemId }, quantity: number) {

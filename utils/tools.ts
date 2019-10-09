@@ -254,7 +254,13 @@ export function createTimerExcuter<T = any>(
   });
 }
 
-export function Serial(t = 1500) {
+export function Serial(
+  t = 1500,
+  retryInfo?: {
+    count: number;
+    delay: number;
+  }
+) {
   return (target: any, key: string, descriptor: PropertyDescriptor) => {
     var handlers: (() => any)[] = [];
     var pending = false;
@@ -267,14 +273,35 @@ export function Serial(t = 1500) {
         try {
           await handlers.shift()!();
         } catch (e) {}
-        await delay(t);
+        if (t > 0) {
+          await delay(t);
+        }
       }
       pending = false;
     }
     var old_fn = descriptor.value;
     descriptor.value = (...args: any[]) => {
       var p = new Promise((resolve, reject) => {
-        handlers.push(() => old_fn.apply(target, args).then(resolve, reject));
+        if (retryInfo) {
+          let count = retryInfo.count;
+          handlers.push(async function f() {
+            count--;
+            try {
+              let r = await old_fn.apply(target, args);
+              resolve(r);
+            } catch (e) {
+              console.error(count + 1, e.message);
+              if (count > 0) {
+                await delay(retryInfo.count);
+                return f();
+              } else {
+                reject(e);
+              }
+            }
+          });
+        } else {
+          handlers.push(() => old_fn.apply(target, args).then(resolve, reject));
+        }
       });
       start();
       return p;
@@ -321,7 +348,7 @@ export async function sysPlatformTime(platform: string) {
     (dt > 0 ? "慢了" : "快了") + Math.abs(dt) + "ms"
   );
   console.log(platform + "单程时间", rtl + "ms");
-  DT[platform] = dt + (platform === "taobao" ? Math.max(0, rtl - 30) : rtl);
+  DT[platform] = dt + (platform === "taobao" ? Math.max(0, rtl - 70) : rtl);
 }
 
 const getDelayTime = (() => {
@@ -496,7 +523,7 @@ export class TaskManager {
               f();
               return;
             }
-            console.error(e)
+            console.error(e);
             rejectHandler(moment().format() + ` ${title} 任务已取消`);
           }
         };

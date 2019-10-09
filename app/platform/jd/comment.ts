@@ -148,7 +148,7 @@ export class JingDongComment {
     });
   }
 
-  @Serial(3000)
+  @Serial(5000, { count: 10, delay: 5000 })
   async commentGoodsItem({ data, Referer }: { data; Referer: string }) {
     let comments = await this.getGoodsCommentList(data.productId);
     let images = R.compose(
@@ -192,9 +192,8 @@ export class JingDongComment {
       }
     } = JSON.parse(res);
     if (resultCode === "11") {
-      console.log(errorMessage);
       await delay(3000);
-      return this.commentGoodsItem({ data, Referer });
+      throw new Error(errorMessage);
     }
   }
 

@@ -7,7 +7,7 @@
 import { requestData } from "./tools";
 import { getComment } from "../comment-tpl";
 import { Serial } from "../../../utils/tools";
-import setting from "../jd/setting";
+import setting from "./setting";
 
 export class TaobaoComment {
   async getCommentList(page = 1) {
@@ -27,9 +27,10 @@ export class TaobaoComment {
           prePageNo: page - 1 || 2
         },
         headers: {
-          'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-          'X-Requested-With': 'XMLHttpRequest',
-          'referer': 'https://buyertrade.taobao.com/trade/itemlist/list_bought_items.htm?action=itemlist/BoughtQueryAction&event_submit_do_query=1&tabCode=waitRate'
+          // "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+          "X-Requested-With": "XMLHttpRequest",
+          referer:
+            "https://buyertrade.taobao.com/trade/itemlist/list_bought_items.htm?action=itemlist/BoughtQueryAction&event_submit_do_query=1&tabCode=waitRate"
         }
       }
     );
@@ -49,8 +50,8 @@ export class TaobaoComment {
     return {
       items,
       page,
-      more: currentPage<totalPage
-    }
+      more: currentPage < totalPage
+    };
     // var {
     //   data: { group, meta }
     // } = await requestData(

@@ -348,7 +348,7 @@ export async function sysPlatformTime(platform: string) {
     (dt > 0 ? "慢了" : "快了") + Math.abs(dt) + "ms"
   );
   console.log(platform + "单程时间", rtl + "ms");
-  DT[platform] = dt + (platform === "taobao" ? Math.max(0, rtl - 70) : rtl);
+  DT[platform] = dt + (platform === "taobao" ? Math.max(0, rtl - 60) : rtl);
 }
 
 const getDelayTime = (() => {
@@ -450,7 +450,7 @@ export class TaskManager {
         if (data.url) {
           if (this.tasks.find(task => task.url === data.url)) {
             return rejectHandler(
-              "已存在该任务 " + JSON.stringify(data.comment, null, 2)
+              "\n 已存在该任务 " + JSON.stringify(data.comment, null, 2)
             );
           }
         }
@@ -479,7 +479,7 @@ export class TaskManager {
           }
         };
         rejectHandler = (
-          msg = `${moment().format(
+          msg = `\n${moment().format(
             moment.HTML5_FMT.TIME_SECONDS
           )} 取消任务 ${title}`
         ) => {
@@ -499,8 +499,9 @@ export class TaskManager {
               update(-1);
               this.removeTask(id);
               console.log(
-                moment().format(moment.HTML5_FMT.TIME_SECONDS) +
-                  ` ${title} 任务已完成`
+                `\n${moment().format(
+                  moment.HTML5_FMT.TIME_SECONDS
+                )} ${title} 任务已完成`
               );
               return resolve();
             }
@@ -511,7 +512,7 @@ export class TaskManager {
                 }
               } else {
                 return rejectHandler(
-                  `${moment().format(
+                  `\n${moment().format(
                     moment.HTML5_FMT.TIME_SECONDS
                   )} ${title} 超时了`
                 );
@@ -524,10 +525,10 @@ export class TaskManager {
               return;
             }
             console.error(e);
-            rejectHandler(moment().format() + ` ${title} 任务已取消`);
+            rejectHandler(`\n${moment().format()} ${title} 任务已取消`);
           }
         };
-        console.log(`${moment().format()} 开始任务 ${title}`);
+        console.log(`\n${moment().format()} 开始任务 ${title}`);
         f();
         if (data.interval) {
           taskData.timer = setTimeout(function f() {

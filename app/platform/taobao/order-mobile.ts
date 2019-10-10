@@ -248,7 +248,7 @@ export class TaobaoOrderMobile {
     console.log("-------------进入手机订单结算页，准备提交-------------");
     var postdata;
     var structure;
-    async function submit(retryCount = 0) {
+    var submit = async (retryCount = 0) => {
       try {
         r = Date.now();
         console.time("订单提交" + r);
@@ -274,9 +274,12 @@ export class TaobaoOrderMobile {
           console.log(e.message, "正在重试");
           return submit(retryCount + 1);
         }
+        if (e.message === "优惠信息变更") {
+          return this.submitOrder(args);
+        }
         throw e;
       }
-    }
+    };
     (async () => {
       var prev_error_msg;
       async function f() {

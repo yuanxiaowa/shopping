@@ -195,8 +195,8 @@ function transformOrderData(
 export class TaobaoOrderMobile {
   @Serial(0)
   async submitOrder(args: ArgOrder<any>, retryCount = 0) {
-    var r = Date.now();
-    console.time("订单结算" + r);
+    var startTime = Date.now();
+    console.time("订单结算" + startTime);
     // other.memo other.ComplexInput
     console.log("-------------开始进入手机订单结算页-------------");
     var data1;
@@ -242,7 +242,7 @@ export class TaobaoOrderMobile {
       }
       throw e;
     }
-    console.timeEnd("订单结算" + r);
+    console.timeEnd("订单结算" + startTime);
     console.log("-------------已经进入手机订单结算页-------------");
     logFile(data1, "手机订单结算页", ".json");
     console.log("-------------进入手机订单结算页，准备提交-------------");
@@ -285,7 +285,7 @@ export class TaobaoOrderMobile {
             console.log(e.message);
             prev_error_msg = e.message;
           }
-          getNewestOrderData();
+          await getNewestOrderData();
         } else {
           throw new Error(e.message);
         }
@@ -293,8 +293,8 @@ export class TaobaoOrderMobile {
     }
     var submit = async (retryCount = 0) => {
       try {
-        r = Date.now();
-        console.time("订单提交" + r);
+        startTime = Date.now();
+        console.time("订单提交" + startTime);
         let ret = await requestData(
           "mtop.trade.order.create.h5",
           postdata,
@@ -303,7 +303,7 @@ export class TaobaoOrderMobile {
         );
         logFile(ret, "手机订单提交成功");
         console.log("----------手机订单提交成功----------");
-        console.timeEnd("订单提交" + r);
+        console.timeEnd("订单提交" + startTime);
         sendQQMsg("手机订单提交成功，速度去付款");
       } catch (e) {
         if (retryCount >= 2) {
@@ -340,7 +340,7 @@ export class TaobaoOrderMobile {
               .join("~");
           })(),
           handler: handleOrderData,
-          time: Date.now() + 1000 * 60 * args.jianlou!
+          time: startTime + 1000 * 60 * args.jianlou!
         },
         30,
         "刷到库存了，去下单---"

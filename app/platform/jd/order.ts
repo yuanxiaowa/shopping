@@ -253,10 +253,10 @@ export class JingDongOrder {
       // "errId":"9075","errMsg":"您的下单操作过于频繁，请稍后再试."
       // "errId":"8730","errMsg":"您要购买的商品无货了，换个收货地址或者其他款式的商品试试"
     } catch (e) {
-      throwError(e);
       if (page!) {
         page!.close();
       }
+      throwError(e);
     }
   }
 

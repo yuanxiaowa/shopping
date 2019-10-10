@@ -120,6 +120,7 @@ export class JingDongOrder {
     }>
   ): Promise<any> {
     var page: Page;
+    var startTime = Date.now();
     try {
       page = await this.getOrderPage();
       page.goto(args.data.submit_url);
@@ -151,8 +152,8 @@ export class JingDongOrder {
         try {
           console.log("jingdong开始提交下单");
           await page.evaluate(() => {
-            (<HTMLDivElement>document.getElementById('btnPayOnLine')).click()
-          })
+            (<HTMLDivElement>document.getElementById("btnPayOnLine")).click();
+          });
           console.log("jingdong点击提交订单按钮，等待回应");
           var res = await page.waitForResponse(res =>
             res.url().startsWith("https://wqdeal.jd.com/deal/msubmit/confirm?")
@@ -190,8 +191,6 @@ export class JingDongOrder {
               .join("~")
               .substring(0, 50);
           });
-          var startTime = Date.now();
-          var endTime = startTime + args.jianlou * 1000 * 60;
           var p = taskManager.registerTask(
             {
               name: "刷库存",
@@ -204,7 +203,7 @@ export class JingDongOrder {
                 );
                 return !n;
               },
-              time: endTime,
+              time: startTime + args.jianlou * 1000 * 60,
               interval: {
                 handler: async () => {
                   // taskManager.cancelTask(p.id);

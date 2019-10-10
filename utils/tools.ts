@@ -417,7 +417,8 @@ export class TaskManager {
       TaskItem,
       "name" | "platform" | "comment" | "url" | "handler" | "time" | "interval"
     >,
-    t: number
+    t: number,
+    finish_msg = '任务已完成'
   ) {
     var id = this.id++;
     var p = <
@@ -501,7 +502,7 @@ export class TaskManager {
               console.log(
                 `\n${moment().format(
                   moment.HTML5_FMT.TIME_SECONDS
-                )} ${title} 任务已完成`
+                )} ${title} ${finish_msg}`
               );
               return resolve();
             }

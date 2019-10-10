@@ -248,7 +248,50 @@ export class TaobaoOrderMobile {
     console.log("-------------进入手机订单结算页，准备提交-------------");
     var postdata;
     var structure;
-    var submit = async () => {
+    async function getNewestOrderData() {
+      let { params } = transformOrderData(data1, args, "address_1");
+      let data = await requestData(
+        "mtop.trade.order.adjust.h5",
+        {
+          params,
+          feature: `{"gzip":"false"}`
+        },
+        "post",
+        "4.0",
+        "#t#ip##_h5_2019"
+      );
+      ["endpoint", "linkage" /* , "hierarchy" */].forEach(key => {
+        if (data[key]) {
+          data1[key] = data[key];
+        }
+      });
+      structure = data.hierarchy.structure;
+      if (data.data.submitOrder_1) {
+        data1.data = data.data;
+      }
+    }
+
+    var prev_error_msg;
+    async function handleOrderData() {
+      try {
+        postdata = transformOrderData(data1, args, undefined, structure);
+        logFile(postdata, "订单结算页提交的数据", ".json");
+        /* writeFile("a1.json", getTransformData(postdata));
+  writeFile("a2.json", getTransformData(await getPageData(args))); */
+        return true;
+      } catch (e) {
+        if (e.code === 2) {
+          if (e.message !== prev_error_msg) {
+            console.log(e.message);
+            prev_error_msg = e.message;
+          }
+          getNewestOrderData();
+        } else {
+          throw new Error(e.message);
+        }
+      }
+    }
+    var submit = async (retryCount = 0) => {
       try {
         r = Date.now();
         console.time("订单提交" + r);
@@ -261,7 +304,7 @@ export class TaobaoOrderMobile {
         logFile(ret, "手机订单提交成功");
         console.log("----------手机订单提交成功----------");
         console.timeEnd("订单提交" + r);
-        sendQQMsg(JSON.stringify("手机订单提交成功，速度去付款"));
+        sendQQMsg("手机订单提交成功，速度去付款");
       } catch (e) {
         if (retryCount >= 2) {
           console.error("已经重试三次，放弃治疗");
@@ -269,79 +312,47 @@ export class TaobaoOrderMobile {
         }
         if (
           e.message.includes("对不起，系统繁忙，请稍候再试") ||
-          e.message.includes("被挤爆")
+          e.message.includes("被挤爆") ||
+          e.message === "优惠信息变更"
         ) {
           console.log(e.message, "正在重试");
-          return this.submitOrder(args, retryCount + 1);
-        }
-        if (e.message === "优惠信息变更") {
-          return this.submitOrder(args);
+          if (args.jianlou) {
+            await getNewestOrderData();
+            await doJianlou();
+            return submit(retryCount);
+          }
+        } else {
+          submit(retryCount + 1);
         }
         throw e;
       }
     };
+    function doJianlou() {
+      return taskManager.registerTask(
+        {
+          name: "捡漏",
+          platform: "taobao-mobile",
+          comment: (() => {
+            var { data } = data1;
+            return Object.keys(data)
+              .filter(key => key.startsWith("itemInfo_"))
+              .map(key => data[key].fields.title)
+              .join("~");
+          })(),
+          handler: handleOrderData,
+          time: Date.now() + 1000 * 60 * args.jianlou!
+        },
+        30,
+        "刷到库存了，去下单---"
+      );
+    }
     (async () => {
-      var prev_error_msg;
-      async function f() {
-        try {
-          postdata = transformOrderData(data1, args, undefined, structure);
-          logFile(postdata, "订单结算页提交的数据", ".json");
-          /* writeFile("a1.json", getTransformData(postdata));
-  writeFile("a2.json", getTransformData(await getPageData(args))); */
-          return true;
-        } catch (e) {
-          if (e.code === 2) {
-            if (e.message !== prev_error_msg) {
-              console.log(e.message);
-              prev_error_msg = e.message;
-            }
-            let { params } = transformOrderData(data1, args, "address_1");
-            let data = await requestData(
-              "mtop.trade.order.adjust.h5",
-              {
-                params,
-                feature: `{"gzip":"false"}`
-              },
-              "post",
-              "4.0",
-              "#t#ip##_h5_2019"
-            );
-            ["endpoint", "linkage" /* , "hierarchy" */].forEach(key => {
-              if (data[key]) {
-                data1[key] = data[key];
-              }
-            });
-            structure = data.hierarchy.structure;
-            if (data.data.submitOrder_1) {
-              data1.data = data.data;
-            }
-          } else {
-            throw new Error(e.message);
-          }
-        }
-      }
       try {
         postdata = transformOrderData(data1, args);
         logFile(postdata, "订单结算页提交的数据", ".json");
       } catch (e) {
         if (args.jianlou) {
-          await taskManager.registerTask(
-            {
-              name: "捡漏",
-              platform: "taobao-mobile",
-              comment: (() => {
-                var { data } = data1;
-                return Object.keys(data)
-                  .filter(key => key.startsWith("itemInfo_"))
-                  .map(key => data[key].fields.title)
-                  .join("~");
-              })(),
-              handler: f,
-              time: Date.now() + 1000 * 60 * args.jianlou
-            },
-            30
-          );
-          console.log(moment().format(), "---淘宝刷到库存了，去下单--------");
+          await doJianlou();
         } else {
           throw e;
         }

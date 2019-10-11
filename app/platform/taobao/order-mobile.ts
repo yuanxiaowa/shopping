@@ -321,7 +321,7 @@ export class TaobaoOrderMobile {
             await doJianlou();
             return submit(retryCount);
           }
-        } else {
+        } else if (e.message !== "活动火爆，名额陆续开放，建议后续关注！") {
           submit(retryCount + 1);
         }
         throw e;

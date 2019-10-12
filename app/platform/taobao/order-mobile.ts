@@ -238,7 +238,8 @@ export class TaobaoOrderMobile {
       }
       if (e.name === "FAIL_SYS_TRAFFIC_LIMIT" || e.message.includes("被挤爆")) {
         console.log("太挤了，正在重试");
-        return this.submitOrder(args, retryCount + 1);
+        this.submitOrder(args, retryCount + 1);
+        return;
       }
       throw e;
     }
@@ -313,7 +314,7 @@ export class TaobaoOrderMobile {
         if (
           e.message.includes("对不起，系统繁忙，请稍候再试") ||
           e.message.includes("被挤爆") ||
-          e.message === "优惠信息变更"
+          e.message.includes("优惠信息变更")
         ) {
           console.log(e.message, "正在重试");
           if (args.jianlou) {

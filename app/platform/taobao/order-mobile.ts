@@ -403,45 +403,46 @@ export class TaobaoOrderMobile {
       throwError("重复下单");
     }
     this.prev_id = data.itemId;
-    if (data.quantity < args.quantity) {
-      if (args.jianlou) {
-        let p = this.waitForStock(args, args.jianlou);
-        p.then(async () => {
-          console.log("有库存了，开始去下单");
-          if (args.from_cart) {
-            /* let id = await this.cartAdd({
-              url: args.url,
-              quantity: args.quantity,
-              skus: args.skus
-            }); */
-            return this.coudan({
-              urls: [args.url],
-              quantities: [args.quantity],
-              expectedPrice: args.expectedPrice!
-            });
-          }
-          return this.submitOrder(
-            Object.assign(args, {
-              data: this.getNextDataByGoodsInfo(data, args.quantity)
-            })
-          );
-        });
-      } else {
-        throwError("无库存了");
-      }
+    if (p) {
+      await p;
     } else {
+      if (data.quantity < args.quantity) {
+        if (args.jianlou) {
+          let sp = this.waitForStock(args, args.jianlou);
+          sp.then(async () => {
+            console.log("有库存了，开始去下单");
+            if (args.from_cart) {
+              /* let id = await this.cartAdd({
+                url: args.url,
+                quantity: args.quantity,
+                skus: args.skus
+              }); */
+              return this.coudan({
+                urls: [args.url],
+                quantities: [args.quantity],
+                expectedPrice: args.expectedPrice!
+              });
+            }
+            return this.submitOrder(
+              Object.assign(args, {
+                data: this.getNextDataByGoodsInfo(data, args.quantity)
+              })
+            );
+          });
+          return;
+        } else {
+          throwError("无库存了");
+        }
+      }
       if (!data.buyEnable) {
         throwError(data.msg || "不能购买");
       }
-      if (p) {
-        await p;
-      }
-      return this.submitOrder(
-        Object.assign(args, {
-          data: this.getNextDataByGoodsInfo(data, args.quantity)
-        })
-      );
     }
+    return this.submitOrder(
+      Object.assign(args, {
+        data: this.getNextDataByGoodsInfo(data, args.quantity)
+      })
+    );
   }
 
   async coudan(data: ArgCoudan): Promise<any> {

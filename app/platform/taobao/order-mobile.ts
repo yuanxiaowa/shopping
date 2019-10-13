@@ -326,6 +326,10 @@ export class TaobaoOrderMobile {
           e.message !== "活动火爆，名额陆续开放，建议后续关注！" &&
           !e.message.startsWith("您已经从购物车购买过此商品")
         ) {
+          // B-15034-01-01-001: 您已经从购物车购买过此商品，请勿重复下单
+          // RGV587_ERROR: 哎哟喂,被挤爆啦,请稍后重试
+          // F-10007-10-10-019: 对不起，系统繁忙，请稍候再试
+          // FAIL_SYS_TOKEN_EXOIRED: 令牌过期
           submit(retryCount + 1);
         }
         throw e;

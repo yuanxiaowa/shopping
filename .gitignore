@@ -13,7 +13,6 @@ logs/
 *.lock
 *.js
 !.autod.conf.js
-!app/platform/taobao/h.js
 
 app/**/*.js
 test/**/*.js
@@ -21,3 +20,4 @@ config/**/*.js
 app/**/*.map
 test/**/*.map
 config/**/*.map
+!app/platform/taobao/h.js

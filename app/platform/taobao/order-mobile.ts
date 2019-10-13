@@ -322,7 +322,10 @@ export class TaobaoOrderMobile {
             await doJianlou();
             return submit(retryCount);
           }
-        } else if (e.message !== "活动火爆，名额陆续开放，建议后续关注！") {
+        } else if (
+          e.message !== "活动火爆，名额陆续开放，建议后续关注！" &&
+          !e.message.startsWith("您已经从购物车购买过此商品")
+        ) {
           submit(retryCount + 1);
         }
         throw e;
@@ -343,7 +346,7 @@ export class TaobaoOrderMobile {
           handler: handleOrderData,
           time: startTime + 1000 * 60 * args.jianlou!
         },
-        30,
+        16,
         "刷到库存了，去下单---"
       );
     }

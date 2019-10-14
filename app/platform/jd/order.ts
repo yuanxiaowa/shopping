@@ -53,16 +53,14 @@ export class JingDongOrder {
         args.quantity,
         data.miao
       );
-      if (p) {
-        await p;
-      }
       return this.submitOrder(
         Object.assign(
           {
             data: res
           },
           args
-        )
+        ),
+        p
       );
     };
     if (args.jianlou && data.stock.StockState === 34) {
@@ -82,10 +80,7 @@ export class JingDongOrder {
     }
     return next();
   }
-  async cartBuy(data: any, p?: Promise<void>) {
-    if (p) {
-      await p;
-    }
+  cartBuy(data: any, p?: Promise<void>) {
     return this.submitOrder(
       Object.assign(
         {
@@ -95,7 +90,8 @@ export class JingDongOrder {
           other: {}
         },
         data
-      )
+      ),
+      p
     );
   }
   async getOrderPage() {
@@ -117,12 +113,16 @@ export class JingDongOrder {
   async submitOrder(
     args: ArgOrder<{
       submit_url: string;
-    }>
+    }>,
+    p?: Promise<void>
   ): Promise<any> {
     var page: Page;
     var startTime = Date.now();
     try {
       page = await this.getOrderPage();
+      if (p) {
+        await p;
+      }
       page.goto(args.data.submit_url);
       let text_userasset = await page
         .waitForResponse(res => res.url().includes("userasset"))

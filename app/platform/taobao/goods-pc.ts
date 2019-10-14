@@ -153,6 +153,7 @@ export async function getStock(arg: {
       skuQuantity: Record<
         string,
         {
+          icTotalQuantity: number;
           quantity: number;
           totalQuantity: number;
           type: number;
@@ -162,7 +163,7 @@ export async function getStock(arg: {
       totalQuantity: number;
     }
   >inventoryDO;
-  if (!arg.skuId) {
+  if (!arg.skuId || !skuQuantity[arg.skuId]) {
     return icTotalQuantity;
   }
   return skuQuantity[arg.skuId].quantity;

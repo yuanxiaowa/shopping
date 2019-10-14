@@ -19,6 +19,7 @@ import { getGoodsInfo } from "./goods-mobile";
 import { getCartList, addCart } from "./cart-mobile";
 import setting from "./setting";
 import moment = require("moment");
+import { taobaoOrderPc } from "./order-pc";
 
 const request_tags = {
   agencyPay: true,
@@ -324,12 +325,14 @@ export class TaobaoOrderMobile {
           }
         } else if (
           e.message !== "活动火爆，名额陆续开放，建议后续关注！" &&
-          !e.message.startsWith("您已经从购物车购买过此商品")
+          !e.message.startsWith("您已经从购物车购买过此商品") &&
+          !e.message.startsWith("购买数量超过了限购数")
         ) {
           // B-15034-01-01-001: 您已经从购物车购买过此商品，请勿重复下单
           // RGV587_ERROR: 哎哟喂,被挤爆啦,请稍后重试
           // F-10007-10-10-019: 对不起，系统繁忙，请稍候再试
           // FAIL_SYS_TOKEN_EXOIRED: 令牌过期
+          // F-10003-11-16-001: 购买数量超过了限购数。可能是库存不足，也可能是人为限制。
           submit(retryCount + 1);
         }
         throw e;
@@ -416,7 +419,15 @@ export class TaobaoOrderMobile {
     } else {
       if (data.quantity < args.quantity) {
         if (args.jianlou) {
-          let sp = this.waitForStock(args, args.jianlou);
+          let sp = taobaoOrderPc.waitForStock(
+            {
+              id: getItemId(args.url),
+              quantity: args.quantity,
+              skuId: data.skuId,
+              url: args.url
+            },
+            args.jianlou
+          );
           sp.then(async () => {
             console.log("有库存了，开始去下单");
             if (args.from_cart) {

@@ -233,8 +233,8 @@ export class TaobaoOrderMobile {
       );
     } catch (e) {
       console.error("获取订单信息出错", e);
-      if (retryCount >= 2) {
-        console.error("已经重试三次，放弃治疗");
+      if (retryCount >= 1) {
+        console.error("已经重试两次，放弃治疗");
         throw e;
       }
       if (e.name === "FAIL_SYS_TRAFFIC_LIMIT" || e.message.includes("被挤爆")) {
@@ -308,7 +308,7 @@ export class TaobaoOrderMobile {
         console.timeEnd("订单提交" + startTime);
         sendQQMsg("手机订单提交成功，速度去付款");
       } catch (e) {
-        if (retryCount >= 2) {
+        if (retryCount >= 1) {
           console.error("已经重试三次，放弃治疗");
           throw e;
         }
@@ -333,6 +333,7 @@ export class TaobaoOrderMobile {
           // F-10007-10-10-019: 对不起，系统繁忙，请稍候再试
           // FAIL_SYS_TOKEN_EXOIRED: 令牌过期
           // F-10003-11-16-001: 购买数量超过了限购数。可能是库存不足，也可能是人为限制。
+          // FAIL_SYS_HSF_ASYNC_TIMEOUT: 抱歉，网络系统异常
           submit(retryCount + 1);
         }
         throw e;

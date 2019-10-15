@@ -76,9 +76,7 @@ export async function seckillList(url: string) {
       resData = JSON.parse(pageInfo[0]);
     }
     let { data, modules } = resData;
-    let _item = modules.find(
-      item => item.name === "pmod-zebra-brand-on-time-wb"
-    );
+    let _item = modules.find(item => item.name.includes("-on-time-"));
     let dataId: string;
     if (!pageInfo) {
       dataId = _item.uuid;

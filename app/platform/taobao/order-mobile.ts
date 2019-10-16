@@ -374,7 +374,6 @@ export class TaobaoOrderMobile {
       }
       return submit();
     })();
-    return delay(70);
   }
 
   getNextDataByGoodsInfo({ delivery, skuId, itemId }, quantity: number) {

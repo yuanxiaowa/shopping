@@ -91,7 +91,7 @@ export async function seckillList(url: string) {
         param: JSON.stringify({
           itemIds,
           page: 1,
-          pageSize: 69,
+          pageSize: 100,
           showId: 251
         })
       },

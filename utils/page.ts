@@ -16,7 +16,7 @@ var defaultPage: Page;
 
 export async function bootstrapBrowser() {
   var revisionInfo = await resolver();
-  var dataDir = process.cwd() + "/.data/data-dir4";
+  var dataDir = process.cwd() + "/.data/data-dir";
   browser = await puppeteer.launch({
     headless: false,
     userDataDir: dataDir,

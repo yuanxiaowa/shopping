@@ -252,24 +252,30 @@ export class TaobaoOrderMobile {
     var structure;
     async function getNewestOrderData() {
       let { params } = transformOrderData(data1, args, "address_1");
-      let data = await requestData(
-        "mtop.trade.order.adjust.h5",
-        {
-          params,
-          feature: `{"gzip":"false"}`
-        },
-        "post",
-        "4.0",
-        "#t#ip##_h5_2019"
-      );
-      ["endpoint", "linkage" /* , "hierarchy" */].forEach(key => {
-        if (data[key]) {
-          data1[key] = data[key];
+      try {
+        let data = await requestData(
+          "mtop.trade.order.adjust.h5",
+          {
+            params,
+            feature: `{"gzip":"false"}`
+          },
+          "post",
+          "4.0",
+          "#t#ip##_h5_2019"
+        );
+        ["endpoint", "linkage" /* , "hierarchy" */].forEach(key => {
+          if (data[key]) {
+            data1[key] = data[key];
+          }
+        });
+        structure = data.hierarchy.structure;
+        if (data.data.submitOrder_1) {
+          data1.data = data.data;
         }
-      });
-      structure = data.hierarchy.structure;
-      if (data.data.submitOrder_1) {
-        data1.data = data.data;
+      } catch (e) {
+        if (e.message !== "对不起，系统繁忙，请稍候再试") {
+          throw e;
+        }
       }
     }
 

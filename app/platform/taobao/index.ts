@@ -286,13 +286,13 @@ export class Taobao extends AutoShop {
   }
   setCookies(cookies: any[], url: string) {
     super.setCookies(cookies, url);
-    if (url.includes(".taobao.com")) {
+    /* if (url.includes(".taobao.com")) {
       cookies.forEach(cookie => {
         jar.setCookie(
           cookie.name + "=" + encodeURIComponent(cookie.value),
           "https://www.tmall.com/"
         );
       });
-    }
+    } */
   }
 }

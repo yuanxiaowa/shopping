@@ -14,6 +14,8 @@ export default async function bootstrap() {
     bus_global.emit("cookie:init");
   });
   await bootstrapBrowser();
-  bootstrapJingdongTasks();
+  if (!process.env.other) {
+    bootstrapJingdongTasks();
+  }
   bus_global.emit("bootstrap");
 }

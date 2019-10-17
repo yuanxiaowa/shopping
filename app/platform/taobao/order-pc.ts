@@ -8,7 +8,6 @@ import {
   delay,
   Serial,
   throwError,
-  TimerCondition,
   sendQQMsg,
   taskManager
 } from "../../../utils/tools";
@@ -23,7 +22,6 @@ import { newPage } from "../../../utils/page";
 const { taobao } = require("../../../.data/user.json");
 
 export class TaobaoOrderPc {
-  @TimerCondition(0)
   async waitForStock(
     args: {
       skuId?: string;

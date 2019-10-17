@@ -14,9 +14,22 @@ import { UA } from "../app/common/config";
 var browser: Browser;
 var defaultPage: Page;
 
+var _i = "";
+var _conf_file = ".data/_c";
+if (process.env.other) {
+  _i = fs.readFileSync(_conf_file, "utf8");
+  fs.writeFile(_conf_file, +_i + 1);
+} else {
+  fs.ensureFileSync(_conf_file);
+  fs.writeFile(_conf_file, "1");
+}
+
 export async function bootstrapBrowser() {
   var revisionInfo = await resolver();
-  var dataDir = process.cwd() + "/.data/data-dir";
+  var dataDir = process.cwd() + "/.data/data-dir" + _i;
+  if (await fs.pathExists(path.join(dataDir, "GrShaderCache"))) {
+    await fs.remove(path.join(dataDir, "GrShaderCache"));
+  }
   browser = await puppeteer.launch({
     headless: false,
     userDataDir: dataDir,

@@ -194,6 +194,9 @@ function transformOrderData(
 }
 
 export class TaobaoOrderMobile {
+  @Serial(100)
+  waitOrder() {}
+
   @Serial(0)
   submitOrder(args: ArgOrder<any>, retryCount = 0) {
     (async () => {
@@ -314,8 +317,8 @@ export class TaobaoOrderMobile {
             "post",
             "4.0"
           );
-          logFile(ret, `手机订单提交成功：${args.title}`);
-          console.log("----------手机订单提交成功----------");
+          logFile(ret, `手机订单提交成功`);
+          console.log(`----------手机订单提交成功：${args.title}`);
           console.timeEnd("订单提交 " + startTime);
           sendQQMsg(`手机订单提交成功，速度去付款：${args.title}`);
         } catch (e) {
@@ -325,10 +328,18 @@ export class TaobaoOrderMobile {
           }
           if (
             e.message.includes("对不起，系统繁忙，请稍候再试") ||
-            e.message.includes("被挤爆") ||
-            e.message.includes("优惠信息变更")
+            e.message.includes("被挤爆")
           ) {
             console.log(e.message, "正在重试：" + args.title);
+            if (args.jianlou) {
+              await getNewestOrderData();
+              await doJianlou();
+              return submit(retryCount + 1);
+            }
+          } else if (
+            e.message.includes("优惠信息变更") ||
+            e.message.startsWith("购买数量超过了限购数")
+          ) {
             if (args.jianlou) {
               await getNewestOrderData();
               await doJianlou();
@@ -336,8 +347,7 @@ export class TaobaoOrderMobile {
             }
           } else if (
             e.message !== "活动火爆，名额陆续开放，建议后续关注！" &&
-            !e.message.startsWith("您已经从购物车购买过此商品") &&
-            !e.message.startsWith("购买数量超过了限购数")
+            !e.message.startsWith("您已经从购物车购买过此商品")
           ) {
             // B-15034-01-01-001: 您已经从购物车购买过此商品，请勿重复下单
             // RGV587_ERROR: 哎哟喂,被挤爆啦,请稍后重试
@@ -378,7 +388,7 @@ export class TaobaoOrderMobile {
       }
       return submit();
     })();
-    return delay(110);
+    return delay(150);
   }
 
   getNextDataByGoodsInfo({ delivery, skuId, itemId }, quantity: number) {

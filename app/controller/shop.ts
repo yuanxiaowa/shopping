@@ -8,7 +8,7 @@ import { Controller } from "egg";
 import moment = require("moment");
 import { taskManager, sysPlatformTime } from "../../utils/tools";
 import R = require("ramda");
-import { DT } from '../common/config';
+import { DT } from "../common/config";
 
 async function handle(p: any, msg?: string) {
   try {
@@ -26,7 +26,11 @@ async function handle(p: any, msg?: string) {
   }
 }
 
-sysPlatformTime("taobao").then(() => sysPlatformTime("jingdong"));
+sysPlatformTime("taobao").then(() => {
+  if (!process.env.other) {
+    sysPlatformTime("jingdong");
+  }
+});
 
 export default class ShopController extends Controller {
   public async cartList() {

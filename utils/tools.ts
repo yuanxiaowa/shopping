@@ -348,7 +348,7 @@ export async function sysPlatformTime(platform: string) {
     (dt > 0 ? "慢了" : "快了") + Math.abs(dt) + "ms"
   );
   console.log(platform + "单程时间", rtl + "ms");
-  DT[platform] = dt + (platform === "taobao" ? Math.max(0, rtl - 50) : rtl);
+  DT[platform] = dt + (platform === "taobao" ? rtl/* Math.max(0, rtl - 50) */ : rtl);
 }
 
 const getDelayTime = (() => {

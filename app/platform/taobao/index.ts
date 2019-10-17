@@ -44,8 +44,8 @@ export class Taobao extends AutoShop {
       name: "taobao",
       login_url: "https://login.taobao.com/member/login.jhtml",
       state_urls: [
-        "https://main.m.taobao.com/mytaobao/index.html?spm=a215s.7406091.toolbar.i2"
-        // "https://buy.tmall.com/auction/order/TmallConfirmOrderError.htm?__buy_error_code=F-10000-15-15-014&__buy_error_trace_id=b7d515cc15686464991268068e&__buy_error_original_code=F-10000-15-15-014",
+        "https://main.m.taobao.com/mytaobao/index.html?spm=a215s.7406091.toolbar.i2",
+        "https://buy.tmall.com/auction/order/TmallConfirmOrderError.htm?__buy_error_code=F-10000-15-15-014&__buy_error_trace_id=b7d515cc15686464991268068e&__buy_error_original_code=F-10000-15-15-014"
         // "https://buyertrade.taobao.com/trade/itemlist/list_bought_items.htm"
       ],
       handlers: taobaoHandlers,

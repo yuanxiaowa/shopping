@@ -102,7 +102,7 @@ export class TaobaoOrderPc {
                 data: {
                   form,
                   addr_url,
-                  Referer: args.url
+                  referer: args.url
                 },
                 other: {},
                 title: itemDO.title
@@ -120,7 +120,7 @@ export class TaobaoOrderPc {
             data: {
               form,
               addr_url,
-              Referer: args.url
+              referer: args.url
             },
             other: {},
             title: itemDO.title
@@ -209,7 +209,7 @@ export class TaobaoOrderPc {
           source_time: Date.now()
         },
         addr_url: `https://buy.tmall.com/order/confirm_order.htm?spm=a1z0d.6639537.0.0.undefined`,
-        Referer: `https://cart.taobao.com/cart.htm?spm=a220o.1000855.a2226mz.12.5ada2389fIdDSp&from=btop`
+        Referer: `https://cart.taobao.com/cart.htm?spm=a21bo.2017.1997525049.1.5af911d97tfEQo&from=mini&ad_id=&am_id=&cm_id=&pm_id=1501036000a02c5c3739`
       };
     }
     if (args.from_browser) {
@@ -242,13 +242,13 @@ export class TaobaoOrderPc {
     args: ArgOrder<{
       form: Record<string, any>;
       addr_url: string;
-      Referer: string;
+      referer: string;
     }>,
     type: string,
     retryCount = 0
   ): Promise<any> {
     var {
-      data: { form, addr_url, Referer }
+      data: { form, addr_url, referer }
     } = args;
     console.log("准备进入订单结算页");
     logFile(addr_url + "\n" + JSON.stringify(form), "pc-准备进入订单结算页");
@@ -256,7 +256,7 @@ export class TaobaoOrderPc {
     var html: string = await setting.req.post(addr_url, {
       form,
       headers: {
-        Referer
+        referer
       }
     });
     var time_diff = Date.now() - start_time;

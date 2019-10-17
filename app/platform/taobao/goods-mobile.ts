@@ -100,6 +100,7 @@ function transformMobileGoodsInfo({ apiStack, item }, skus?: number[]) {
   }
   return {
     itemId: item.itemId,
+    title: item.title,
     quantity,
     buyEnable,
     cartEnable,

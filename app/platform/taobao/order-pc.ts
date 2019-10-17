@@ -9,7 +9,8 @@ import {
   Serial,
   throwError,
   TimerCondition,
-  sendQQMsg
+  sendQQMsg,
+  taskManager
 } from "../../../utils/tools";
 import setting from "./setting";
 import { logFile, getItemId } from "./tools";
@@ -29,13 +30,26 @@ export class TaobaoOrderPc {
       id: string;
       quantity: number;
       url: string;
+      title: string;
     },
     duration: number
   ): Promise<any> {
-    var quantity = await getStock(args);
-    return {
-      success: quantity >= args.quantity
-    };
+    var time = Date.now() + duration * 1000 * 60;
+    await taskManager.registerTask(
+      {
+        name: "刷库存",
+        platform: "taobao",
+        url: args.url,
+        time,
+        comment: args.title,
+        async handler() {
+          var quantity = await getStock(args);
+          return quantity >= args.quantity;
+        }
+      },
+      30,
+      "刷到库存了，去订单结算页"
+    );
   }
   prev_id = "";
   async buyDirect(args: ArgBuyDirect, p?: Promise<void>) {
@@ -77,7 +91,8 @@ export class TaobaoOrderPc {
             id: getItemId(args.url),
             quantity: args.quantity,
             skuId: form.skuId,
-            url: args.url
+            url: args.url,
+            title: itemDO.title
           },
           args.jianlou
         ).then(() =>
@@ -89,7 +104,8 @@ export class TaobaoOrderPc {
                   addr_url,
                   Referer: args.url
                 },
-                other: {}
+                other: {},
+                title: itemDO.title
               },
               args
             ),
@@ -106,7 +122,8 @@ export class TaobaoOrderPc {
               addr_url,
               Referer: args.url
             },
-            other: {}
+            other: {},
+            title: itemDO.title
           },
           args
         ),
@@ -132,6 +149,7 @@ export class TaobaoOrderPc {
         createTime: string;
         attr: string;
         toBuy: string;
+        title: string;
       }[];
       from_browser?: boolean;
     },
@@ -199,7 +217,8 @@ export class TaobaoOrderPc {
         {
           data,
           other: {},
-          ...args
+          ...args,
+          title: goods.map(({ title }) => title).join(",")
         },
         type,
         p
@@ -212,7 +231,8 @@ export class TaobaoOrderPc {
       {
         data,
         other: {},
-        ...args
+        ...args,
+        title: goods.map(({ title }) => title).join(",")
       },
       type
     );
@@ -671,7 +691,7 @@ export class TaobaoOrderPc {
     if (p) {
       await p;
     }
-    await page.reload()
+    await page.reload();
     // page.click('.addr-default+div')
     // await page.waitForResponse(res => res.url().startsWith('https://buy.tmall.com/auction/json/async_linkage.do'))
     // await delay(16)

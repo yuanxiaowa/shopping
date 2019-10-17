@@ -20,7 +20,7 @@
     "autod": "autod",
     "lint": "tslint --project . -c tslint.json",
     "clean": "ets clean",
-    "clean-dev": "rm -rf .data/data-dir/GrShaderCache && yarn debug"
+    "clean-dev": "rm -rf .data/data-dir/GrShaderCache && yarn dev"
   },
   "dependencies": {
     "@types/cheerio": "^0.22.12",

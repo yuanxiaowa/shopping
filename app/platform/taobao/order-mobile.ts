@@ -51,7 +51,7 @@ function transformOrderData(
     if (typeof args.expectedPrice === "number") {
       if (Number(args.expectedPrice) < Number(price)) {
         throw {
-          message: `价格太高，买不起，期望${args.expectedPrice}，实际${price}`,
+          message: `${args.title} 价格太高，期望${args.expectedPrice}，实际${price}`,
           code: 2
         };
       }
@@ -59,7 +59,7 @@ function transformOrderData(
     var invalids = structure[root].filter(name => name.startsWith("invalid"));
     if (invalids.length > 0) {
       throw {
-        message: "有失效宝贝",
+        message: `${args.title} 有失效宝贝`,
         code: 2
       };
     }
@@ -197,10 +197,11 @@ export class TaobaoOrderMobile {
   @Serial(0)
   submitOrder(args: ArgOrder<any>, retryCount = 0) {
     (async () => {
-      var startTime = Date.now();
-      console.time("订单结算" + startTime);
+      var startDate = new Date();
+      var startTime = startDate.getTime();
+      console.time("订单结算 " + args.title + startTime);
       // other.memo other.ComplexInput
-      console.log("-------------开始进入手机订单结算页-------------");
+      console.log(`----准备进入手机订单结算页：${args.title}`);
       var data1;
       try {
         // {
@@ -233,25 +234,25 @@ export class TaobaoOrderMobile {
           "4.0"
         );
       } catch (e) {
-        console.error("获取订单信息出错", e);
+        console.error(`获取订单信息出错：${args.title}`, e);
         if (retryCount >= 1) {
-          console.error("已经重试两次，放弃治疗");
+          console.error(`已经重试两次，放弃治疗：${args.title}`);
           throw e;
         }
         if (
           e.name === "FAIL_SYS_TRAFFIC_LIMIT" ||
           e.message.includes("被挤爆")
         ) {
-          console.log("太挤了，正在重试");
+          console.log(`太挤了，正在重试：${args.title}`);
           this.submitOrder(args, retryCount + 1);
           return;
         }
         throw e;
       }
-      console.timeEnd("订单结算" + startTime);
-      console.log("-------------已经进入手机订单结算页-------------");
+      console.timeEnd("订单结算 " + args.title + startTime);
+      console.log(`-----已经进入手机订单结算页：${args.title}`);
       logFile(data1, "手机订单结算页", ".json");
-      console.log("-------------进入手机订单结算页，准备提交-------------");
+      console.log(`-----准备提交：${args.title}`);
       var postdata;
       var structure;
       async function getNewestOrderData() {
@@ -306,20 +307,20 @@ export class TaobaoOrderMobile {
       var submit = async (retryCount = 0) => {
         try {
           startTime = Date.now();
-          console.time("订单提交" + startTime);
+          console.time("订单提交 " + startTime);
           let ret = await requestData(
             "mtop.trade.order.create.h5",
             postdata,
             "post",
             "4.0"
           );
-          logFile(ret, "手机订单提交成功");
+          logFile(ret, `手机订单提交成功：${args.title}`);
           console.log("----------手机订单提交成功----------");
-          console.timeEnd("订单提交" + startTime);
-          sendQQMsg("手机订单提交成功，速度去付款");
+          console.timeEnd("订单提交 " + startTime);
+          sendQQMsg(`手机订单提交成功，速度去付款：${args.title}`);
         } catch (e) {
           if (retryCount >= 1) {
-            console.error("已经重试三次，放弃治疗");
+            console.error(`已经重试两次，放弃治疗：${args.title}`);
             throw e;
           }
           if (
@@ -327,7 +328,7 @@ export class TaobaoOrderMobile {
             e.message.includes("被挤爆") ||
             e.message.includes("优惠信息变更")
           ) {
-            console.log(e.message, "正在重试");
+            console.log(e.message, "正在重试：" + args.title);
             if (args.jianlou) {
               await getNewestOrderData();
               await doJianlou();
@@ -354,13 +355,7 @@ export class TaobaoOrderMobile {
           {
             name: "捡漏",
             platform: "taobao-mobile",
-            comment: (() => {
-              var { data } = data1;
-              return Object.keys(data)
-                .filter(key => key.startsWith("itemInfo_"))
-                .map(key => data[key].fields.title)
-                .join("~");
-            })(),
+            comment: args.title,
             handler: handleOrderData,
             time: startTime + 1000 * 60 * args.jianlou!
           },
@@ -401,20 +396,31 @@ export class TaobaoOrderMobile {
     };
   }
 
-  @TimerCondition()
   async waitForStock(
     args: {
       url: string;
       quantity: number;
       skus?: number[];
+      title: string;
     },
     duration: number
   ): Promise<any> {
-    var data = await getGoodsInfo(args.url, args.skus);
-    return {
-      success: data.quantity >= args.quantity,
-      data
-    };
+    var time = Date.now() + duration * 1000 * 60;
+    await taskManager.registerTask(
+      {
+        name: "刷库存",
+        platform: "taobao",
+        url: args.url,
+        time,
+        comment: args.title,
+        async handler() {
+          var data = await getGoodsInfo(args.url, args.skus);
+          return data.quantity >= args.quantity;
+        }
+      },
+      1500,
+      "刷到库存了，去订单结算页"
+    );
   }
 
   prev_id = "";
@@ -434,12 +440,13 @@ export class TaobaoOrderMobile {
               id: getItemId(args.url),
               quantity: args.quantity,
               skuId: data.skuId,
-              url: args.url
+              url: args.url,
+              title: data.title
             },
             args.jianlou
           );
           sp.then(async () => {
-            console.log("有库存了，开始去下单");
+            console.log(data.title + " 有库存了，开始去下单");
             if (args.from_cart) {
               /* let id = await this.cartAdd({
                 url: args.url,
@@ -454,7 +461,8 @@ export class TaobaoOrderMobile {
             }
             return this.submitOrder(
               Object.assign(args, {
-                data: this.getNextDataByGoodsInfo(data, args.quantity)
+                data: this.getNextDataByGoodsInfo(data, args.quantity),
+                title: data.title
               })
             );
           });
@@ -469,7 +477,8 @@ export class TaobaoOrderMobile {
     }
     return this.submitOrder(
       Object.assign(args, {
-        data: this.getNextDataByGoodsInfo(data, args.quantity)
+        data: this.getNextDataByGoodsInfo(data, args.quantity),
+        title: data.title
       })
     );
   }
@@ -510,7 +519,8 @@ export class TaobaoOrderMobile {
       },
       other: {},
       jianlou: args.jianlou,
-      expectedPrice: args.expectedPrice
+      expectedPrice: args.expectedPrice,
+      title: args.items.map(({ title }) => title).join("~")
     });
   }
 }

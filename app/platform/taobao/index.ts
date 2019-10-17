@@ -286,6 +286,10 @@ export class Taobao extends AutoShop {
   }
   setCookies(cookies: any[], url: string) {
     super.setCookies(cookies, url);
+    if (url.includes(".taobao.com")) {
+      let username = cookies.find(cookie => cookie.name === "_nk_").value;
+      setting.username = decodeURIComponent(username);
+    }
     /* if (url.includes(".taobao.com")) {
       cookies.forEach(cookie => {
         jar.setCookie(

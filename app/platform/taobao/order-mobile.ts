@@ -320,7 +320,9 @@ export class TaobaoOrderMobile {
           logFile(ret, `手机订单提交成功`);
           console.log(`----------手机订单提交成功：${args.title}`);
           console.timeEnd("订单提交 " + startTime);
-          sendQQMsg(`手机订单提交成功，速度去付款：${args.title}`);
+          sendQQMsg(
+            `手机订单提交成功，速度去付款(${setting.username})：${args.title}`
+          );
         } catch (e) {
           if (retryCount >= 1) {
             console.error(`已经重试两次，放弃治疗：${args.title}`);

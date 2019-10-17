@@ -15,6 +15,7 @@ interface Setting {
   mteeInfo: any;
   cookie: string;
   token: string;
+  username: string;
 }
 
 // @ts-ignore
@@ -29,7 +30,8 @@ var setting: Setting = {
     ulandSrc: "201_11.230.188.217_8942114_1563529853358",
     umidToken: "T1B909C1008F917EC23F10509E607EFB7EF74F21A9C621A9A956FAEDC63"
   },
-  req: global_req/* .defaults({
+  username: "",
+  req: global_req /* .defaults({
     headers: {
       "User-Agent": UA.wap
     }

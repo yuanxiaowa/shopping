@@ -422,7 +422,7 @@ export class TaobaoOrderPc {
         }
       );
       qs_data = {
-        spm: `a220l.1.a22016.d011001001001.undefined`,
+        // spm: `a220l.1.a22016.d011001001001.undefined`,
         submitref: confirmOrder_1.fields.secretValue,
         sparam1: confirmOrder_1.fields.sparam1,
         sparam2: confirmOrder_1.fields.sparam2

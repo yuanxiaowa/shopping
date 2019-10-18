@@ -402,7 +402,7 @@ export class TaobaoOrderMobile {
       }
       return submit();
     })();
-    return delay(150);
+    return delay(160);
   }
 
   getNextDataByGoodsInfo({ delivery, skuId, itemId }, quantity: number) {

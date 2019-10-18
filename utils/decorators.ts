@@ -12,7 +12,7 @@ export function log(label: string) {
   return (target: any, key: string, desc: PropertyDescriptor) => {
     var old_f: Function = desc.value;
     desc.value = (...args: any[]) => {
-      console.log(moment().toString(), label);
+      console.log(moment().format(moment.HTML5_FMT.TIME_SECONDS), label);
       return old_f.apply(target, args);
     };
   };

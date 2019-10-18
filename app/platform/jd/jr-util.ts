@@ -161,12 +161,12 @@ export class JingrongUtil {
     for (let { time, floorInfo } of datas) {
       let diff = moment(time, "HH:mm").diff();
       if (diff > 0) {
-        console.log(time + "开抢", floorInfo);
+        // console.log(time + "开抢", floorInfo);
         await delay(diff - DT.jingdong);
         floorInfo.forEach(item => {
           executer(() =>
             receiveCoupon(item.couponKey).then(data => {
-              console.log("权益中心抢券", data);
+              // console.log("权益中心抢券", data);
             })
           );
         });
@@ -177,10 +177,10 @@ export class JingrongUtil {
   @daily()
   @log("浏览产品得京豆")
   async doProductJingdou() {
-    await getProductJingdouInfo();
-    while (true) {
+    // await getProductJingdouInfo();
+    /* while (true) {
       await getProductJingdou();
-    }
+    } */
   }
 
   @daily()

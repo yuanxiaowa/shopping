@@ -349,7 +349,7 @@ export async function sysPlatformTime(platform: string) {
   );
   console.log(platform + "单程时间", rtl + "ms");
   DT[platform] =
-    dt + (platform === "taobao" ? rtl - 20 /* Math.max(0, rtl - 50) */ : rtl);
+    dt + (platform === "taobao" ? rtl - 30 /* Math.max(0, rtl - 50) */ : rtl);
 }
 
 const getDelayTime = (() => {
@@ -468,8 +468,8 @@ export class TaskManager {
           if (b === 1) {
             this.titles.push(title);
             if (this.titles.length === 1) {
-              this.spinner.start();
               this.title_timer = this.switchSpinTitle();
+              this.spinner.start();
             }
           } else {
             let i = this.titles.indexOf(title);

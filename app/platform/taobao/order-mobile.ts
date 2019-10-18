@@ -325,6 +325,7 @@ export class TaobaoOrderMobile {
           );
         } catch (e) {
           if (retryCount >= 1) {
+            console.error(e.message + ":" + args.title);
             console.error(`已经重试两次，放弃治疗：${args.title}`);
             throw e;
           }
@@ -332,8 +333,8 @@ export class TaobaoOrderMobile {
             e.message.includes("对不起，系统繁忙，请稍候再试") ||
             e.message.includes("被挤爆")
           ) {
-            console.log(e.message, "正在重试：" + args.title);
             if (args.jianlou) {
+              console.log(e.message, "正在捡漏重试：" + args.title);
               await getNewestOrderData();
               await doJianlou();
               return submit(retryCount + 1);
@@ -343,6 +344,7 @@ export class TaobaoOrderMobile {
             e.message.startsWith("购买数量超过了限购数")
           ) {
             if (args.jianlou) {
+              console.error(e.message, "正在捡漏重试：" + args.title);
               await getNewestOrderData();
               await doJianlou();
               return submit(retryCount);
@@ -351,13 +353,14 @@ export class TaobaoOrderMobile {
             e.message !== "活动火爆，名额陆续开放，建议后续关注！" &&
             !e.message.startsWith("您已经从购物车购买过此商品")
           ) {
+            console.log(e.message, "正在重试：" + args.title);
             // B-15034-01-01-001: 您已经从购物车购买过此商品，请勿重复下单
             // RGV587_ERROR: 哎哟喂,被挤爆啦,请稍后重试
             // F-10007-10-10-019: 对不起，系统繁忙，请稍候再试
             // FAIL_SYS_TOKEN_EXOIRED: 令牌过期
             // F-10003-11-16-001: 购买数量超过了限购数。可能是库存不足，也可能是人为限制。
             // FAIL_SYS_HSF_ASYNC_TIMEOUT: 抱歉，网络系统异常
-            submit(retryCount + 1);
+            return submit(retryCount + 1);
           }
           throw e;
         }

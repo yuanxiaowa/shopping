@@ -511,11 +511,11 @@ interface WelfareRes<T> {
 }
 
 /**
- * 
- * @param url 
- * @param qs 
+ *
+ * @param url
+ * @param qs
  * @param form
- * @deprecated 
+ * @deprecated
  */
 async function requestWelfare<T>(url: string, qs: any, form?: any) {
   var { data, code, msg } = await requestJsonp<WelfareRes<T>>(url, qs, form);
@@ -802,7 +802,7 @@ export async function getRightCenterLucky() {
         t: Math.random()
       }
     );
-    console.log("权益中心抽奖:", couponsDetailVo.remark);
+    // console.log("权益中心抽奖:", couponsDetailVo.remark);
   }
 }
 

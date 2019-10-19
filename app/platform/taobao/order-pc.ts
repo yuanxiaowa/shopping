@@ -430,12 +430,13 @@ export class TaobaoOrderPc {
       submit_url = `https://buy.taobao.com${confirmOrder_1.fields.pcSubmitUrl ||
         /var submitURL="([^"]+)/.exec(html)![1]}`;
     } else {
+      let ts = +realPayPC_1.hidden.extensionMap.timestamp
       if (
         args.seckill &&
         retryCount === 0 &&
-        realPayPC_1.hidden.extensionMap.timestamp
+        ts
       ) {
-        let t = moment(+realPayPC_1.hidden.extensionMap.timestamp);
+        let t = moment(+ts);
         let _s = t.second();
         if (_s < 59 && _s > 55) {
           let t_str = t.valueOf().toString();
@@ -448,6 +449,7 @@ export class TaobaoOrderPc {
           return;
         }
       }
+      realPayPC_1.hidden.extensionMap.timestamp = String(ts);
       if (linkage.input)
         if (typeof args.expectedPrice !== "undefined") {
           if (+realPayPC_1.fields.price > +args.expectedPrice) {

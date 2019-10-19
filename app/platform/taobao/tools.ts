@@ -74,7 +74,7 @@ export async function requestData(
   version = "6.0",
   ttid = "#b#ad##_h5"
 ) {
-  var t = Date.now();
+  var t = Date.now() + 1000;
   var data_str = JSON.stringify(data);
   var form: any;
   var token = setting.token;

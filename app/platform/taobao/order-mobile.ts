@@ -198,186 +198,183 @@ export class TaobaoOrderMobile {
   waitOrder() {}
 
   @Serial(0)
-  submitOrder(args: ArgOrder<any>, retryCount = 0) {
-    (async () => {
-      var startDate = new Date();
-      var startTime = startDate.getTime();
-      console.time("订单结算 " + args.title + startTime);
-      // other.memo other.ComplexInput
-      console.log(`----准备进入手机订单结算页：${args.title}`);
-      var data1;
+  async submitOrder(args: ArgOrder<any>, retryCount = 0) {
+    var startDate = new Date();
+    var startTime = startDate.getTime();
+    console.time("订单结算 " + args.title + startTime);
+    // other.memo other.ComplexInput
+    console.log(`----准备进入手机订单结算页：${args.title}`);
+    var data1;
+    try {
+      // {
+      //   jsv: "2.4.7",
+      //   appKey: this.appKey,
+      //   api: "mtop.trade.buildOrder.h5",
+      //   v: "3.0",
+      //   type: "originaljson",
+      //   timeout: "20000",
+      //   isSec: "1",
+      //   dataType: "json",
+      //   ecode: "1",
+      //   ttid: "#t#ip##_h5_2014",
+      //   AntiFlood: "true",
+      //   LoginRequest: "true",
+      //   H5Request: "true"
+      // }
+      data1 = await requestData(
+        "mtop.trade.order.build.h5",
+        Object.assign(
+          {
+            exParams: JSON.stringify({
+              tradeProtocolFeatures: "5",
+              userAgent: UA.wap
+            })
+          },
+          args.data
+        ),
+        "post",
+        "4.0"
+      );
+    } catch (e) {
+      console.error(`获取订单信息出错：${args.title}`, e);
+      if (retryCount >= 1) {
+        console.error(`已经重试两次，放弃治疗：${args.title}`);
+        throw e;
+      }
+      if (e.name === "FAIL_SYS_TRAFFIC_LIMIT" || e.message.includes("被挤爆")) {
+        console.log(`太挤了，正在重试：${args.title}`);
+        this.submitOrder(args, retryCount + 1);
+        return;
+      }
+      throw e;
+    }
+    console.timeEnd("订单结算 " + args.title + startTime);
+    console.log(`-----已经进入手机订单结算页：${args.title}`);
+    logFile(data1, "手机订单结算页", ".json");
+    console.log(`-----准备提交：${args.title}`);
+    var postdata;
+    var structure;
+    async function getNewestOrderData() {
+      let { params } = transformOrderData(data1, args, "address_1");
       try {
-        // {
-        //   jsv: "2.4.7",
-        //   appKey: this.appKey,
-        //   api: "mtop.trade.buildOrder.h5",
-        //   v: "3.0",
-        //   type: "originaljson",
-        //   timeout: "20000",
-        //   isSec: "1",
-        //   dataType: "json",
-        //   ecode: "1",
-        //   ttid: "#t#ip##_h5_2014",
-        //   AntiFlood: "true",
-        //   LoginRequest: "true",
-        //   H5Request: "true"
-        // }
-        data1 = await requestData(
-          "mtop.trade.order.build.h5",
-          Object.assign(
-            {
-              exParams: JSON.stringify({
-                tradeProtocolFeatures: "5",
-                userAgent: UA.wap
-              })
-            },
-            args.data
-          ),
+        let data = await requestData(
+          "mtop.trade.order.adjust.h5",
+          {
+            params,
+            feature: `{"gzip":"false"}`
+          },
+          "post",
+          "4.0",
+          "#t#ip##_h5_2019"
+        );
+        ["endpoint", "linkage" /* , "hierarchy" */].forEach(key => {
+          if (data[key]) {
+            data1[key] = data[key];
+          }
+        });
+        structure = data.hierarchy.structure;
+        if (data.data.submitOrder_1) {
+          data1.data = data.data;
+        }
+      } catch (e) {
+        if (e.message !== "对不起，系统繁忙，请稍候再试") {
+          throw e;
+        }
+      }
+    }
+
+    var prev_error_msg;
+    async function handleOrderData() {
+      try {
+        postdata = transformOrderData(data1, args, undefined, structure);
+        logFile(postdata, "订单结算页提交的数据", ".json");
+        /* writeFile("a1.json", getTransformData(postdata));
+    writeFile("a2.json", getTransformData(await getPageData(args))); */
+        return true;
+      } catch (e) {
+        if (e.code === 2) {
+          if (e.message !== prev_error_msg) {
+            console.log(e.message);
+            prev_error_msg = e.message;
+          }
+          await getNewestOrderData();
+        } else {
+          throw new Error(e.message);
+        }
+      }
+    }
+    var submit = async (retryCount = 0) => {
+      try {
+        startTime = Date.now();
+        console.time("订单提交 " + startTime);
+        let ret = await requestData(
+          "mtop.trade.order.create.h5",
+          postdata,
           "post",
           "4.0"
         );
+        logFile(ret, `手机订单提交成功`);
+        console.log(`----------手机订单提交成功：${args.title}`);
+        console.timeEnd("订单提交 " + startTime);
+        sendQQMsg(
+          `手机订单提交成功，速度去付款(${setting.username})：${args.title}`
+        );
       } catch (e) {
-        console.error(`获取订单信息出错：${args.title}`, e);
         if (retryCount >= 1) {
+          console.error(e.message + ":" + args.title);
           console.error(`已经重试两次，放弃治疗：${args.title}`);
           throw e;
         }
         if (
-          e.name === "FAIL_SYS_TRAFFIC_LIMIT" ||
+          e.message.includes("对不起，系统繁忙，请稍候再试") ||
           e.message.includes("被挤爆")
         ) {
-          console.log(`太挤了，正在重试：${args.title}`);
-          this.submitOrder(args, retryCount + 1);
-          return;
+          if (args.jianlou) {
+            console.log(e.message, "正在捡漏重试：" + args.title);
+            await getNewestOrderData();
+            await doJianlou();
+            return submit(retryCount + 1);
+          }
+        } else if (
+          e.message.includes("优惠信息变更") ||
+          e.message.startsWith("购买数量超过了限购数")
+        ) {
+          if (args.jianlou) {
+            console.error(e.message, "正在捡漏重试：" + args.title);
+            await getNewestOrderData();
+            await doJianlou();
+            return submit(retryCount);
+          }
+        } else if (
+          e.message !== "活动火爆，名额陆续开放，建议后续关注！" &&
+          !e.message.startsWith("您已经从购物车购买过此商品")
+        ) {
+          console.log(e.message, "正在重试：" + args.title);
+          // B-15034-01-01-001: 您已经从购物车购买过此商品，请勿重复下单
+          // RGV587_ERROR: 哎哟喂,被挤爆啦,请稍后重试
+          // F-10007-10-10-019: 对不起，系统繁忙，请稍候再试
+          // FAIL_SYS_TOKEN_EXOIRED: 令牌过期
+          // F-10003-11-16-001: 购买数量超过了限购数。可能是库存不足，也可能是人为限制。
+          // FAIL_SYS_HSF_ASYNC_TIMEOUT: 抱歉，网络系统异常
+          return submit(retryCount + 1);
         }
         throw e;
       }
-      console.timeEnd("订单结算 " + args.title + startTime);
-      console.log(`-----已经进入手机订单结算页：${args.title}`);
-      logFile(data1, "手机订单结算页", ".json");
-      console.log(`-----准备提交：${args.title}`);
-      var postdata;
-      var structure;
-      async function getNewestOrderData() {
-        let { params } = transformOrderData(data1, args, "address_1");
-        try {
-          let data = await requestData(
-            "mtop.trade.order.adjust.h5",
-            {
-              params,
-              feature: `{"gzip":"false"}`
-            },
-            "post",
-            "4.0",
-            "#t#ip##_h5_2019"
-          );
-          ["endpoint", "linkage" /* , "hierarchy" */].forEach(key => {
-            if (data[key]) {
-              data1[key] = data[key];
-            }
-          });
-          structure = data.hierarchy.structure;
-          if (data.data.submitOrder_1) {
-            data1.data = data.data;
-          }
-        } catch (e) {
-          if (e.message !== "对不起，系统繁忙，请稍候再试") {
-            throw e;
-          }
-        }
-      }
-
-      var prev_error_msg;
-      async function handleOrderData() {
-        try {
-          postdata = transformOrderData(data1, args, undefined, structure);
-          logFile(postdata, "订单结算页提交的数据", ".json");
-          /* writeFile("a1.json", getTransformData(postdata));
-    writeFile("a2.json", getTransformData(await getPageData(args))); */
-          return true;
-        } catch (e) {
-          if (e.code === 2) {
-            if (e.message !== prev_error_msg) {
-              console.log(e.message);
-              prev_error_msg = e.message;
-            }
-            await getNewestOrderData();
-          } else {
-            throw new Error(e.message);
-          }
-        }
-      }
-      var submit = async (retryCount = 0) => {
-        try {
-          startTime = Date.now();
-          console.time("订单提交 " + startTime);
-          let ret = await requestData(
-            "mtop.trade.order.create.h5",
-            postdata,
-            "post",
-            "4.0"
-          );
-          logFile(ret, `手机订单提交成功`);
-          console.log(`----------手机订单提交成功：${args.title}`);
-          console.timeEnd("订单提交 " + startTime);
-          sendQQMsg(
-            `手机订单提交成功，速度去付款(${setting.username})：${args.title}`
-          );
-        } catch (e) {
-          if (retryCount >= 1) {
-            console.error(e.message + ":" + args.title);
-            console.error(`已经重试两次，放弃治疗：${args.title}`);
-            throw e;
-          }
-          if (
-            e.message.includes("对不起，系统繁忙，请稍候再试") ||
-            e.message.includes("被挤爆")
-          ) {
-            if (args.jianlou) {
-              console.log(e.message, "正在捡漏重试：" + args.title);
-              await getNewestOrderData();
-              await doJianlou();
-              return submit(retryCount + 1);
-            }
-          } else if (
-            e.message.includes("优惠信息变更") ||
-            e.message.startsWith("购买数量超过了限购数")
-          ) {
-            if (args.jianlou) {
-              console.error(e.message, "正在捡漏重试：" + args.title);
-              await getNewestOrderData();
-              await doJianlou();
-              return submit(retryCount);
-            }
-          } else if (
-            e.message !== "活动火爆，名额陆续开放，建议后续关注！" &&
-            !e.message.startsWith("您已经从购物车购买过此商品")
-          ) {
-            console.log(e.message, "正在重试：" + args.title);
-            // B-15034-01-01-001: 您已经从购物车购买过此商品，请勿重复下单
-            // RGV587_ERROR: 哎哟喂,被挤爆啦,请稍后重试
-            // F-10007-10-10-019: 对不起，系统繁忙，请稍候再试
-            // FAIL_SYS_TOKEN_EXOIRED: 令牌过期
-            // F-10003-11-16-001: 购买数量超过了限购数。可能是库存不足，也可能是人为限制。
-            // FAIL_SYS_HSF_ASYNC_TIMEOUT: 抱歉，网络系统异常
-            return submit(retryCount + 1);
-          }
-          throw e;
-        }
-      };
-      function doJianlou() {
-        return taskManager.registerTask(
-          {
-            name: "捡漏",
-            platform: "taobao-mobile",
-            comment: args.title,
-            handler: handleOrderData,
-            time: startTime + 1000 * 60 * args.jianlou!
-          },
-          16,
-          "刷到库存了，去下单---"
-        );
-      }
+    };
+    function doJianlou() {
+      return taskManager.registerTask(
+        {
+          name: "捡漏",
+          platform: "taobao-mobile",
+          comment: args.title,
+          handler: handleOrderData,
+          time: startTime + 1000 * 60 * args.jianlou!
+        },
+        16,
+        "刷到库存了，去下单---"
+      );
+    }
+    (async () => {
       try {
         postdata = transformOrderData(data1, args);
         logFile(postdata, "订单结算页提交的数据", ".json");
@@ -393,7 +390,7 @@ export class TaobaoOrderMobile {
       }
       return submit();
     })();
-    return delay(150);
+    // return delay(70);
   }
 
   getNextDataByGoodsInfo({ delivery, skuId, itemId }, quantity: number) {

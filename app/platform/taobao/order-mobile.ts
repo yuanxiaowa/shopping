@@ -314,6 +314,7 @@ export class TaobaoOrderMobile {
     }
     var submit = async (retryCount = 0) => {
       try {
+        await delay(1000)
         startTime = Date.now();
         console.time("订单提交 " + startTime);
         let ret = await requestData(
@@ -329,6 +330,7 @@ export class TaobaoOrderMobile {
           `手机订单提交成功，速度去付款(${setting.username})：${args.title}`
         );
       } catch (e) {
+        startTime = Date.now();
         if (retryCount >= 1) {
           console.error(e.message + ":" + args.title);
           console.error(`已经重试两次，放弃治疗：${args.title}`);

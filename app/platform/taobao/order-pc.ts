@@ -559,6 +559,10 @@ export class TaobaoOrderPc {
             }
             throwError(msg);
           }
+          if (ret.trim().startsWith("<a")) {
+            sendQQMsg(setting.username + "pc订单提交失败");
+            return;
+          }
           if (ret.indexOf("security-X5") > -1) {
             console.log("-------提交碰到验证拦截--------");
             logFile(ret, "pc-订单提交验证拦截");
@@ -567,7 +571,7 @@ export class TaobaoOrderPc {
           // /auction/confirm_order.htm
           logFile(ret, "pc-订单已提交");
           console.log("-----订单提交成功，等待付款----");
-          sendQQMsg(JSON.stringify("pc订单提交成功，速度去付款"));
+          sendQQMsg(setting.username + "pc订单提交成功，速度去付款");
         } catch (e) {
           console.trace(e);
           if (retryCount >= 3) {

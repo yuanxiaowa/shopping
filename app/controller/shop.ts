@@ -6,7 +6,7 @@
  */
 import { Controller } from "egg";
 import moment = require("moment");
-import { taskManager, sysPlatformTime } from "../../utils/tools";
+import { taskManager, sysPlatformTime, delay } from "../../utils/tools";
 import R = require("ramda");
 import { DT } from "../common/config";
 
@@ -150,11 +150,11 @@ export default class ShopController extends Controller {
           toTime.valueOf()
         );
         data.seckill = true;
-        ins.buyDirect(data, p);
-        ctx.body = {
-          code: 0,
-          msg: toTime.fromNow() + " 将直接下单"
-        };
+        let p2 = ins.buyDirect(data, p);
+        p2.catch(() => {
+          taskManager.cancelTask(p.id);
+        });
+        ctx.body = await handle(p2, toTime.fromNow() + " 将直接下单");
         return;
       }
     }
@@ -269,9 +269,15 @@ export default class ShopController extends Controller {
   public async taskList() {
     const { ctx } = this;
     ctx.body = await handle(
-      R.sort(
-        (a, b) => moment(a.time).valueOf() - moment(b.time).valueOf(),
-        taskManager.items
+      R.map(
+        (item: any) =>
+          Object.assign(item, {
+            time: moment(item.time).format(moment.HTML5_FMT.TIME)
+          }),
+        R.sort(
+          (a, b) => moment(a.time).valueOf() - moment(b.time).valueOf(),
+          taskManager.items
+        )
       )
     );
   }

@@ -60,80 +60,82 @@ export class TaobaoOrderPc {
         throwError("重复下单");
       }
     }
-    this.prev_id = itemDO.itemId;
     Object.assign(form, {
       quantity: args.quantity
     });
     if (!p && !itemDO.isOnline) {
       throwError("商品已下架");
     }
-    if (p) {
-      await p;
-    }
-    try {
-      var type = "tmall";
-      var addr_url = "https:";
-      if (form.etm === "") {
-        if (detail.isHkItem) {
-          addr_url += tradeConfig[tradeType];
+    this.prev_id = itemDO.itemId;
+    (async () => {
+      if (p) {
+        await p;
+      }
+      try {
+        var type = "tmall";
+        var addr_url = "https:";
+        if (form.etm === "") {
+          if (detail.isHkItem) {
+            addr_url += tradeConfig[tradeType];
+          } else {
+            addr_url += tradeConfig[1];
+            type = "taobao";
+          }
         } else {
-          addr_url += tradeConfig[1];
-          type = "taobao";
+          addr_url += tradeConfig[2];
         }
-      } else {
-        addr_url += tradeConfig[2];
-      }
-      if (args.jianlou) {
-        this.waitForStock(
-          {
-            id: getItemId(args.url),
-            quantity: args.quantity,
-            skuId: form.skuId,
-            url: args.url,
-            title: itemDO.title
-          },
-          args.jianlou
-        ).then(() =>
-          this.submitOrder(
-            Object.assign(
-              {
-                data: {
-                  form,
-                  addr_url,
-                  referer: args.url
-                },
-                other: {},
-                title: itemDO.title
-              },
-              args
-            ),
-            type
-          )
-        );
-        return "正在捡漏中";
-      }
-      return this.submitOrder(
-        Object.assign(
-          {
-            data: {
-              form,
-              addr_url,
-              referer: args.url
+        if (args.jianlou) {
+          this.waitForStock(
+            {
+              id: getItemId(args.url),
+              quantity: args.quantity,
+              skuId: form.skuId,
+              url: args.url,
+              title: itemDO.title
             },
-            other: {},
-            title: itemDO.title
-          },
-          args
-        ),
-        type
-      );
-      /* var ret = await this.req.post("https:" + tradeConfig[2], {
-        form,
-        qs: qs_data
-      }); */
-    } catch (e) {
-      console.error("订单提交出错", e);
-    }
+            args.jianlou
+          ).then(() =>
+            this.submitOrder(
+              Object.assign(
+                {
+                  data: {
+                    form,
+                    addr_url,
+                    referer: args.url
+                  },
+                  other: {},
+                  title: itemDO.title
+                },
+                args
+              ),
+              type
+            )
+          );
+          return "正在捡漏中";
+        }
+        return this.submitOrder(
+          Object.assign(
+            {
+              data: {
+                form,
+                addr_url,
+                referer: args.url
+              },
+              other: {},
+              title: itemDO.title
+            },
+            args
+          ),
+          type
+        );
+        /* var ret = await this.req.post("https:" + tradeConfig[2], {
+          form,
+          qs: qs_data
+        }); */
+      } catch (e) {
+        console.error("订单提交出错", e);
+      }
+    })();
   }
 
   async cartBuy(

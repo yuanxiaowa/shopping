@@ -84,7 +84,7 @@ export class TaobaoOrderPc {
         } else {
           addr_url += tradeConfig[2];
         }
-        if (args.jianlou) {
+        if (args.jianlou && !p) {
           this.waitForStock(
             {
               id: getItemId(args.url),

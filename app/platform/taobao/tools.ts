@@ -7,10 +7,10 @@
 import request = require("request-promise-native");
 import { newPage } from "../../../utils/page";
 import { logFileWrapper } from "../../../utils/tools";
-import signData from "./h";
 import bus_global from "../../common/bus";
 import setting from "./setting";
 import { jar } from "../../common/config";
+import crypto = require("crypto");
 
 export async function resolveTaokouling(text: string) {
   var data: string = await request.post(
@@ -94,7 +94,10 @@ export async function requestData(
     H5Request: true,
     post: method === "post" ? 1 : undefined
   };
-  var sign = signData([token, t, setting.appKey, data_str].join("&"));
+  var sign = crypto
+    .createHash("md5")
+    .update([token, t, setting.appKey, data_str].join("&"))
+    .digest("hex");
   qs.sign = sign;
   if (method === "get") {
     qs.data = data_str;

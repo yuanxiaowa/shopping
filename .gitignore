@@ -20,4 +20,3 @@ config/**/*.js
 app/**/*.map
 test/**/*.map
 config/**/*.map
-!app/platform/taobao/h.js

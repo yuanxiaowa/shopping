@@ -526,7 +526,7 @@ export class TaobaoOrderPc {
       }
       (async () => {
         try {
-          await delay(Math.min(1200 - time_diff, 750));
+          await delay(1000);
           let p = setting.req.post(submit_url, {
             qs: qs_data,
             form: formData,
@@ -582,7 +582,7 @@ export class TaobaoOrderPc {
         }
       })();
     })();
-    return delay(150);
+    // return delay(150);
   }
 
   async submitOrderFromBrowser(

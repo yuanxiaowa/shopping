@@ -56,6 +56,7 @@ export class JingDongOrder {
       return this.submitOrder(
         Object.assign(
           {
+            title: data.item.skuName,
             data: res
           },
           args

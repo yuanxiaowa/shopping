@@ -19,7 +19,7 @@ export async function getGoodsInfo(url: string, hasForm = false) {
           "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
       },
       qs: {
-        spm: "a221u.7741822.2571404953.1.7e7573eaEtdv5G"
+        spm: `a221u.7741822.${(Math.random() * 10 ** 10) >> 0}.1.7e7573eaEtdv5G`
       }
     }
   );

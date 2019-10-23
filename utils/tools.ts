@@ -335,7 +335,7 @@ export function createScheduler(t = 1500) {
 }
 
 export function throwError(msg: string) {
-  console.error(moment().toString(), msg);
+  console.error(moment().format(moment.HTML5_FMT.TIME), msg);
   throw new Error(msg);
 }
 
@@ -348,8 +348,7 @@ export async function sysPlatformTime(platform: string) {
     (dt > 0 ? "慢了" : "快了") + Math.abs(dt) + "ms"
   );
   console.log(platform + "单程时间", rtl + "ms");
-  DT[platform] =
-    dt + (platform === "taobao" ? rtl - 30 /* Math.max(0, rtl - 50) */ : rtl);
+  DT[platform] = dt + (platform === "taobao" ? Math.max(0, rtl - 30) : rtl);
 }
 
 const getDelayTime = (() => {
@@ -360,7 +359,7 @@ const getDelayTime = (() => {
     }
     let toTime = moment(t);
     if (toTime.format("mm:ss") !== "00:00") {
-      return toTime.diff(moment()) - DT[platform];
+      return DT[platform];
     }
     let bt = 1000 * 60 * 10;
     let p = new Promise<number>(resolve => {

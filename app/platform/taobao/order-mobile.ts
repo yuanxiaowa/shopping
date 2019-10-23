@@ -314,7 +314,7 @@ export class TaobaoOrderMobile {
     }
     var submit = async (retryCount = 0) => {
       try {
-        await delay(1000)
+        // await delay(1000)
         startTime = Date.now();
         console.time("订单提交 " + startTime);
         let ret = await requestData(

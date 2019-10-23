@@ -251,7 +251,7 @@ export class TaobaoOrderPc {
       var {
         data: { form, addr_url, referer }
       } = args;
-      console.log("准备进入订单结算页");
+      console.log(args.title + ":准备进入订单结算页:");
       logFile(addr_url + "\n" + JSON.stringify(form), "pc-准备进入订单结算页");
       var start_time = Date.now();
       var html: string = await setting.req.post(addr_url, {
@@ -267,7 +267,7 @@ export class TaobaoOrderPc {
         logFile(html, "pc-订单提交验证拦截");
         throwError(msg);
       }
-      console.log("进入订单结算页用时：" + time_diff);
+      console.log(args.title + ":进入订单结算页用时：" + time_diff);
       logFile(addr_url + "\n" + html, "pc-订单结算页", ".html");
       var text = /var orderData\s*=(.*);/.exec(html)![1];
       var {
@@ -339,7 +339,7 @@ export class TaobaoOrderPc {
           structure: Record<string, string[]>;
         };
       } = JSON.parse(text);
-      console.log("-----进入订单结算页，准备提交订单----");
+      console.log(args.title + "-----进入订单结算页，准备提交订单----");
       var { confirmOrder_1, submitOrderPC_1, realPayPC_1 } = data;
       var formData: any;
       var qs_data: any;
@@ -349,7 +349,7 @@ export class TaobaoOrderPc {
       throwError("存在无效商品");
     } */
       if (!linkage.input) {
-        throwError("存在无效商品");
+        throwError(args.title + ":存在无效商品");
       }
       if (!submitOrderPC_1) {
         if (
@@ -444,7 +444,7 @@ export class TaobaoOrderPc {
             let t_str = t.valueOf().toString();
             let m = t_str.length - 4;
             let delay_time = 10000 - Number(t_str.substring(m));
-            console.log("来早了，重试中...");
+            console.log(args.title + "来早了，重试中...");
             delay(delay_time - time_diff).then(() =>
               this.submitOrder(args, type, retryCount + 1)
             );
@@ -552,34 +552,36 @@ export class TaobaoOrderPc {
           let ret: string = await p;
           if (p.path.startsWith("/auction/order/TmallConfirmOrderError.htm")) {
             let msg = /<h2 class="sub-title">([^<]*)/.exec(ret)![1];
-            console.log(msg);
+            console.log(args.title + ":" + msg);
             if (
               msg.includes("优惠信息变更") ||
               msg.includes("商品在收货地址内不可售")
             ) {
               return;
             }
-            throwError(msg);
+            throwError(args.title + ":" + msg);
           }
           if (ret.trim().startsWith("<a")) {
-            sendQQMsg(setting.username + "pc订单提交失败");
+            sendQQMsg(`${args.title}(${setting.username}) pc订单提交失败`);
             return;
           }
           if (ret.indexOf("security-X5") > -1) {
-            console.log("-------提交碰到验证拦截--------");
+            console.log(args.title + "-------提交碰到验证拦截--------");
             logFile(ret, "pc-订单提交验证拦截");
             return;
           }
           // /auction/confirm_order.htm
           logFile(ret, "pc-订单已提交");
-          console.log("-----订单提交成功，等待付款----");
-          sendQQMsg(setting.username + "pc订单提交成功，速度去付款");
+          console.log(args.title + "-----订单提交成功，等待付款----");
+          sendQQMsg(
+            `${args.title}(${setting.username}) pc订单提交成功，速度去付款`
+          );
         } catch (e) {
           console.trace(e);
           if (retryCount >= 3) {
-            return console.error("重试失败3次，放弃治疗");
+            return console.error(args.title + ":重试失败3次，放弃治疗");
           }
-          console.log("重试中");
+          console.log(args.title + ":重试中");
           this.submitOrder(args, type, retryCount + 1);
         }
       })();

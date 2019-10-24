@@ -10,7 +10,9 @@ import iconv = require("iconv-lite");
 import { ensureDirSync, ensureFileSync, writeFileSync } from "fs-extra";
 
 export const config = {
-  isSubmitOrder: true
+  isSubmitOrder: true,
+  interval_submit: 0,
+  delay_submit: 1000
 };
 
 export const UA = {

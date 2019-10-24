@@ -5,26 +5,30 @@
  * @LastEditTime: 2019-09-07 09:27:44
  */
 import setting from "./setting";
-import { logFile } from "./tools";
-import { throwError } from "../../../utils/tools";
+import { throwError, md5 } from "../../../utils/tools";
 import cheerio = require("cheerio");
 import qs = require("querystring");
+import fs = require("fs-extra");
+import moment = require("moment");
+import { UA } from "../../common/config";
 
 export async function getGoodsInfo(url: string, hasForm = false) {
-  var html: string = await setting.req.get(
-    url.replace("detail.m.tmall.com/", "detail.tmall.com/"),
-    {
+  url = url.replace("detail.m.tmall.com/", "detail.tmall.com/");
+  var filename = `.data/files/${moment().format(moment.HTML5_FMT.DATE)}/${md5(
+    url
+  )}.html`;
+  var html = "";
+  if (await fs.pathExists(filename)) {
+    html = await fs.readFile(filename, "utf8");
+  } else {
+    html = await setting.req.get(url, {
       headers: {
-        "user-agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
-      },
-      qs: {
-        spm: `a221u.7741822.${(Math.random() * 10 ** 10) >> 0}.1.7e7573eaEtdv5G`
+        "user-agent": UA.pc
       }
-    }
-  );
-  logFile(url + "\n" + html, "商品详情");
-  var text = /TShop.Setup\(\s*(.*)\s*\);/.exec(html)![1];
+    });
+    fs.ensureFile(filename).then(() => fs.writeFile(filename, html));
+  }
+  var text = /TShop\.Setup\(\s*(.*)\s*\);/.exec(html)![1];
   // detail.isHiddenShopAction
   var ret = JSON.parse(text);
   var { itemDO, valItemInfo, valTimeLeft, detail } = ret;

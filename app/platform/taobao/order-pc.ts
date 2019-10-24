@@ -63,9 +63,9 @@ export class TaobaoOrderPc {
     Object.assign(form, {
       quantity: args.quantity
     });
-    if (!p && !itemDO.isOnline) {
+    /* if (!p && !itemDO.isOnline) {
       throwError("商品已下架");
-    }
+    } */
     this.prev_id = itemDO.itemId;
     (async () => {
       if (p) {
@@ -528,7 +528,7 @@ export class TaobaoOrderPc {
       }
       (async () => {
         try {
-          await delay(1000);
+          await delay(config.delay_submit);
           let p = setting.req.post(submit_url, {
             qs: qs_data,
             form: formData,
@@ -562,7 +562,7 @@ export class TaobaoOrderPc {
             throwError(args.title + ":" + msg);
           }
           if (ret.trim().startsWith("<a")) {
-            sendQQMsg(`${args.title}(${setting.username}) pc订单提交失败`);
+            sendQQMsg(`${args.title}(${setting.username}) pc订单被拦截`);
             return;
           }
           if (ret.indexOf("security-X5") > -1) {
@@ -586,7 +586,7 @@ export class TaobaoOrderPc {
         }
       })();
     })();
-    // return delay(150);
+    return delay(config.interval_submit);
   }
 
   async submitOrderFromBrowser(

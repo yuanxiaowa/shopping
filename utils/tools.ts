@@ -10,6 +10,7 @@ import { writeFile } from "fs-extra";
 import { Spinner } from "cli-spinner";
 import { DT } from "../app/common/config";
 import request = require("request-promise-native");
+import crypto = require("crypto");
 
 export function remain(h: number, m = 0) {
   var now = new Date();
@@ -576,11 +577,18 @@ export class TaskManager {
 
 export const taskManager = new TaskManager();
 
-export function sendQQMsg(message: string) {
+export function sendQQMsg(message: string, user_id = "870092104") {
   request.get("http://localhost:5700/send_private_msg", {
     qs: {
-      user_id: "870092104",
+      user_id,
       message
     }
   });
+}
+
+export function md5(content: string) {
+  return crypto
+    .createHash("md5")
+    .update(content)
+    .digest("hex");
 }

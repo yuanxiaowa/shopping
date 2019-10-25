@@ -312,14 +312,17 @@ export class TaobaoOrderMobile {
         }
       }
     }
+    var prev_postdata;
     var submit = async (retryCount = 0) => {
       try {
-        await delay(config.delay_submit);
+        if (!prev_postdata) {
+          await delay(config.delay_submit);
+        }
         startTime = Date.now();
         console.time("订单提交 " + startTime);
         let ret = await requestData(
           "mtop.trade.order.create.h5",
-          postdata,
+          prev_postdata || postdata,
           "post",
           "4.0"
         );
@@ -330,6 +333,7 @@ export class TaobaoOrderMobile {
           `手机订单提交成功，速度去付款(${setting.username})：${args.title}`
         );
       } catch (e) {
+        prev_postdata = postdata;
         startTime = Date.now();
         if (retryCount >= 1) {
           console.error(e.message + ":" + args.title);

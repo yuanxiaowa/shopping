@@ -152,28 +152,32 @@ export async function getStock(arg: {
       }
     }
   );
-  var {
-    defaultModel: { inventoryDO }
-  } = JSON.parse(text);
-  var { skuQuantity, icTotalQuantity } = <
-    {
-      skuQuantity: Record<
-        string,
-        {
-          icTotalQuantity: number;
-          quantity: number;
-          totalQuantity: number;
-          type: number;
-        }
-      >;
-      icTotalQuantity: number;
-      totalQuantity: number;
+  try {
+    var {
+      defaultModel: { inventoryDO }
+    } = JSON.parse(text);
+    var { skuQuantity, icTotalQuantity } = <
+      {
+        skuQuantity: Record<
+          string,
+          {
+            icTotalQuantity: number;
+            quantity: number;
+            totalQuantity: number;
+            type: number;
+          }
+        >;
+        icTotalQuantity: number;
+        totalQuantity: number;
+      }
+    >inventoryDO;
+    if (!arg.skuId || !skuQuantity[arg.skuId]) {
+      return icTotalQuantity;
     }
-  >inventoryDO;
-  if (!arg.skuId || !skuQuantity[arg.skuId]) {
-    return icTotalQuantity;
+    return skuQuantity[arg.skuId].quantity;
+  } catch (e) {
+    return 0;
   }
-  return skuQuantity[arg.skuId].quantity;
 }
 
 export async function getGoodsCollection(page = 1) {

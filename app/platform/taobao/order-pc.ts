@@ -237,7 +237,7 @@ export class TaobaoOrderPc {
       type
     );
   }
-  @Serial(0)
+
   async submitOrder(
     args: ArgOrder<{
       form: Record<string, any>;
@@ -526,72 +526,81 @@ export class TaobaoOrderPc {
         return;
       }
       (async () => {
-        try {
-          console.log(args.title + "-----开始提交订单----");
-          await delay(config.delay_submit);
-          let p = setting.req.post(submit_url, {
-            qs: qs_data,
-            form: formData,
-            headers: {
-              Referer: addr_url,
-              "Sec-Fetch-Mode": "navigate",
-              "Sec-Fetch-User": "?1",
-              Accept:
-                "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
-              "Sec-Fetch-Site": "same-origin",
-              "Accept-Encoding": "gzip, deflate, br",
-              "Accept-Language": "zh-CN,zh;q=0.9",
-              "Upgrade-Insecure-Requests": "1"
-              // "cache-control": "no-cache",
-              // pragma: "no-cache",
-              // cookie:
-              //   "cna=P1uzFa+lx0UCAXLYXz0zDpJR; sm4=320506; ubn=p; ucn=center; lid=yuanxiaowaer; hng=CN%7Czh-CN%7CCNY%7C156; enc=C2JKJTyVi5rv9fZzGrCsctbG7wED%2F74f7JEftmCzqaZEOd69vwlxaQDdSe8cBD9xeulaoUtmhfL98EtXGDhB9Q%3D%3D; _bl_uid=g1jsFzn9ua9198531qp0vO6i1e82; dnk=yuanxiaowaer; uc1=tag=8&cookie14=UoTaECDSKJYHzg%3D%3D&pas=0&cookie21=WqG3DMC9Fbxq&cookie15=W5iHLLyFOGW7aA%3D%3D&cookie16=V32FPkk%2FxXMk5UvIbNtImtMfJQ%3D%3D&lng=zh_CN&existShop=false; uc3=nk2=Gh6VT7X9cESW5Bav&id2=W80qN4V3GqCv&lg2=VFC%2FuZ9ayeYq2g%3D%3D&vt3=F8dByuKwBA1bxA20fWg%3D; tracknick=yuanxiaowaer; uc4=nk4=0%40GJJeVHtXcnJImf8jH6j1S0uANAXEVLQ%3D&id4=0%40We5hgrFpKEIMRVD3AVPA1HU0W9M%3D; _l_g_=Ug%3D%3D; unb=842405758; lgc=yuanxiaowaer; cookie1=Vv6bWmeYv86mmEqDzTiNqknTnpFlk5e11%2BTyi5eXquQ%3D; login=true; cookie17=W80qN4V3GqCv; cookie2=18c331700a85e415ab2c3961e41bb03c; _nk_=yuanxiaowaer; t=08dd795cd89e14737715e44ab9a3c605; sg=r8d; csg=869f8a25; _tb_token_=83f0e663af53; l=cBTWs5nRqrQ6DRmEKOCZlurza77TbIRxBuPzaNbMi_5hY6L_V57OkycQ4Fp6DfXdtzLBq2XfR429-etbj8pTY-bwDFec.; isg=BBoatHtyE2oy1J-V1BHw47oCa8Y8S54lUmGI7SST3a14l7rRDNshNXJtZiquFha9"
-            },
-            followAllRedirects: true
-          });
-          let ret: string = await p;
-          if (p.path.startsWith("/auction/order/TmallConfirmOrderError.htm")) {
-            let msg = /<h2 class="sub-title">([^<]*)/.exec(ret)![1];
-            console.log(args.title + ":" + msg);
+        console.log(args.title + "-----开始提交订单----");
+        await delay(config.delay_submit);
+        this.addQueue(async () => {
+          try {
+            let p = setting.req.post(submit_url, {
+              qs: qs_data,
+              form: formData,
+              headers: {
+                Referer: addr_url,
+                "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-User": "?1",
+                Accept:
+                  "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
+                "Sec-Fetch-Site": "same-origin",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Accept-Language": "zh-CN,zh;q=0.9",
+                "Upgrade-Insecure-Requests": "1"
+                // "cache-control": "no-cache",
+                // pragma: "no-cache",
+                // cookie:
+                //   "cna=P1uzFa+lx0UCAXLYXz0zDpJR; sm4=320506; ubn=p; ucn=center; lid=yuanxiaowaer; hng=CN%7Czh-CN%7CCNY%7C156; enc=C2JKJTyVi5rv9fZzGrCsctbG7wED%2F74f7JEftmCzqaZEOd69vwlxaQDdSe8cBD9xeulaoUtmhfL98EtXGDhB9Q%3D%3D; _bl_uid=g1jsFzn9ua9198531qp0vO6i1e82; dnk=yuanxiaowaer; uc1=tag=8&cookie14=UoTaECDSKJYHzg%3D%3D&pas=0&cookie21=WqG3DMC9Fbxq&cookie15=W5iHLLyFOGW7aA%3D%3D&cookie16=V32FPkk%2FxXMk5UvIbNtImtMfJQ%3D%3D&lng=zh_CN&existShop=false; uc3=nk2=Gh6VT7X9cESW5Bav&id2=W80qN4V3GqCv&lg2=VFC%2FuZ9ayeYq2g%3D%3D&vt3=F8dByuKwBA1bxA20fWg%3D; tracknick=yuanxiaowaer; uc4=nk4=0%40GJJeVHtXcnJImf8jH6j1S0uANAXEVLQ%3D&id4=0%40We5hgrFpKEIMRVD3AVPA1HU0W9M%3D; _l_g_=Ug%3D%3D; unb=842405758; lgc=yuanxiaowaer; cookie1=Vv6bWmeYv86mmEqDzTiNqknTnpFlk5e11%2BTyi5eXquQ%3D; login=true; cookie17=W80qN4V3GqCv; cookie2=18c331700a85e415ab2c3961e41bb03c; _nk_=yuanxiaowaer; t=08dd795cd89e14737715e44ab9a3c605; sg=r8d; csg=869f8a25; _tb_token_=83f0e663af53; l=cBTWs5nRqrQ6DRmEKOCZlurza77TbIRxBuPzaNbMi_5hY6L_V57OkycQ4Fp6DfXdtzLBq2XfR429-etbj8pTY-bwDFec.; isg=BBoatHtyE2oy1J-V1BHw47oCa8Y8S54lUmGI7SST3a14l7rRDNshNXJtZiquFha9"
+              },
+              followAllRedirects: true
+            });
+            let ret: string = await p;
             if (
-              msg.includes("优惠信息变更") ||
-              msg.includes("商品在收货地址内不可售")
+              p.path.startsWith("/auction/order/TmallConfirmOrderError.htm")
             ) {
+              let msg = /<h2 class="sub-title">([^<]*)/.exec(ret)![1];
+              console.log(args.title + ":" + msg);
+              if (
+                msg.includes("优惠信息变更") ||
+                msg.includes("商品在收货地址内不可售")
+              ) {
+                return;
+              }
+              // 购买数量超过了限购数。可能是库存不足，也可能是人为限制。
+              if (args.jianlou && msg.startsWith("购买数量超过了限购数")) {
+                return;
+              }
+              throwError(args.title + ":" + msg);
+            }
+            if (ret.trim().startsWith("<a")) {
+              console.log(args.title + "：订单被拦截");
+              sendQQMsg(`${args.title}(${setting.username}) pc订单被拦截`);
               return;
             }
-            // 购买数量超过了限购数。可能是库存不足，也可能是人为限制。
-            if (args.jianlou && msg.startsWith("购买数量超过了限购数")) {
+            if (ret.indexOf("security-X5") > -1) {
+              console.log(args.title + "-------提交碰到验证拦截--------");
+              logFile(ret, "pc-订单提交验证拦截");
               return;
             }
-            throwError(args.title + ":" + msg);
+            // /auction/confirm_order.htm
+            logFile(ret, "pc-订单已提交");
+            console.log(args.title + "-----订单提交成功，等待付款----");
+            sendQQMsg(
+              `${args.title}(${setting.username}) pc订单提交成功，速度去付款`
+            );
+          } catch (e) {
+            console.trace(e);
+            if (retryCount >= 3) {
+              return console.error(args.title + ":重试失败3次，放弃治疗");
+            }
+            console.log(args.title + ":重试中");
+            this.submitOrder(args, type, retryCount + 1);
           }
-          if (ret.trim().startsWith("<a")) {
-            console.log(args.title + "：订单被拦截");
-            sendQQMsg(`${args.title}(${setting.username}) pc订单被拦截`);
-            return;
-          }
-          if (ret.indexOf("security-X5") > -1) {
-            console.log(args.title + "-------提交碰到验证拦截--------");
-            logFile(ret, "pc-订单提交验证拦截");
-            return;
-          }
-          // /auction/confirm_order.htm
-          logFile(ret, "pc-订单已提交");
-          console.log(args.title + "-----订单提交成功，等待付款----");
-          sendQQMsg(
-            `${args.title}(${setting.username}) pc订单提交成功，速度去付款`
-          );
-        } catch (e) {
-          console.trace(e);
-          if (retryCount >= 3) {
-            return console.error(args.title + ":重试失败3次，放弃治疗");
-          }
-          console.log(args.title + ":重试中");
-          this.submitOrder(args, type, retryCount + 1);
-        }
+        });
       })();
     })();
-    return delay(config.interval_submit);
+  }
+
+  @Serial(0)
+  async addQueue(f: Function) {
+    f();
+    await delay(config.interval_submit);
   }
 
   async submitOrderFromBrowser(

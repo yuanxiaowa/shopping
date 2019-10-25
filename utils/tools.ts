@@ -8,7 +8,7 @@ import fs = require("fs-extra");
 import moment = require("moment");
 import { writeFile } from "fs-extra";
 import { Spinner } from "cli-spinner";
-import { DT } from "../app/common/config";
+import { DT, config } from "../app/common/config";
 import request = require("request-promise-native");
 import crypto = require("crypto");
 
@@ -349,7 +349,8 @@ export async function sysPlatformTime(platform: string) {
     (dt > 0 ? "慢了" : "快了") + Math.abs(dt) + "ms"
   );
   console.log(platform + "单程时间", rtl + "ms");
-  DT[platform] = dt + (platform === "taobao" ? Math.max(0, rtl - 30) : rtl);
+  DT[platform] =
+    dt + (platform === "taobao" ? Math.max(0, rtl - config.delay_all) : rtl);
 }
 
 const getDelayTime = (() => {

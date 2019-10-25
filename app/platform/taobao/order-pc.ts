@@ -339,7 +339,6 @@ export class TaobaoOrderPc {
           structure: Record<string, string[]>;
         };
       } = JSON.parse(text);
-      console.log(args.title + "-----进入订单结算页，准备提交订单----");
       var { confirmOrder_1, submitOrderPC_1, realPayPC_1 } = data;
       var formData: any;
       var qs_data: any;
@@ -528,6 +527,7 @@ export class TaobaoOrderPc {
       }
       (async () => {
         try {
+          console.log(args.title + "-----开始提交订单----");
           await delay(config.delay_submit);
           let p = setting.req.post(submit_url, {
             qs: qs_data,
@@ -559,9 +559,14 @@ export class TaobaoOrderPc {
             ) {
               return;
             }
+            // 购买数量超过了限购数。可能是库存不足，也可能是人为限制。
+            if (args.jianlou && msg.startsWith("购买数量超过了限购数")) {
+              return;
+            }
             throwError(args.title + ":" + msg);
           }
           if (ret.trim().startsWith("<a")) {
+            console.log(args.title + "：订单被拦截");
             sendQQMsg(`${args.title}(${setting.username}) pc订单被拦截`);
             return;
           }

@@ -12,7 +12,8 @@ import { ensureDirSync, ensureFileSync, writeFileSync } from "fs-extra";
 export const config = {
   isSubmitOrder: true,
   interval_submit: 0,
-  delay_submit: 1000
+  delay_submit: 1000,
+  delay_all: 30
 };
 
 export const UA = {

@@ -570,7 +570,7 @@ export class TaobaoOrderPc {
             }
             if (ret.trim().startsWith("<a")) {
               console.log(args.title + "：订单被拦截");
-              sendQQMsg(`${args.title}(${setting.username}) pc订单被拦截`);
+              sendQQMsg(`${args.title}(${setting.username}) pc订单被拦截`, args.qq);
               return;
             }
             if (ret.indexOf("security-X5") > -1) {
@@ -582,7 +582,8 @@ export class TaobaoOrderPc {
             logFile(ret, "pc-订单已提交");
             console.log(args.title + "-----订单提交成功，等待付款----");
             sendQQMsg(
-              `${args.title}(${setting.username}) pc订单提交成功，速度去付款`
+              `${args.title}(${setting.username}) pc订单提交成功，速度去付款`,
+              , args.qq
             );
           } catch (e) {
             console.trace(e);

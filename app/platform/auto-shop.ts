@@ -106,7 +106,7 @@ export default abstract class AutoShop implements AutoShopOptions {
     page.goto(this.login_url);
     let p = this.loginAction(page);
     (async () => {
-      await p
+      await p;
       await page.waitForNavigation({
         timeout: 0
       });
@@ -121,7 +121,7 @@ export default abstract class AutoShop implements AutoShopOptions {
   async start() {
     return this.preserveState();
   }
-  async checkUrl(url: string, page: Page) {
+  async checkUrl(url: string, page: Page): Promise<any> {
     /* try {
       var p = this.req.get(url, {
         followRedirect: false
@@ -185,12 +185,13 @@ export default abstract class AutoShop implements AutoShopOptions {
     var page = await newPage();
     var logined = await this.checkUrl(this.state_urls[0], page);
     var p: any;
-    if (!logined) {
+    if (logined === false) {
       p = await this.login(page, () =>
         this.setDatas(page).then(() => page.close())
       );
     } else {
       this.setDatas(page).then(() => page.close());
+      return logined;
     }
     return p;
   }

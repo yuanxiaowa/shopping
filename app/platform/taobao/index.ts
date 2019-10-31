@@ -69,7 +69,9 @@ export class Taobao extends AutoShop {
           )
     );
     var text: string = await res.text();
-    return !text.includes("FAIL_SYS_SESSION_EXPIRED::");
+    return text.includes("FAIL_SYS_SESSION_EXPIRED::")
+      ? false
+      : setting.username;
     // return checkLogin();
   }
   resolveUrl = resolveUrl;

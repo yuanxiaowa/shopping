@@ -570,7 +570,10 @@ export class TaobaoOrderPc {
             }
             if (ret.trim().startsWith("<a")) {
               console.log(args.title + "：订单被拦截");
-              sendQQMsg(`${args.title}(${setting.username}) pc订单被拦截`, args.qq);
+              sendQQMsg(
+                `${args.title}(${setting.username}) pc订单被拦截`,
+                args.qq
+              );
               return;
             }
             if (ret.indexOf("security-X5") > -1) {
@@ -580,11 +583,52 @@ export class TaobaoOrderPc {
             }
             // /auction/confirm_order.htm
             logFile(ret, "pc-订单已提交");
+            let p_url = /window\.location\s*=\s*"([^"]+)/.exec(ret);
+            if (!p_url) {
+              sendQQMsg(
+                `${args.title}(${setting.username}) pc订单提交失败`,
+                args.qq
+              );
+              return;
+            }
             console.log(args.title + "-----订单提交成功，等待付款----");
             sendQQMsg(
               `${args.title}(${setting.username}) pc订单提交成功，速度去付款`,
-              , args.qq
+              args.qq
             );
+            if (args.expectedPrice && args.expectedPrice < 1) {
+              let pass = "";
+              if (setting.username === "yuanxiaowaer") {
+                pass = "870092";
+              } else if (setting.username === "15262677381欧泽和") {
+                pass = "869328";
+              } else {
+                return;
+              }
+              let page = await newPage();
+              try {
+                await page.setRequestInterception(true);
+                page.goto(p_url[1]);
+                // await page.waitForResponse(res =>
+                //   res.url().startsWith("https://tscenter.alipay.com/home/pc.htm")
+                // );
+                await page.waitForSelector("#J_authSubmit");
+                await page.evaluate(() => {
+                  var ele = document.querySelector<HTMLInputElement>(
+                    "#payPassword_rsainput"
+                  )!;
+                  ele.value = pass;
+                }, pass);
+                await page.click("#J_authSubmit");
+                await page.waitForNavigation();
+                sendQQMsg(
+                  `${args.title}(${setting.username}) pc订单已付款`,
+                  args.qq
+                );
+              } finally {
+                await page.close();
+              }
+            }
           } catch (e) {
             console.trace(e);
             if (retryCount >= 3) {

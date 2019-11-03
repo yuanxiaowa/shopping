@@ -279,6 +279,9 @@ export class TaobaoOrderPc {
       if (!meta.success) {
         console.error(`${args.title}:${meta.msg}`);
         if (!args.jianlou) {
+          if (retryCount >= 1) {
+            throwError(args.title + ":已失败两次，放弃治疗");
+          }
           this.submitOrder(args, type, retryCount + 1);
           return;
         }

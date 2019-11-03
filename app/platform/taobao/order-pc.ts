@@ -456,16 +456,19 @@ export class TaobaoOrderPc {
         var msg;
         var {
           linkage,
-          data: { realPayPC_1 }
+          data: { realPayPC_1, realPay_1 }
         } = orderData;
         if (!linkage.input) {
           success = false;
           msg = args.title + ":存在无效商品";
         } else {
-          if (typeof args.expectedPrice !== "undefined" && realPayPC_1) {
-            if (+realPayPC_1.fields.price > +args.expectedPrice) {
+          if (typeof args.expectedPrice !== "undefined") {
+            let price = realPayPC_1
+              ? +realPayPC_1.fields.price
+              : +realPay_1.fields.price;
+            if (price > +args.expectedPrice) {
               success = false;
-              msg = `${args.title}: 期望价格:${args.expectedPrice}, 实际价格：${realPayPC_1.fields.price}`;
+              msg = `${args.title}: 期望价格:${args.expectedPrice}, 实际价格：${price}`;
             }
           }
         }

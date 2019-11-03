@@ -275,8 +275,6 @@ export class TaobaoOrderPc {
     if (args.noinvalid && structure.invalidGroup_2) {
       throwError("存在无效商品");
     } */
-      jar.getCookies("www.taobao.com");
-
       var meta = getOrderDataMeta(res);
       if (!meta.success) {
         console.error(`${args.title}:${meta.msg}`);

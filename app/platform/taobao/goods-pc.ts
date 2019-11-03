@@ -153,9 +153,12 @@ export async function getStock(arg: {
     }
   );
   try {
-    var {
-      defaultModel: { inventoryDO }
-    } = JSON.parse(text);
+    var res = JSON.parse(text);
+    var { defaultModel } = res;
+    if (!defaultModel) {
+      throw new Error(res.url);
+    }
+    var { inventoryDO } = defaultModel;
     var { skuQuantity, icTotalQuantity } = <
       {
         skuQuantity: Record<
@@ -176,6 +179,9 @@ export async function getStock(arg: {
     }
     return skuQuantity[arg.skuId].quantity;
   } catch (e) {
+    if (e.message.startsWith("https://mdskip.taobao.com")) {
+      throw new Error("遇到拦截");
+    }
     return 0;
   }
 }

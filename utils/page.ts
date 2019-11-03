@@ -34,7 +34,8 @@ export async function bootstrapBrowser() {
     headless: false,
     userDataDir: dataDir,
     // devtools: true,
-    executablePath: revisionInfo.executablePath
+    executablePath: revisionInfo.executablePath,
+    defaultViewport: null
   });
   let shaderFolder = path.join(dataDir, "GrShaderCache");
   if (await fs.pathExists(shaderFolder)) {
@@ -63,13 +64,12 @@ export async function bootstrapBrowser() {
   });
 }
 
-export async function newPage() {
+export async function newPage(viewport?: { width: number; height: number }) {
   var page = await browser.newPage();
   page.setUserAgent(UA.pc);
-  await page.setViewport({
-    width: 400,
-    height: 573
-  });
+  if (viewport) {
+    await page.setViewport(viewport);
+  }
   /* page.setUserAgent(
     "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1"
   ); */

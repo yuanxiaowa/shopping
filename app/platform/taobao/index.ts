@@ -54,8 +54,8 @@ export class Taobao extends AutoShop {
   }
 
   async checkUrl(url: string, page: Page) {
-    page.goto(url);
-    var res = await page.waitForResponse(
+    await page.goto("https://i.taobao.com/my_taobao_api/guess_you_like.json");
+    /* var res = await page.waitForResponse(
       res =>
         res
           .url()
@@ -68,10 +68,9 @@ export class Taobao extends AutoShop {
             "https://h5api.m.taobao.com/h5/mtop.taobao.mclaren.index.data.get.h5/1.0"
           )
     );
-    var text: string = await res.text();
-    return text.includes("FAIL_SYS_SESSION_EXPIRED::")
-      ? false
-      : setting.username;
+    var text: string = await res.text(); */
+    // return text.includes("FAIL_SYS_SESSION_EXPIRED::")
+    return page.url() === url ? false : setting.username;
     // return checkLogin();
   }
   resolveUrl = resolveUrl;

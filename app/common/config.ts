@@ -13,7 +13,7 @@ export const config = {
   isSubmitOrder: true,
   interval_submit: 0,
   delay_submit: 1000,
-  delay_all: 30
+  delay_all: 40
 };
 
 export const UA = {

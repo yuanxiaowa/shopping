@@ -14,7 +14,7 @@ import {
 import setting from "./setting";
 import { logFile, getItemId } from "./tools";
 import { ArgBuyDirect, ArgOrder } from "../struct";
-import { config } from "../../common/config";
+import { config, jar } from "../../common/config";
 import moment = require("moment");
 import { getGoodsInfo, getStock } from "./goods-pc";
 import iconv = require("iconv-lite");
@@ -270,264 +270,255 @@ export class TaobaoOrderPc {
       console.log(args.title + ":进入订单结算页用时：" + time_diff);
       logFile(addr_url + "\n" + html, "pc-订单结算页", ".html");
       var text = /var orderData\s*=(.*);/.exec(html)![1];
-      var {
-        endpoint,
-        data,
-        linkage,
-        hierarchy: { structure }
-      }: {
-        endpoint: {
-          mode: string;
-          osVersion: string;
-          protocolVersion: string;
-          ultronage: string;
-        };
-        data: Record<
-          string,
-          {
-            submit: boolean;
-            tag: string;
-            fields: any;
-          }
-        > & {
-          confirmOrder_1: {
-            fields: {
-              pcSubmitUrl: string;
-              secretValue: string;
-              sparam1: string;
-              sparam2: string;
-              sourceTime: string;
-            };
-          };
-          submitOrderPC_1: {
-            hidden: {
-              extensionMap: {
-                action: string;
-                event_submit_do_confirm: string;
-                input_charset: string;
-                pcSubmitUrl: string;
-                secretKey: string;
-                secretValue: string;
-                sparam1: string;
-                sparam2?: string;
-                unitSuffix: string;
-              };
-            };
-          };
-          realPayPC_1: {
-            fields: {
-              price: string;
-            };
-            hidden: {
-              extensionMap: {
-                timestamp: string;
-              };
-            };
-          };
-        };
-        linkage: {
-          common: {
-            compress: boolean;
-            queryParams: string;
-            submitParams: string;
-            validateParams: string;
-          };
-          signature: string;
-          input?: string[];
-        };
-        hierarchy: {
-          structure: Record<string, string[]>;
-        };
-      } = JSON.parse(text);
-      var { confirmOrder_1, submitOrderPC_1, realPayPC_1 } = data;
-      var formData: any;
-      var qs_data: any;
-      var submit_url: string;
+      var res: OrderData = JSON.parse(text);
       /* console.log(args.noinvalid);
     if (args.noinvalid && structure.invalidGroup_2) {
       throwError("存在无效商品");
     } */
-      if (!linkage.input) {
-        throwError(args.title + ":存在无效商品");
+      jar.getCookies("www.taobao.com");
+
+      var meta = getOrderDataMeta(res);
+      if (!meta.success) {
+        console.error(`${args.title}:${meta.msg}`);
+        if (!args.jianlou) {
+          this.submitOrder(args, type, retryCount + 1);
+          return;
+        }
+        await waitExpectedOrderData();
       }
-      if (!submitOrderPC_1) {
-        if (
-          args.seckill &&
-          retryCount === 0 &&
-          confirmOrder_1.fields.sourceTime
-        ) {
-          let t = moment(+confirmOrder_1.fields.sourceTime);
-          let _s = t.second();
-          if (_s < 59 && _s > 55) {
-            let t_str = t.valueOf().toString();
-            let m = t_str.length - 4;
-            let delay_time = 10000 - Number(t_str.substring(m));
-            delay(delay_time - time_diff).then(() =>
-              this.submitOrder(args, type, retryCount + 1)
-            );
-            return;
+      function getFormData(
+        { endpoint, data, linkage, hierarchy: { structure } }: OrderData,
+        isUpdate = false
+      ) {
+        var { submitOrderPC_1 } = data;
+        var qs_data;
+        var operator;
+        var common;
+        var input: string[];
+        var lifecycle;
+        var submit_url;
+        var formData;
+        if (data.submitOrderPC_1) {
+          if (isUpdate) {
+            operator = "addressPC_1";
+            common = {
+              compress: true,
+              queryParams: linkage.common.queryParams,
+              validateParams: linkage.common.validateParams
+            };
+            input = [operator].concat(linkage.input);
+            lifecycle = "null";
+            submit_url = linkage.url;
+          } else {
+            qs_data = {
+              spm: `a220l.1.a22016.d011001001001.undefined`,
+              submitref: submitOrderPC_1.hidden.extensionMap.secretValue,
+              sparam1: submitOrderPC_1.hidden.extensionMap.sparam1,
+              sparam2: submitOrderPC_1.hidden.extensionMap.sparam2
+            };
+            common = {
+              compress: true,
+              submitParams: linkage.common.submitParams,
+              validateParams: linkage.common.validateParams
+            };
+            input = Object.keys(data).filter(key => data[key].submit);
+            submit_url = submitOrderPC_1.hidden.extensionMap.pcSubmitUrl;
           }
-        }
-        let ua_log =
-          "119#MlKA70vEMnDyqMMzZR0mfhNqsAOCc0zzNoYqOxPXiX8rOLMlRvBsQHACBLnD7HNkVW6u+TJDO2dsHEKw83cWa2lUDbCsSUkGMZA8RJBONt8LfoHMRPPe3FN8fHhS4Q9LdeNMR2VVNlsCqwMJqQPOutK6fusG4lhLPGg1RJ+q+NFGf/VwKSqj+EAL9eVH4QyG2eALRJE+EE387nASRVTmHNA6h2+S4lca0rA87PjVNN3Mxe3RaB0U3FNcQ1hzcDbL3e3My2I3TAFGfoZEh/loEEAL9weXLl9Lt1ELKlGv86GGMaASRBSUWLNN2I75eGcR3oALR2V48iVNNJd6+7hSzsyTgYCQM6ILf9lNDKDMyaD6cQ9YCYbCuYUcuuFM5yEg02+qaowfKLyxBXU8Ft9A4ia4LltAFPd5qdtAcnn8R7ho4LbVKKgB53QfxeC/hIJxtmKJZd2VBm5lz/LN09il3DbBKeaRMc/J1eugCy8Kb5lyXIoB3cfAkvUQjSDL5n4ubXZdBj4MiYX2BOsZRSfmWR8hVf5yn53hSaCZTLHKt7FbC9ZydWY1AB8+IFCJ8Qh2z9vM3TX/7pzXKH6MJcjYR8YntN9rmxnMKSOr/5hyWOGahQLHimcEeBmyWCbwLD6v6OOjualjPSwjk9VCx/yX2GAI4QJJ8bq3XA4b9z1AfjWmSe8/iedwoUahD6NT5zB3M0tAqy0vMv65kYVzj9Mvr/RimM2FHuErzYj9IjC0JJOFgnEYuAnMrRUvdLZjWqlyrIus3RbKuEM5E++wjfaqXGWRQny9BCGg+hJJIilFDyuuF3EitezdHX8mWypJ6e+MjAkDwq8Q7LIo5cANFZSQF3qpJun7d671jsKQLSuFgNPISBEAQWAy7+ZM3Y+biHaMRCXlYnMbY0EI";
-        formData = [
-          "_tb_token_",
-          "action",
-          "event_submit_do_confirm",
-          "input_charset",
-          // "praper_alipay_cashier_domain",
-          "authYiYao",
-          "authHealth",
-          "F_nick"
-        ].reduce(
-          (state: any, name) => {
-            var arr = new RegExp(
-              `name=['"]${name}['"].*? value=['"](.*?)['"]`
-            ).exec(html);
-            if (arr) {
-              state[name] = arr![1];
-            }
-            return state;
-          },
-          {
-            praper_alipay_cashier_domain: "cashierstl",
-            hierarchy: JSON.stringify({
-              structure
-            }),
-            data: iconv
-              .encode(
-                JSON.stringify(
-                  Object.keys(data).reduce((state: any, name) => {
-                    var item = data[name];
-                    if (item.submit) {
-                      if (item.tag === "submitOrder") {
-                        if (item.fields) {
-                          if (ua_log) {
-                            item.fields.ua = ua_log;
-                          }
-                        }
-                      } else if (item.tag === "eticketDesc") {
-                        item.fields.value = taobao.mobile;
-                      }
-                      state[name] = item;
-                    }
-                    return state;
-                  }, {})
-                ),
-                "gbk"
-              )
-              .toString(),
+          formData = {
+            endpoint: JSON.stringify(endpoint),
+            operator,
             linkage: JSON.stringify({
-              common: linkage.common,
+              common,
               signature: linkage.signature
-            })
-          }
-        );
-        qs_data = {
-          spm: `a220l.1.a22016.d011001001001.undefined`,
-          submitref: confirmOrder_1.fields.secretValue,
-          sparam1: confirmOrder_1.fields.sparam1,
-          sparam2: confirmOrder_1.fields.sparam2
-        };
-        submit_url = `https://buy.taobao.com${confirmOrder_1.fields
-          .pcSubmitUrl || /var submitURL="([^"]+)/.exec(html)![1]}`;
-      } else {
-        if (
-          args.seckill &&
-          retryCount === 0 &&
-          realPayPC_1.hidden.extensionMap.timestamp
-        ) {
-          let t = moment(+realPayPC_1.hidden.extensionMap.timestamp);
-          let _s = t.second();
-          if (_s < 59 && _s > 55) {
-            let t_str = t.valueOf().toString();
-            let m = t_str.length - 4;
-            let delay_time = 10000 - Number(t_str.substring(m));
-            console.log(args.title + "来早了，重试中...");
-            delay(delay_time - time_diff).then(() =>
-              this.submitOrder(args, type, retryCount + 1)
-            );
-            return;
-          }
-        }
-        if (linkage.input)
-          if (typeof args.expectedPrice !== "undefined") {
-            if (+realPayPC_1.fields.price > +args.expectedPrice) {
-              throwError(
-                `太贵了，期望价格:${args.expectedPrice}, 实际价格：${realPayPC_1.fields.price}`
-              );
-            }
-          }
-        delete linkage.common.queryParams;
-        submit_url = `https://buy.tmall.com${submitOrderPC_1.hidden.extensionMap.pcSubmitUrl}`;
-        qs_data = {
-          spm: `a220l.1.a22016.d011001001001.undefined`,
-          submitref: submitOrderPC_1.hidden.extensionMap.secretValue,
-          sparam1: submitOrderPC_1.hidden.extensionMap.sparam1,
-          sparam2: submitOrderPC_1.hidden.extensionMap.sparam2
-        };
-        formData = {
-          input_charset: submitOrderPC_1.hidden.extensionMap.input_charset,
-          event_submit_do_confirm:
-            submitOrderPC_1.hidden.extensionMap.event_submit_do_confirm,
-          action: submitOrderPC_1.hidden.extensionMap.action,
-          praper_alipay_cashier_domain: "cashierstl",
-          _tb_token_: /name=['"]_tb_token_['"].*? value=['"](.*?)['"]/.exec(
-            html
-          )![1],
-          endpoint: encodeURIComponent(JSON.stringify(endpoint)),
-          hierarchy: encodeURIComponent(
-            JSON.stringify({
-              structure
-            })
-          ),
-          linkage: encodeURIComponent(
-            JSON.stringify({
-              common: linkage.common,
-              signature: linkage.signature
-            })
-          ),
-          data: encodeURIComponent(
-            JSON.stringify(
-              Object.keys(data).reduce((state: any, name) => {
+            }),
+            data: JSON.stringify(
+              input.reduce((state: any, name) => {
                 var item = data[name];
-                if (item.submit) {
-                  /* if (item.tag === "submitOrder") {
+                /* if (item.tag === "submitOrder") {
                         if (item.fields) {
                           if (ua_log) {
                             item.fields.ua = ua_log;
                           }
                         }
                       } */
-                  if (item.tag === "eticketDesc") {
-                    item.fields.value = taobao.mobile;
-                  } else if (item.tag === "itemInfoPC") {
-                    let { priceInfo, quantity } = item.fields;
-                    if (quantity) {
-                      priceInfo.valueStyles.bold = true;
-                      quantity.min = +quantity.min;
-                      quantity.quantity = +quantity.quantity;
-                      quantity.step = +quantity.step;
-                      quantity.max = +quantity.max;
-                    }
+                if (item.tag === "eticketDesc") {
+                  item.fields.value = taobao.mobile;
+                } else if (item.tag === "itemInfoPC") {
+                  let { priceInfo, quantity } = item.fields;
+                  if (quantity) {
+                    priceInfo.valueStyles.bold = true;
+                    quantity.min = +quantity.min;
+                    quantity.quantity = +quantity.quantity;
+                    quantity.step = +quantity.step;
+                    quantity.max = +quantity.max;
                   }
-                  state[name] = item;
                 }
+                state[name] = item;
                 return state;
               }, {})
-            )
-          )
+            ),
+            hierarchy: JSON.stringify({
+              structure
+            }),
+            lifecycle
+          };
+          if (!isUpdate) {
+            Object.assign(formData, {
+              input_charset: submitOrderPC_1.hidden.extensionMap.input_charset,
+              event_submit_do_confirm:
+                submitOrderPC_1.hidden.extensionMap.event_submit_do_confirm,
+              action: submitOrderPC_1.hidden.extensionMap.action,
+              praper_alipay_cashier_domain: "cashierstl",
+              _tb_token_: /name=['"]_tb_token_['"].*? value=['"](.*?)['"]/.exec(
+                html
+              )![1]
+            });
+            ["endpoint", "linkage", "data", "hierarchy"].forEach(key => {
+              formData[key] = encodeURIComponent(formData[key]);
+            });
+          }
+          submit_url = `https://buy.tmall.com${submit_url}`;
+        } else {
+          let { confirmOrder_1 } = data;
+          let ua_log =
+            "119#MlKA70vEMnDyqMMzZR0mfhNqsAOCc0zzNoYqOxPXiX8rOLMlRvBsQHACBLnD7HNkVW6u+TJDO2dsHEKw83cWa2lUDbCsSUkGMZA8RJBONt8LfoHMRPPe3FN8fHhS4Q9LdeNMR2VVNlsCqwMJqQPOutK6fusG4lhLPGg1RJ+q+NFGf/VwKSqj+EAL9eVH4QyG2eALRJE+EE387nASRVTmHNA6h2+S4lca0rA87PjVNN3Mxe3RaB0U3FNcQ1hzcDbL3e3My2I3TAFGfoZEh/loEEAL9weXLl9Lt1ELKlGv86GGMaASRBSUWLNN2I75eGcR3oALR2V48iVNNJd6+7hSzsyTgYCQM6ILf9lNDKDMyaD6cQ9YCYbCuYUcuuFM5yEg02+qaowfKLyxBXU8Ft9A4ia4LltAFPd5qdtAcnn8R7ho4LbVKKgB53QfxeC/hIJxtmKJZd2VBm5lz/LN09il3DbBKeaRMc/J1eugCy8Kb5lyXIoB3cfAkvUQjSDL5n4ubXZdBj4MiYX2BOsZRSfmWR8hVf5yn53hSaCZTLHKt7FbC9ZydWY1AB8+IFCJ8Qh2z9vM3TX/7pzXKH6MJcjYR8YntN9rmxnMKSOr/5hyWOGahQLHimcEeBmyWCbwLD6v6OOjualjPSwjk9VCx/yX2GAI4QJJ8bq3XA4b9z1AfjWmSe8/iedwoUahD6NT5zB3M0tAqy0vMv65kYVzj9Mvr/RimM2FHuErzYj9IjC0JJOFgnEYuAnMrRUvdLZjWqlyrIus3RbKuEM5E++wjfaqXGWRQny9BCGg+hJJIilFDyuuF3EitezdHX8mWypJ6e+MjAkDwq8Q7LIo5cANFZSQF3qpJun7d671jsKQLSuFgNPISBEAQWAy7+ZM3Y+biHaMRCXlYnMbY0EI";
+          formData = [
+            "_tb_token_",
+            "action",
+            "event_submit_do_confirm",
+            "input_charset",
+            // "praper_alipay_cashier_domain",
+            "authYiYao",
+            "authHealth",
+            "F_nick"
+          ].reduce(
+            (state: any, name) => {
+              var arr = new RegExp(
+                `name=['"]${name}['"].*? value=['"](.*?)['"]`
+              ).exec(html);
+              if (arr) {
+                state[name] = arr![1];
+              }
+              return state;
+            },
+            {
+              praper_alipay_cashier_domain: "cashierstl",
+              hierarchy: JSON.stringify({
+                structure
+              }),
+              data: iconv
+                .encode(
+                  JSON.stringify(
+                    Object.keys(data).reduce((state: any, name) => {
+                      var item = data[name];
+                      if (item.submit) {
+                        if (item.tag === "submitOrder") {
+                          if (item.fields) {
+                            if (ua_log) {
+                              item.fields.ua = ua_log;
+                            }
+                          }
+                        } else if (item.tag === "eticketDesc") {
+                          item.fields.value = taobao.mobile;
+                        }
+                        state[name] = item;
+                      }
+                      return state;
+                    }, {})
+                  ),
+                  "gbk"
+                )
+                .toString(),
+              linkage: JSON.stringify({
+                common: linkage.common,
+                signature: linkage.signature
+              })
+            }
+          );
+          qs_data = {
+            spm: `a220l.1.a22016.d011001001001.undefined`,
+            submitref: confirmOrder_1.fields.secretValue,
+            sparam1: confirmOrder_1.fields.sparam1,
+            sparam2: confirmOrder_1.fields.sparam2
+          };
+          submit_url = `https://buy.taobao.com${confirmOrder_1.fields
+            .pcSubmitUrl || /var submitURL="([^"]+)/.exec(html)![1]}`;
+        }
+        return {
+          qs_data,
+          formData,
+          submit_url
         };
       }
-      // var ua_log =
-      //   "119#MlKA70vEMnDyqMMzZR0mfhNqsAOCc0zzNoYqOxPXiX8rOLMlRvBsQHACBLnD7HNkVW6u+TJDO2dsHEKw83cWa2lUDbCsSUkGMZA8RJBONt8LfoHMRPPe3FN8fHhS4Q9LdeNMR2VVNlsCqwMJqQPOutK6fusG4lhLPGg1RJ+q+NFGf/VwKSqj+EAL9eVH4QyG2eALRJE+EE387nASRVTmHNA6h2+S4lca0rA87PjVNN3Mxe3RaB0U3FNcQ1hzcDbL3e3My2I3TAFGfoZEh/loEEAL9weXLl9Lt1ELKlGv86GGMaASRBSUWLNN2I75eGcR3oALR2V48iVNNJd6+7hSzsyTgYCQM6ILf9lNDKDMyaD6cQ9YCYbCuYUcuuFM5yEg02+qaowfKLyxBXU8Ft9A4ia4LltAFPd5qdtAcnn8R7ho4LbVKKgB53QfxeC/hIJxtmKJZd2VBm5lz/LN09il3DbBKeaRMc/J1eugCy8Kb5lyXIoB3cfAkvUQjSDL5n4ubXZdBj4MiYX2BOsZRSfmWR8hVf5yn53hSaCZTLHKt7FbC9ZydWY1AB8+IFCJ8Qh2z9vM3TX/7pzXKH6MJcjYR8YntN9rmxnMKSOr/5hyWOGahQLHimcEeBmyWCbwLD6v6OOjualjPSwjk9VCx/yX2GAI4QJJ8bq3XA4b9z1AfjWmSe8/iedwoUahD6NT5zB3M0tAqy0vMv65kYVzj9Mvr/RimM2FHuErzYj9IjC0JJOFgnEYuAnMrRUvdLZjWqlyrIus3RbKuEM5E++wjfaqXGWRQny9BCGg+hJJIilFDyuuF3EitezdHX8mWypJ6e+MjAkDwq8Q7LIo5cANFZSQF3qpJun7d671jsKQLSuFgNPISBEAQWAy7+ZM3Y+biHaMRCXlYnMbY0EI";
-
+      function getOrderDataMeta(orderData: OrderData) {
+        var success = true;
+        var msg;
+        var {
+          linkage,
+          data: { realPayPC_1 }
+        } = orderData;
+        if (!linkage.input) {
+          success = false;
+          msg = args.title + ":存在无效商品";
+        } else {
+          if (typeof args.expectedPrice !== "undefined" && realPayPC_1) {
+            if (+realPayPC_1.fields.price > +args.expectedPrice) {
+              success = false;
+              msg = `${args.title}: 期望价格:${args.expectedPrice}, 实际价格：${realPayPC_1.fields.price}`;
+            }
+          }
+        }
+        return {
+          success,
+          msg
+        };
+      }
+      function waitExpectedOrderData() {
+        return taskManager.registerTask(
+          {
+            name: "捡漏",
+            platform: "taobao-pc",
+            comment: args.title,
+            handler: async () => {
+              var { submit_url, formData, qs_data } = getFormData(res, true);
+              var text = await setting.req.post(submit_url, {
+                qs: qs_data,
+                form: formData,
+                headers: {
+                  referer: addr_url,
+                  "x-requested-with": "XMLHttpRequest"
+                }
+              });
+              var { data, endpoint, linkage, hierarchy } = JSON.parse(text);
+              Object.assign(res.data, data);
+              res.endpoint = endpoint;
+              res.linkage = linkage;
+              if (hierarchy) {
+                res.hierarchy = hierarchy;
+              }
+              /* setting.req.post("http://localhost:88", {
+                qs: qs_data,
+                form: formData,
+                headers: {
+                  Referer: addr_url,
+                  "x-requested-with": "XMLHttpRequest"
+                  // origin: "https://buy.tmall.com"
+                }
+              }); */
+              return getOrderDataMeta(res).success;
+            },
+            time: start_time + 1000 * 60 * args.jianlou!
+          },
+          0,
+          "刷到库存了，去下单---"
+        );
+      }
       if (!config.isSubmitOrder) {
         return;
       }
-      (async () => {
+      var submit = () => {
         console.log(args.title + "-----开始提交订单----");
-        await delay(config.delay_submit);
+        var { submit_url, qs_data, formData } = getFormData(res);
         this.addQueue(async () => {
           try {
             let p = setting.req.post(submit_url, {
@@ -535,14 +526,16 @@ export class TaobaoOrderPc {
               form: formData,
               headers: {
                 Referer: addr_url,
-                "Sec-Fetch-Mode": "navigate",
-                "Sec-Fetch-User": "?1",
+                // "Sec-Fetch-Mode": "navigate",
+                // "Sec-Fetch-User": "?1",
                 Accept:
                   "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
-                "Sec-Fetch-Site": "same-origin",
+                // "Sec-Fetch-Site": "same-origin",
                 "Accept-Encoding": "gzip, deflate, br",
                 "Accept-Language": "zh-CN,zh;q=0.9",
-                "Upgrade-Insecure-Requests": "1"
+                // origin: "https://buy.tmall.com",
+                pragma: "no-cache"
+                // "Upgrade-Insecure-Requests": "1"
                 // "cache-control": "no-cache",
                 // pragma: "no-cache",
                 // cookie:
@@ -556,14 +549,18 @@ export class TaobaoOrderPc {
             ) {
               let msg = /<h2 class="sub-title">([^<]*)/.exec(ret)![1];
               console.log(args.title + ":" + msg);
+              // 购买数量超过了限购数。可能是库存不足，也可能是人为限制。
               if (
                 msg.includes("优惠信息变更") ||
-                msg.includes("商品在收货地址内不可售")
+                msg.startsWith("购买数量超过了限购数")
               ) {
+                if (args.jianlou && args.jianlou > 0) {
+                  await waitExpectedOrderData();
+                  await submit();
+                }
                 return;
               }
-              // 购买数量超过了限购数。可能是库存不足，也可能是人为限制。
-              if (args.jianlou && msg.startsWith("购买数量超过了限购数")) {
+              if (msg.includes("商品在收货地址内不可售")) {
                 return;
               }
               throwError(args.title + ":" + msg);
@@ -597,6 +594,7 @@ export class TaobaoOrderPc {
               args.qq
             );
             if (args.expectedPrice && args.expectedPrice < 1) {
+              await delay(3000);
               let pass = "";
               if (setting.username === "yuanxiaowaer") {
                 pass = "870092";
@@ -638,7 +636,9 @@ export class TaobaoOrderPc {
             this.submitOrder(args, type, retryCount + 1);
           }
         });
-      })();
+      };
+      await delay(config.delay_submit);
+      await submit();
     })();
   }
 
@@ -764,6 +764,72 @@ export class TaobaoOrderPc {
     // await delay(16)
     page.click(".go-btn");
   }
+}
+
+interface OrderData {
+  endpoint: {
+    mode: string;
+    osVersion: string;
+    protocolVersion: string;
+    ultronage: string;
+  };
+  data: Record<
+    string,
+    {
+      submit: boolean;
+      tag: string;
+      fields: any;
+    }
+  > & {
+    confirmOrder_1: {
+      fields: {
+        pcSubmitUrl: string;
+        secretValue: string;
+        sparam1: string;
+        sparam2: string;
+        sourceTime: string;
+      };
+    };
+    submitOrderPC_1: {
+      hidden: {
+        extensionMap: {
+          action: string;
+          event_submit_do_confirm: string;
+          input_charset: string;
+          pcSubmitUrl: string;
+          secretKey: string;
+          secretValue: string;
+          sparam1: string;
+          sparam2?: string;
+          unitSuffix: string;
+        };
+      };
+    };
+    realPayPC_1: {
+      fields: {
+        price: string;
+      };
+      hidden: {
+        extensionMap: {
+          timestamp: string;
+        };
+      };
+    };
+  };
+  linkage: {
+    common: {
+      compress: boolean;
+      queryParams: string;
+      submitParams: string;
+      validateParams: string;
+    };
+    signature: string;
+    input?: string[];
+    url: string;
+  };
+  hierarchy: {
+    structure: Record<string, string[]>;
+  };
 }
 
 function createForm(data, action) {

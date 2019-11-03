@@ -96,7 +96,10 @@ export class JingDongOrder {
     );
   }
   async getOrderPage() {
-    var page = await newPage();
+    var page = await newPage({
+      width: 400,
+      height: 573
+    });
     page.setRequestInterception(true);
     page.on("request", request => {
       var type = request.resourceType();

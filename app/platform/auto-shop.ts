@@ -138,7 +138,7 @@ export default abstract class AutoShop implements AutoShopOptions {
   private async preserveState() {
     var page = await newPage();
     var logined = await this.checkUrl(this.state_urls[0], page);
-    if (!logined) {
+    if (logined === false) {
       try {
         setTimeout(() => {
           if (!this.is_prev_login) {

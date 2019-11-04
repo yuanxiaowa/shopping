@@ -668,7 +668,6 @@ export async function getCouponCenterQuanpinList(
     }
   );
   var { couponList } = getJsonpData(text);
-  console.log(couponList.length);
   return couponList.filter(
     item => item.overlying && item.limitStr.startsWith("全品类")
   );

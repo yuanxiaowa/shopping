@@ -534,38 +534,3 @@ export async function getWxCoupons() {
 // get https://coupon.m.jd.com/coupons/show.action?key=aec58667c0c14d7bae2422b73b83ef0f&roleId=20889698
 // click .btn
 // xhr: get https://s.m.jd.com/activemcenter/mfreecoupon/getcoupon?key=aec58667c0c14d7bae2422b73b83ef0f&roleId=20889698&to=&verifycode=&verifysession=&_=1561266410625&sceneval=2&g_login_type=1&callback=jsonpCBKA&g_ty=ls
-
-export async function get1111Hongbao() {
-  var text: string = await req.get("https://api.m.jd.com/api", {
-    qs: {
-      functionId: "getCoupons",
-      appid: "u",
-      _: Date.now(),
-      loginType: 3,
-      body: JSON.stringify({
-        platform: "3",
-        unionActId: "31082",
-        actId: "FvKextEWVjwQWtpuw6ep2jX6Akp",
-        unionShareId: "",
-        type: 1
-      })
-    },
-    headers: {
-      referer:
-        "https://story.m.jd.com/babelDiy/Zeus/FvKextEWVjwQWtpuw6ep2jX6Akp/index.html?unionActId=31082&d=9bXgpH&s=&cu=true&utm_source=kong&utm_medium=tuiguang&utm_campaign=t_2011246109_&utm_term=7ad11705ceb648da8cf9177252ba6efd"
-    }
-  });
-  var data: {
-    beginTime: number;
-    couponId: string;
-    discount: number;
-    endTime: number;
-    firstTimePurchase: number;
-    type: number; // 1:红包 3:东券 5:店铺券
-    quota: number;
-    limitStr: string;
-    shopName: string;
-    batchId: number;
-  } = JSON.parse(text);
-  console.log('抽双11红包', data.quota, data.discount);
-}

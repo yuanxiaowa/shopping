@@ -782,3 +782,38 @@ export async function getMyCoupons() {
   } = JSON.parse(text2);
   return useable;
 }
+
+export async function get1111Hongbao() {
+  var text: string = await setting.req.get("https://api.m.jd.com/api", {
+    qs: {
+      functionId: "getCoupons",
+      appid: "u",
+      _: Date.now(),
+      loginType: 3,
+      body: JSON.stringify({
+        platform: "3",
+        unionActId: "31082",
+        actId: "FvKextEWVjwQWtpuw6ep2jX6Akp",
+        unionShareId: "",
+        type: 1
+      })
+    },
+    headers: {
+      referer:
+        "https://story.m.jd.com/babelDiy/Zeus/FvKextEWVjwQWtpuw6ep2jX6Akp/index.html?unionActId=31082&d=9bXgpH&s=&cu=true&utm_source=kong&utm_medium=tuiguang&utm_campaign=t_2011246109_&utm_term=7ad11705ceb648da8cf9177252ba6efd"
+    }
+  });
+  var data: {
+    beginTime: number;
+    couponId: string;
+    discount: number;
+    endTime: number;
+    firstTimePurchase: number;
+    type: number; // 1:红包 3:东券 5:店铺券
+    quota: number;
+    limitStr: string;
+    shopName: string;
+    batchId: number;
+  } = JSON.parse(text);
+  console.log("抽双11红包", data.quota, data.discount);
+}

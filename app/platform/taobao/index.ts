@@ -55,8 +55,9 @@ export class Taobao extends AutoShop {
 
   async checkUrl(url: string, page: Page) {
     url = "https://i.taobao.com/my_taobao_api/guess_you_like.json";
-    await delay(5000);
-    await page.goto(url);
+    await page.goto(url, {
+      timeout: 0
+    });
     /* var res = await page.waitForResponse(
       res =>
         res

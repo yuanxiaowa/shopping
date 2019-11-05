@@ -56,7 +56,7 @@ const jingdongCouponHandlers = {
   },
   activity: {
     // https://pro.m.jd.com/mall/active/2fJDHSrZhhDcNKg9ahyKkbny5r4X/index.html?jd_pop=29588686-c925-471d-b9f2-49696e154408&abt=0&jd_pop=be4dd5ce-8a22-4e00-a791-b00f4c114ab6&abt=0&cu=true&cu=true&cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_2011246109_&utm_term=d1dc38952a544e00879cf4a4f4b871b6
-    test: test(/^https:\/\/prodev(\.m)?\.jd\.com\/(mall|wq)\/active/),
+    test: test(/^https:\/\/pro(dev)?(\.m)?\.jd\.com\/(mall|wq)\/active/),
     async handler(url) {
       return getActivityCoupons(url);
     }

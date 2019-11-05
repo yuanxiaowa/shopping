@@ -233,7 +233,10 @@ export class JingDongOrder {
           console.log(moment().format(), "jingdong刷到库存了，去下单---");
           return submit();
         } else {
-          sendQQMsg(text);
+          if (text.includes(`"errId":"0"`)) {
+            sendQQMsg(text);
+            return;
+          }
         }
         throw new Error(text);
       };

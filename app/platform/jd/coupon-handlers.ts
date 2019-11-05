@@ -227,11 +227,16 @@ export async function obtainFloorCoupon(data: { key: string; level: string }) {
  */
 export async function queryActivityCoupons(url: string) {
   let html: string = await setting.req.get(url);
-  let arr = /window.(dataHub\d+|__react_data__)\s*=(.*?)(;|\n)/.exec(html)!;
+  let arr = /window.(dataHub\d+|__react_data__)\s*=(.*)(;|\n)/.exec(html)!;
   let key = arr[1];
   let data = JSON.parse(arr[2]);
   if (key === "__react_data__") {
-    data = data.activityData.floorList;
+    let _data = data.activityData.floorList;
+    if (!_data) {
+      data = data.pageData.floorList;
+    } else {
+      data = _data;
+    }
   }
   let activityId = /active\/(\w+)/.exec(url)![1];
   let simpleCoupons = arr[2].match(/\/\/(jrmkt|btmkt)\.jd\.com\/[^"]+/g) || [];
@@ -328,6 +333,10 @@ export async function obtainActivityCoupon(data: {
   // A15:此券已经被抢完了，下次记得早点来哟~
   // A39:很抱歉，只有专属用户可以领取哦，看看其他活动吧！
   // A12:您已经参加过此活动，别太贪心哟，下次再来~
+  // A14:此券今日已经被抢完，请您明日再来~
+  // 活动太火爆，休息一会再来哟~~ A25
+  // 此券已经被抢完了，下次记得早点来哟~~ A25
+  // 您今天已经参加过此活动，别太贪心哟，明天再来~ A13
   console.log(data.discount + "," + data.limit);
   if (
     resData.subCode === "A7" ||
@@ -354,6 +363,14 @@ export async function obtainActivityCoupon(data: {
         obtainActivityCoupon(data)
       );
     })();
+  } else if (resData.subCode === "A14") {
+    delay(
+      moment("00", "HH")
+        .add("d", 1)
+        .valueOf() -
+        Date.now() -
+        DT.jingdong
+    ).then(() => obtainActivityCoupon(data));
   } else if (resData.subCode === "D2") {
     console.log(resData.subCodeMsg);
     (() => {
@@ -363,6 +380,10 @@ export async function obtainActivityCoupon(data: {
         obtainActivityCoupon(data)
       );
     })();
+  } else if (resData.subCode === "A25") {
+    if (resData.subCodeMsg.startsWith("活动太火爆")) {
+      obtainActivityCoupon(data);
+    }
   } else {
     console.log(resData.subCodeMsg, resData.subCode);
   }

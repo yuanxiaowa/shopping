@@ -564,7 +564,10 @@ export class TaobaoOrderPc {
                 }
                 return;
               }
-              if (msg.includes("商品在收货地址内不可售")) {
+              if (
+                msg.includes("请填写正确的") ||
+                msg.includes("商品在收货地址内不可售")
+              ) {
                 return;
               }
               throwError(args.title + ":" + msg);

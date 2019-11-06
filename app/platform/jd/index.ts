@@ -24,7 +24,8 @@ import {
   getCouponCenterQuanpin,
   getMyCoupons,
   getPlusQuanpinList,
-  getPlusQuanpin
+  getPlusQuanpin,
+  get1111Hongbao
 } from "./coupon-handlers";
 import {
   getCartList,
@@ -38,7 +39,7 @@ import { getShopJindou, getStoreCollection, delStoreCollection } from "./store";
 import { jingDongOrder } from "./order";
 import { login, loginAction } from "./member";
 import setting from "./setting";
-import { timer } from '../../../utils/decorators';
+import { timer, daily } from "../../../utils/decorators";
 
 export class Jingdong extends AutoShop {
   constructor() {
@@ -189,6 +190,7 @@ export class Jingdong extends AutoShop {
 
   onFirstLogin() {
     getShopJindou();
+    this.doHongbao();
     // getVideoHongbao();
     setting.req.get("https://vip.jd.com/sign/index");
     getCouponCenterQuanpinList().then(async couponList => {
@@ -201,5 +203,13 @@ export class Jingdong extends AutoShop {
 
   onAfterLogin() {
     setReq();
+  }
+
+  @daily()
+  async doHongbao() {
+    for (let i = 0; i < 3; i++) {
+      await get1111Hongbao();
+      await delay(1000);
+    }
   }
 }

@@ -36,9 +36,6 @@ import { getStoreCollection, delStoreCollection } from "./store";
 import { getGoodsCollection, delGoodsCollection } from "./goods-pc";
 import path = require("path");
 import iconv = require("iconv-lite");
-import { jar } from "../../common/config";
-import { get1111Hongbao } from "../jd/coupon-handlers";
-import { daily } from "../../../utils/decorators";
 
 export class Taobao extends AutoShop {
   constructor() {
@@ -199,7 +196,6 @@ export class Taobao extends AutoShop {
     setting.spm = `a1z0d.6639537.1997196601.${(Math.random() * 100) >>
       0}.412f7484UFYI5e`;
     setReq();
-    this.doHongbao();
   }
 
   async testOrder(args) {
@@ -305,13 +301,5 @@ export class Taobao extends AutoShop {
         );
       });
     } */
-  }
-
-  @daily()
-  async doHongbao() {
-    for (let i = 0; i < 3; i++) {
-      await get1111Hongbao();
-      await delay(1000);
-    }
   }
 }

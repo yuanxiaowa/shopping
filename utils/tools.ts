@@ -350,7 +350,10 @@ export async function sysPlatformTime(platform: string) {
   );
   console.log(platform + "单程时间", rtl + "ms");
   DT[platform] =
-    dt + (platform === "taobao" ? Math.max(0, rtl - config.delay_all) : rtl);
+    dt +
+    (platform === "taobao"
+      ? Math.max(0, rtl - config.delay_all)
+      : Math.max(0, rtl - 100));
 }
 
 const getDelayTime = (() => {

@@ -558,6 +558,9 @@ export class TaobaoOrderPc {
                 msg.includes("优惠信息变更") ||
                 msg.startsWith("购买数量超过了限购数")
               ) {
+                if (args.expectedPrice && args.expectedPrice < 1) {
+                  return;
+                }
                 if (args.jianlou && args.jianlou > 0) {
                   await waitExpectedOrderData();
                   await submit();

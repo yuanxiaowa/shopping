@@ -179,7 +179,7 @@ export class Jingdong extends AutoShop {
   @timer(1000 * 60 * 65)
   async preservePcState() {
     var page = await newPage();
-    var b = await this.checkUrl("https://home.jd.com/", page);
+    var b = await this.checkUrlFromApi("https://home.jd.com/" /* , page */);
     if (!b) {
       await login(page);
     }

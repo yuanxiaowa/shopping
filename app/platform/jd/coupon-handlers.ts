@@ -227,7 +227,7 @@ export async function obtainFloorCoupon(data: { key: string; level: string }) {
  */
 export async function queryActivityCoupons(url: string) {
   let html: string = await setting.req.get(url);
-  let arr = /window.(dataHub\d+|__react_data__)\s*=(.*)(;|\n)/.exec(html)!;
+  let arr = /window.(dataHub\d+|__react_data__)\s*=(.*?)(;|\n)/.exec(html)!;
   let key = arr[1];
   let data = JSON.parse(arr[2]);
   if (key === "__react_data__") {
@@ -337,9 +337,11 @@ export async function obtainActivityCoupon(data: {
   // 活动太火爆，休息一会再来哟~~ A25
   // 此券已经被抢完了，下次记得早点来哟~~ A25
   // 您今天已经参加过此活动，别太贪心哟，明天再来~ A13
+  // 您来早了，活动还没开始哟，请稍后再来~ 20016
   console.log(data.discount + "," + data.limit);
   if (
     resData.subCode === "A7" ||
+    resData.subCode === "20016" ||
     resData.subCode === "A28" ||
     resData.subCode === "A15"
   ) {

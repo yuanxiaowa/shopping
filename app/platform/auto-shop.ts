@@ -121,24 +121,30 @@ export default abstract class AutoShop implements AutoShopOptions {
   async start() {
     return this.preserveState();
   }
-  async checkUrl(url: string, page: Page): Promise<any> {
-    /* try {
-      var p = this.req.get(url, {
-        followRedirect: false
-      });
-      await p;
-      return true;
-    } catch (e) {
-      return false;
-    } */
-    await page.goto(url);
-    return page.url() === url;
+  async checkUrlFromPage(url: string): Promise<any> {
+    let page = await newPage();
+    try {
+      await page.goto(url);
+      return page.url() === url;
+    } finally {
+      page.close();
+    }
   }
+  async checkUrlFromApi(url: string): Promise<any> {
+    let p = global_req.get(url);
+    await p;
+    this.isFirstCheck = false;
+    console.log([this.name, p.href === url, p.href, url]);
+    return p.href === url;
+  }
+  isFirstCheck = true;
   @timer(1000 * 10 * 60)
   private async preserveState() {
-    var page = await newPage();
-    var logined = await this.checkUrl(this.state_urls[0], page);
+    var logined = await (this.isFirstCheck
+      ? this.checkUrlFromPage(this.state_urls[0] /* , page */)
+      : this.checkUrlFromApi(this.state_urls[0]));
     if (logined === false) {
+      var page = await newPage();
       try {
         setTimeout(() => {
           if (!this.is_prev_login) {
@@ -148,10 +154,12 @@ export default abstract class AutoShop implements AutoShopOptions {
         await new Promise(resolve => {
           this.login(page, resolve);
         });
+        await this.setDatas();
       } catch (e) {
+      } finally {
         page.close();
-        return;
       }
+      return;
     }
     // await page.goto(this.state_url);
     // console.log(await page.cookies());
@@ -160,8 +168,10 @@ export default abstract class AutoShop implements AutoShopOptions {
     //     await page.goto(url);
     //   }
     // }
-    await this.setDatas(page);
-    await page.close();
+    if (this.isFirstCheck) {
+      this.isFirstCheck = false;
+      await this.setDatas();
+    }
   }
   setCookies(cookies: any[], url: string) {
     var t = new Date("2018-12-31 23:59:59");
@@ -182,26 +192,32 @@ export default abstract class AutoShop implements AutoShopOptions {
   }
   init() {}
   async checkStatus() {
-    var page = await newPage();
-    var logined = await this.checkUrl(this.state_urls[0], page);
+    // var page = await newPage();
+    var logined = await this.checkUrlFromApi(this.state_urls[0] /* , page */);
     var p: any;
     if (logined === false) {
+      let page = await newPage();
       p = await this.login(page, () =>
-        this.setDatas(page).then(() => page.close())
+        this.setDatas().then(() => page.close())
       );
     } else {
-      this.setDatas(page).then(() => page.close());
+      // this.setDatas(page).then(() => page.close());
       return logined;
     }
     return p;
   }
 
-  async setDatas(page: Page) {
-    for (let state_url of this.state_urls) {
-      await page.goto(state_url);
-      var cookies = await page.cookies();
-      this.setCookies(cookies, page.url());
+  async setDatas() {
+    var page = await newPage();
+    try {
+      for (let state_url of this.state_urls) {
+        await page.goto(state_url);
+        var cookies = await page.cookies();
+        this.setCookies(cookies, page.url());
+      }
+      this.onAfterLogin();
+    } finally {
+      page.close();
     }
-    this.onAfterLogin();
   }
 }

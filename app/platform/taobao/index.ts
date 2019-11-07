@@ -5,10 +5,10 @@
  * @LastEditTime: 2019-09-30 16:45:00
  */
 import AutoShop from "../auto-shop";
-import { delay } from "../../../utils/tools";
+import { delay, getJsonpData } from "../../../utils/tools";
 import { Page } from "puppeteer";
 import taobaoHandlers from "./handlers";
-import { resolveUrl, setReq } from "./tools";
+import { resolveUrl, setReq, requestData } from "./tools";
 import { newPage } from "../../../utils/page";
 import { readJSONSync, readFileSync } from "fs-extra";
 import { ArgBuyDirect, ArgCoudan } from "../struct";
@@ -36,6 +36,8 @@ import { getStoreCollection, delStoreCollection } from "./store";
 import { getGoodsCollection, delGoodsCollection } from "./goods-pc";
 import path = require("path");
 import iconv = require("iconv-lite");
+import { jar } from "../../common/config";
+import { Cookie } from "tough-cookie";
 
 export class Taobao extends AutoShop {
   constructor() {
@@ -52,11 +54,65 @@ export class Taobao extends AutoShop {
     });
   }
 
-  async checkUrl(url: string, page: Page) {
+  async checkUrlFromApi(url: string /* , page: Page */) {
     url = "https://i.taobao.com/my_taobao_api/guess_you_like.json";
-    await page.goto(url, {
+    var p = setting.req.get(url);
+    await p;
+    if (p.href === url) {
+      requestData(
+        "mtop.taobao.mclaren.index.data.get.h5",
+        {
+          spm: "a215s.7406091.toolbar.i2",
+          mytbVersion: "4.0.1",
+          moduleConfigVersion: -1,
+          dataConfigVersion: -1,
+          requestType: 1
+        },
+        "get",
+        "1.0"
+      );
+      requestData(
+        "mtop.taobao.mclaren.getmytaobaopage",
+        { spm: "a215s.7406091.toolbar.i2", pageName: "index" },
+        "get",
+        "1.0"
+      );
+      setting.req.get(this.state_urls[1]);
+      setting.req
+        .get(`https://top-tmm.taobao.com/login_api.do?${Math.random()}`, {
+          headers: {
+            referer: this.state_urls[1]
+          }
+        })
+        .then(text => {
+          text = /(\{.*\})/.exec(text)![1];
+          var data = eval(`(${text})`);
+          Object.keys(data).forEach(key => {
+            jar.setCookie(`${key}=${data[key]}`, "https://www.tmall.com/");
+          });
+          setting.req
+            .get(
+              `https://top-tmm.taobao.com/member/query_member_top.do?callback=_initMemberInfoCallback&is_new=true&t=${Date.now()}`,
+              {
+                headers: {
+                  referer: this.state_urls[1]
+                }
+              }
+            )
+            .then(text => {
+              var { cookies } = getJsonpData(text);
+              Object.keys(cookies).forEach(key => {
+                jar.setCookie(
+                  `${key}=${cookies[key].value}`,
+                  "https://www.tmall.com/"
+                );
+              });
+            });
+        });
+    }
+    /* await page.goto(url, {
       timeout: 0
-    });
+    }); */
     /* var res = await page.waitForResponse(
       res =>
         res
@@ -72,7 +128,7 @@ export class Taobao extends AutoShop {
     );
     var text: string = await res.text(); */
     // return text.includes("FAIL_SYS_SESSION_EXPIRED::")
-    return page.url() !== url ? false : setting.username;
+    return p.href !== url ? false : setting.username;
     // return checkLogin();
   }
   resolveUrl = resolveUrl;

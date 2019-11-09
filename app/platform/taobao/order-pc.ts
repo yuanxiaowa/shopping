@@ -627,38 +627,40 @@ export class TaobaoOrderPc {
               args.qq
             );
             if (args.expectedPrice && args.expectedPrice < 1) {
-              await delay(3000);
-              let pass = "";
-              if (setting.username === "yuanxiaowaer") {
-                pass = "870092";
-              } else if (setting.username === "15262677381欧泽和") {
-                pass = "869328";
-              } else {
-                return;
-              }
-              let page = await newPage();
-              try {
-                await page.setRequestInterception(true);
-                page.goto(p_url[1]);
-                // await page.waitForResponse(res =>
-                //   res.url().startsWith("https://tscenter.alipay.com/home/pc.htm")
-                // );
-                await page.waitForSelector("#J_authSubmit");
-                await page.evaluate(() => {
-                  var ele = document.querySelector<HTMLInputElement>(
-                    "#payPassword_rsainput"
-                  )!;
-                  ele.value = pass;
-                }, pass);
-                await page.click("#J_authSubmit");
-                await page.waitForNavigation();
-                sendQQMsg(
-                  `${args.title}(${setting.username}) pc订单已付款`,
-                  args.qq
-                );
-              } finally {
-                await page.close();
-              }
+              (async () => {
+                await delay(3000);
+                let pass = "";
+                if (setting.username === "yuanxiaowaer") {
+                  pass = "870092";
+                } else if (setting.username === "15262677381欧泽和") {
+                  pass = "869328";
+                } else {
+                  return;
+                }
+                let page = await newPage();
+                try {
+                  await page.setRequestInterception(true);
+                  page.goto(p_url[1]);
+                  // await page.waitForResponse(res =>
+                  //   res.url().startsWith("https://tscenter.alipay.com/home/pc.htm")
+                  // );
+                  await page.waitForSelector("#J_authSubmit");
+                  await page.evaluate(() => {
+                    var ele = document.querySelector<HTMLInputElement>(
+                      "#payPassword_rsainput"
+                    )!;
+                    ele.value = pass;
+                  }, pass);
+                  await page.click("#J_authSubmit");
+                  await page.waitForNavigation();
+                  sendQQMsg(
+                    `${args.title}(${setting.username}) pc订单已付款`,
+                    args.qq
+                  );
+                } finally {
+                  await page.close();
+                }
+              })();
             }
           } catch (e) {
             console.trace(e);

@@ -55,61 +55,66 @@ export class Taobao extends AutoShop {
   }
 
   async checkUrlFromApi(url: string /* , page: Page */) {
-    url = "https://i.taobao.com/my_taobao_api/guess_you_like.json";
-    var p = setting.req.get(url);
-    await p;
-    if (p.href === url) {
-      requestData(
-        "mtop.taobao.mclaren.index.data.get.h5",
-        {
-          spm: "a215s.7406091.toolbar.i2",
-          mytbVersion: "4.0.1",
-          moduleConfigVersion: -1,
-          dataConfigVersion: -1,
-          requestType: 1
-        },
-        "get",
-        "1.0"
-      );
-      requestData(
+    try {
+      await requestData(
         "mtop.taobao.mclaren.getmytaobaopage",
         { spm: "a215s.7406091.toolbar.i2", pageName: "index" },
         "get",
         "1.0"
       );
-      setting.req.get(this.state_urls[1]);
-      setting.req
-        .get(`https://top-tmm.taobao.com/login_api.do?${Math.random()}`, {
-          headers: {
-            referer: this.state_urls[1]
-          }
-        })
-        .then(text => {
-          text = /(\{.*\})/.exec(text)![1];
-          var data = eval(`(${text})`);
-          Object.keys(data).forEach(key => {
-            jar.setCookie(`${key}=${data[key]}`, "https://www.tmall.com/");
-          });
-          setting.req
-            .get(
-              `https://top-tmm.taobao.com/member/query_member_top.do?callback=_initMemberInfoCallback&is_new=true&t=${Date.now()}`,
-              {
-                headers: {
-                  referer: this.state_urls[1]
-                }
-              }
-            )
-            .then(text => {
-              var { cookies } = getJsonpData(text);
-              Object.keys(cookies).forEach(key => {
-                jar.setCookie(
-                  `${key}=${cookies[key].value}`,
-                  "https://www.tmall.com/"
-                );
-              });
-            });
-        });
+    } catch (e) {
+      return false;
     }
+    /* url = "https://i.taobao.com/my_taobao_api/guess_you_like.json";
+    var p = setting.req.get(url);
+    await p; */
+    // if (p.href === url) {
+    requestData(
+      "mtop.taobao.mclaren.index.data.get.h5",
+      {
+        spm: "a215s.7406091.toolbar.i2",
+        mytbVersion: "4.0.1",
+        moduleConfigVersion: -1,
+        dataConfigVersion: -1,
+        requestType: 1
+      },
+      "get",
+      "1.0"
+    );
+
+    setting.req.get(this.state_urls[1]);
+    setting.req
+      .get(`https://top-tmm.taobao.com/login_api.do?${Math.random()}`, {
+        headers: {
+          referer: this.state_urls[1]
+        }
+      })
+      .then(text => {
+        text = /(\{.*\})/.exec(text)![1];
+        var data = eval(`(${text})`);
+        Object.keys(data).forEach(key => {
+          jar.setCookie(`${key}=${data[key]}`, "https://www.tmall.com/");
+        });
+        setting.req
+          .get(
+            `https://top-tmm.taobao.com/member/query_member_top.do?callback=_initMemberInfoCallback&is_new=true&t=${Date.now()}`,
+            {
+              headers: {
+                referer: this.state_urls[1]
+              }
+            }
+          )
+          .then(text => {
+            var { cookies } = getJsonpData(text);
+            Object.keys(cookies).forEach(key => {
+              jar.setCookie(
+                `${key}=${cookies[key].value}`,
+                "https://www.tmall.com/"
+              );
+            });
+          });
+      });
+    // }
     /* await page.goto(url, {
       timeout: 0
     }); */
@@ -128,8 +133,9 @@ export class Taobao extends AutoShop {
     );
     var text: string = await res.text(); */
     // return text.includes("FAIL_SYS_SESSION_EXPIRED::")
-    return p.href !== url ? false : setting.username;
+    // return p.href !== url ? false : setting.username;
     // return checkLogin();
+    return setting.username;
   }
   resolveUrl = resolveUrl;
 

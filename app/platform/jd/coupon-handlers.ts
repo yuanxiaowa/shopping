@@ -342,6 +342,7 @@ export async function obtainActivityCoupon(data: {
   // 此券已经被抢完了，下次记得早点来哟~~ A25
   // 您今天已经参加过此活动，别太贪心哟，明天再来~ A13
   // 您来早了，活动还没开始哟，请稍后再来~ 20016
+  // 您来早了，下一场活动开始时间为 14:00，稍后再来吧！ A8
   console.log(data.discount + "," + data.limit);
   if (
     resData.subCode === "A7" ||
@@ -377,7 +378,7 @@ export async function obtainActivityCoupon(data: {
         Date.now() -
         DT.jingdong
     ).then(() => obtainActivityCoupon(data));
-  } else if (resData.subCode === "D2") {
+  } else if (resData.subCode === "A8" || resData.subCode === "D2") {
     console.log(resData.subCodeMsg);
     (() => {
       let to_date = moment(/\d{2}:\d{2}/.exec(resData.subCodeMsg)![0], "HH");

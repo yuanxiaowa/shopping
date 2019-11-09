@@ -162,19 +162,23 @@ export function getSysTime(url: string, transform: (data: any) => number) {
       rtl: number;
       dt: number;
     }> {
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         var start = Date.now();
         https.get(url, res => {
           var end = Date.now();
           var text = "";
           res.on("data", chunk => (text += chunk));
           res.on("end", () => {
-            var rtl = (end - start) / 2;
-            var t = transform(JSON.parse(text));
-            resolve({
-              dt: rtl - (end - t),
-              rtl
-            });
+            try {
+              var rtl = (end - start) / 2;
+              var t = transform(JSON.parse(text));
+              resolve({
+                dt: rtl - (end - t),
+                rtl
+              });
+            } catch (e) {
+              reject(e);
+            }
           });
         });
       });
@@ -182,14 +186,18 @@ export function getSysTime(url: string, transform: (data: any) => number) {
     var count = 100;
     var total = 0;
     var total_rtl = 0;
+    var total_count = 0;
     for (let i = 0; i < count; i++) {
-      var { rtl, dt } = await getDt();
-      total += dt;
-      total_rtl += rtl;
+      try {
+        var { rtl, dt } = await getDt();
+        total += dt;
+        total_rtl += rtl;
+        total_count++;
+      } catch (e) {}
     }
     return {
-      dt: total / count,
-      rtl: total_rtl / count
+      dt: total / total_count,
+      rtl: total_rtl / total_count
     };
   };
 }

@@ -227,8 +227,12 @@ export async function obtainFloorCoupon(data: { key: string; level: string }) {
  */
 export async function queryActivityCoupons(url: string) {
   let html: string = await setting.req.get(url);
-  let arr = /window.(dataHub\d+|__react_data__)\s*=(.*?)(;|\n)/.exec(html)!;
+  let arr = /window.(dataHub\d+|__react_data__)\s*=(.*)/.exec(html)!;
   let key = arr[1];
+  arr[2] = arr[2].trim();
+  if (arr[2].endsWith(";")) {
+    arr[2] = arr[2].substring(0, arr[2].length - 1);
+  }
   let data = JSON.parse(arr[2]);
   if (key === "__react_data__") {
     let _data = data.activityData.floorList;

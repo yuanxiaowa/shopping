@@ -399,6 +399,47 @@ export async function obtainActivityCoupon(data: {
   return resData;
 }
 
+export async function getBillionSubsidyList() {
+  var text = await setting.req.get("https://api.m.jd.com/client.action", {
+    qs: {
+      functionId: "getBillionSubsidyInfo",
+      client: "m",
+      appid: "XPMSGC2019"
+    }
+  });
+  var { advertList } = JSON.parse(text);
+  return advertList;
+}
+
+/**
+ * 获取百亿补贴
+ * @param roleId
+ */
+export async function obtainBillionSubsidy(roleId) {
+  var text = await setting.req.get("https://api.m.jd.com/client.action", {
+    qs: {
+      functionId: "receiveSeckillCoupon",
+      body: JSON.stringify({
+        roleId
+      }),
+      client: "m",
+      appid: "XPMSGC2019"
+    },
+    headers: {
+      referer:
+        "https://birth.m.jd.com/babelDiy/Zeus/3DMauchBtuvSfu5XwMW1hgdZeLxr/index.html?ad_od=1&_ts=1573004438059&utm_user=plusmember&from=singlemessage&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_1000276924_&utm_term=08a95b915ac54711b8efa65acc43f112"
+    }
+  });
+  // {"code":17,"drawNum":0,"resultMsg":"此券已经被抢完了，下次记得早点来哟~","status":-1}
+  var res: {
+    code: number;
+    drawNum: number;
+    resultMsg: string;
+    status: number;
+  } = JSON.parse(text);
+  return res;
+}
+
 /**
  * 领取全品券
  * @param url

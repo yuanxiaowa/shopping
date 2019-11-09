@@ -138,9 +138,22 @@ export default abstract class AutoShop implements AutoShopOptions {
   isFirstCheck = true;
   @timer(1000 * 10 * 60)
   private async preserveState() {
-    var logined = await (this.isFirstCheck
-      ? this.checkUrlFromPage(this.state_urls[0] /* , page */)
-      : this.checkUrlFromApi(this.state_urls[0]));
+    var logined = false;
+    if (this.isFirstCheck) {
+      logined = await this.checkUrlFromPage(this.state_urls[0] /* , page */);
+      if (logined) {
+        await this.setDatas();
+      }
+      this.isFirstCheck = false;
+    } else {
+      logined = await this.checkUrlFromApi(this.state_urls[0]);
+      if (!logined) {
+        logined = await this.checkUrlFromPage(this.state_urls[0] /* , page */);
+        if (logined) {
+          await this.setDatas();
+        }
+      }
+    }
     if (logined === false) {
       var page = await newPage();
       try {
@@ -166,10 +179,6 @@ export default abstract class AutoShop implements AutoShopOptions {
     //     await page.goto(url);
     //   }
     // }
-    if (this.isFirstCheck) {
-      this.isFirstCheck = false;
-      await this.setDatas();
-    }
   }
   setCookies(cookies: any[], url: string) {
     var t = new Date("2018-12-31 23:59:59");
@@ -190,8 +199,22 @@ export default abstract class AutoShop implements AutoShopOptions {
   }
   init() {}
   async checkStatus() {
-    // var page = await newPage();
-    var logined = await this.checkUrlFromApi(this.state_urls[0] /* , page */);
+    var logined = false;
+    if (this.isFirstCheck) {
+      logined = await this.checkUrlFromPage(this.state_urls[0] /* , page */);
+      if (logined) {
+        await this.setDatas();
+      }
+      this.isFirstCheck = false;
+    } else {
+      logined = await this.checkUrlFromApi(this.state_urls[0]);
+      if (!logined) {
+        logined = await this.checkUrlFromPage(this.state_urls[0] /* , page */);
+        if (logined) {
+          await this.setDatas();
+        }
+      }
+    }
     var p: any;
     if (logined === false) {
       let page = await newPage();

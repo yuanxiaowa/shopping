@@ -39,7 +39,7 @@ import { getShopJindou, getStoreCollection, delStoreCollection } from "./store";
 import { jingDongOrder } from "./order";
 import { login, loginAction } from "./member";
 import setting from "./setting";
-import { timer, daily } from "../../../utils/decorators";
+import { timer, daily, timerHourPoint } from "../../../utils/decorators";
 
 export class Jingdong extends AutoShop {
   constructor() {
@@ -191,6 +191,7 @@ export class Jingdong extends AutoShop {
   onFirstLogin() {
     getShopJindou();
     this.doHongbao();
+    this.doHongbaoyu();
     // getVideoHongbao();
     setting.req.get("https://vip.jd.com/sign/index");
     getCouponCenterQuanpinList().then(async couponList => {
@@ -203,6 +204,18 @@ export class Jingdong extends AutoShop {
 
   onAfterLogin() {
     setReq();
+  }
+
+  @timer(1 * 60 * 60 * 1000)
+  async doHongbaoyu() {
+    for (let i = 0; i < 5; i++) {
+      setting.req
+        .get(
+          "https://api.m.jd.com/client.action?functionId=haveFunRedRainLottery&body=%7B%22type%22%3A%221%22%7D&client=wh5&clientVersion=7.2.6&_=&callback=jsonp3"
+        )
+        .then(console.log);
+      await delay(20 * 1000);
+    }
   }
 
   @daily()

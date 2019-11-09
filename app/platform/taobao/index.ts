@@ -54,6 +54,18 @@ export class Taobao extends AutoShop {
     });
   }
 
+  async checkUrlFromPage(url: string) {
+    url =
+      "https://i.taobao.com/my_taobao.htm?spm=a21bo.2017.754894437.3.5af911d9FFI2wd&ad_id=&am_id=&cm_id=&pm_id=1501036000a02c5c3739";
+    var page = await newPage();
+    try {
+      await page.goto(url);
+      return page.url() === url;
+    } finally {
+      page.close();
+    }
+  }
+
   async checkUrlFromApi(url: string /* , page: Page */) {
     try {
       await requestData(

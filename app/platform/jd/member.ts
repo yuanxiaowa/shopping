@@ -11,7 +11,11 @@ const user = require("../../../.data/user.json").jingdong;
 
 export async function login(page: Page) {
   console.log("京东登录");
-  await page.goto("https://passport.jd.com/new/login.aspx");
+  var url = "https://passport.jd.com/new/login.aspx";
+  await page.goto(url);
+  if (!page.url().startsWith(url)) {
+    return;
+  }
   await page.click(".login-tab-r");
   await page.evaluate(() => {
     (<HTMLSpanElement>document.querySelector(".clear-btn")).click();

@@ -133,8 +133,6 @@ export default abstract class AutoShop implements AutoShopOptions {
   async checkUrlFromApi(url: string): Promise<any> {
     let p = global_req.get(url);
     await p;
-    this.isFirstCheck = false;
-    console.log([this.name, p.href === url, p.href, url]);
     return p.href === url;
   }
   isFirstCheck = true;
@@ -143,6 +141,7 @@ export default abstract class AutoShop implements AutoShopOptions {
     var logined = await (this.isFirstCheck
       ? this.checkUrlFromPage(this.state_urls[0] /* , page */)
       : this.checkUrlFromApi(this.state_urls[0]));
+    console.log(logined, this.isFirstCheck, this.name);
     if (logined === false) {
       var page = await newPage();
       try {

@@ -141,7 +141,6 @@ export default abstract class AutoShop implements AutoShopOptions {
     var logined = await (this.isFirstCheck
       ? this.checkUrlFromPage(this.state_urls[0] /* , page */)
       : this.checkUrlFromApi(this.state_urls[0]));
-    console.log(logined, this.isFirstCheck, this.name);
     if (logined === false) {
       var page = await newPage();
       try {

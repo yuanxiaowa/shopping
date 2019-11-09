@@ -273,7 +273,9 @@ export async function queryActivityCoupons(url: string) {
             Object.assign(item, {
               activityId,
               actKey: item.cpId,
-              dp: Number(/\d+/.exec(item.limit)![0]) - Number(item.discount)
+              dp:
+                item.limit &&
+                Number(/\d+/.exec(item.limit)![0]) - Number(item.discount)
             })
           )
       )

@@ -140,7 +140,8 @@ export async function getCouponEdetail(url: string) {
   var { searchParams } = new URL(url);
   var pid = searchParams.get("pid");
   var res = await requestData(
-    "mtop.alimama.union.xt.en.api.entry",
+    // "mtop.alimama.union.xt.en.api.entry",
+    "mtop.alimama.union.xt.biz.quan.api.entry",
     {
       floorId: 13193,
       variableMap: JSON.stringify({
@@ -165,7 +166,8 @@ export async function getCouponEdetail(url: string) {
   var recoveryId = `201_11.1.228.74_6456882_${Date.now()}`;
   for (let key of keys) {
     var res = await requestData(
-      "mtop.alimama.union.xt.en.api.entry",
+      // "mtop.alimama.union.xt.en.api.entry",
+      "mtop.alimama.union.xt.biz.quan.api.entry",
       {
         variableMap: JSON.stringify(
           Object.assign(

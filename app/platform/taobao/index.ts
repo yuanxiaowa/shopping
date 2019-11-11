@@ -257,6 +257,23 @@ export class Taobao extends AutoShop {
     if (url) {
       return url
     } */
+    await page.waitForNavigation();
+    let url = await page.evaluate(() => {
+      if (
+        !document
+          .querySelector("#J_LoginBox")!
+          .classList.contains("module-quick")
+      ) {
+        document.querySelector<HTMLDivElement>("#J_Quick2Static")!.click();
+      } else {
+        return document.querySelector<HTMLImageElement>("#J_QRCodeImg img")!
+          .src;
+      }
+    });
+    if (url) {
+      return url;
+    }
+
     var res = await page.waitForResponse(
       res => res.url().endsWith("xcode.png"),
       {

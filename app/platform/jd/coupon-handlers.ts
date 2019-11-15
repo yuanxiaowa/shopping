@@ -269,15 +269,28 @@ export async function queryActivityCoupons(url: string) {
             ({ status }) =>
               typeof status === "undefined" || status === "0" || status === "5"
           )
-          .map(item =>
-            Object.assign(item, {
+          .map(item => {
+            var dp;
+            var limit;
+            var discount;
+            if (item.limit) {
+              limit = Number(/\d+/.exec(item.limit)![0]);
+              discount = Number(item.discount);
+              dp = limit - discount;
+              if (limit > 0 && discount > 0) {
+                if (limit / discount < 0.1) {
+                  return;
+                }
+              }
+            }
+            var data = Object.assign(item, {
               activityId,
               actKey: item.cpId,
-              dp:
-                item.limit &&
-                Number(/\d+/.exec(item.limit)![0]) - Number(item.discount)
-            })
-          )
+              dp
+            });
+            return data;
+          })
+          .filter(Boolean)
       )
   ).sort((keyA, keyB) => {
     return keyA.dp - keyB.dp;

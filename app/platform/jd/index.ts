@@ -190,8 +190,8 @@ export class Jingdong extends AutoShop {
 
   onFirstLogin() {
     getShopJindou();
-    this.doHongbao();
-    this.doHongbaoyu();
+    // this.doHongbao();
+    // this.doHongbaoyu();
     // getVideoHongbao();
     setting.req.get("https://vip.jd.com/sign/index");
     getCouponCenterQuanpinList().then(async couponList => {

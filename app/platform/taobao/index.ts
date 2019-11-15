@@ -260,15 +260,14 @@ export class Taobao extends AutoShop {
     await page.waitForNavigation();
     let url = await page.evaluate(() => {
       if (
-        !document
+        document
           .querySelector("#J_LoginBox")!
           .classList.contains("module-quick")
       ) {
-        document.querySelector<HTMLDivElement>("#J_Quick2Static")!.click();
-      } else {
         return document.querySelector<HTMLImageElement>("#J_QRCodeImg img")!
           .src;
       }
+      document.querySelector<HTMLElement>("i.quick")!.click();
     });
     if (url) {
       return url;

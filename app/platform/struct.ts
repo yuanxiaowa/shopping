@@ -1,3 +1,5 @@
+import { EventEmitter } from "events";
+
 /*
  * @Author: oudingyin
  * @Date: 2019-07-22 08:53:50
@@ -26,6 +28,7 @@ export interface ArgOrder<T> {
   jianlou?: number;
   title: string;
   qq?: string;
+  bus?: EventEmitter;
 }
 
 export interface ArgCartBuy {

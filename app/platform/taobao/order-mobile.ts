@@ -20,6 +20,7 @@ import { getCartList, addCart } from "./cart-mobile";
 import setting from "./setting";
 import moment = require("moment");
 import { taobaoOrderPc } from "./order-pc";
+import { EventEmitter } from "events";
 
 const request_tags = {
   agencyPay: true,
@@ -66,23 +67,20 @@ function transformOrderData(
   }
   // if (dataSubmitOrder.hidden) {
   // var realPay = data.realPay_1;
-  var orderData = Object.keys(data).reduce(
-    (state, name) => {
-      var item = data[name];
-      // item._request = request_tags[item.tag];
-      if (item.submit) {
-        let i = name.indexOf("_");
-        let tag = name.substring(0, i);
-        let id = name.substring(i + 1);
-        item.fields.value = args.other[item.tag] || item.fields.value;
-        item.id = id;
-        item.tag = tag;
-        state[name] = item;
-      }
-      return state;
-    },
-    <any>{}
-  );
+  var orderData = Object.keys(data).reduce((state, name) => {
+    var item = data[name];
+    // item._request = request_tags[item.tag];
+    if (item.submit) {
+      let i = name.indexOf("_");
+      let tag = name.substring(0, i);
+      let id = name.substring(i + 1);
+      item.fields.value = args.other[item.tag] || item.fields.value;
+      item.id = id;
+      item.tag = tag;
+      state[name] = item;
+    }
+    return state;
+  }, <any>{});
   // } else {
   //   let realPay = data.realPay_1;
   //   endpoint = undefined;
@@ -312,17 +310,27 @@ export class TaobaoOrderMobile {
         }
       }
     }
-    var prev_postdata;
     var submit = async (retryCount = 0) => {
       try {
-        if (!prev_postdata) {
+        if (args.jianlou) {
+          if (!args.bus) {
+            await delay(config.delay_submit);
+            args.bus = new EventEmitter();
+            this.submitOrder(args);
+          } else {
+            args.bus.emit("continue");
+          }
+          await new Promise((resolve, reject) => {
+            args.bus!.once("continue", resolve);
+          });
+        } else {
           await delay(config.delay_submit);
         }
         startTime = Date.now();
         console.time("订单提交 " + startTime);
         let ret = await requestData(
           "mtop.trade.order.create.h5",
-          prev_postdata || postdata,
+          postdata,
           "post",
           "4.0"
         );
@@ -333,7 +341,6 @@ export class TaobaoOrderMobile {
           `手机订单提交成功，速度去付款(${setting.username})：${args.title}`
         );
       } catch (e) {
-        prev_postdata = postdata;
         startTime = Date.now();
         if (retryCount >= 1) {
           console.error(e.message + ":" + args.title);

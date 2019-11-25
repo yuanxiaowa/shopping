@@ -151,7 +151,7 @@ function transformOrderData(
       baseDeliverAddressDO.city +
       baseDeliverAddressDO.area +
       baseDeliverAddressDO.addressDetail;
-    address_1.fields.cornerType = "both";
+    // address_1.fields.cornerType = "both";
     [
       address_1.fields,
       ...address_1.events.itemClick.map(item => item.fields.params)
@@ -173,19 +173,19 @@ function transformOrderData(
     if (new_structure) {
       structure = new_structure;
     }
-    let { coupon_3, tbgold_1 } = orderData;
+    /* let { coupon_3, tbgold_1 } = orderData;
     address_1.fields.cornerType = "both";
     if (coupon_3) {
       coupon_3.fields.cornerType = "bottom";
     }
     if (tbgold_1) {
       tbgold_1.fields.cornerType = "top";
-    }
+    } */
   }
   var postdata = {
     params: JSON.stringify({
       data: JSON.stringify(orderData),
-      endpoint,
+      endpoint: JSON.stringify(endpoint),
       hierarchy: JSON.stringify({
         structure
       }),
@@ -194,8 +194,8 @@ function transformOrderData(
         signature: linkage.signature
       }),
       operator
-    }),
-    ua
+    })
+    // ua
   };
   return postdata;
 }
@@ -316,6 +316,7 @@ export class TaobaoOrderMobile {
           if (!args.bus) {
             await delay(config.delay_submit);
             args.bus = new EventEmitter();
+            console.log("打开另一个下单");
             this.submitOrder(args);
           } else {
             args.bus.emit("continue");
@@ -323,6 +324,7 @@ export class TaobaoOrderMobile {
           await new Promise((resolve, reject) => {
             args.bus!.once("continue", resolve);
           });
+          console.log("捡漏结束，去下单...");
         } else {
           await delay(config.delay_submit);
         }

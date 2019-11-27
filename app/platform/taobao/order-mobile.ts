@@ -313,6 +313,7 @@ export class TaobaoOrderMobile {
     }
     var _n = args.bus ? 2 : 1;
     var timeSub;
+    var _resolve;
 
     var submit = async (retryCount = 0) => {
       try {
@@ -330,18 +331,25 @@ export class TaobaoOrderMobile {
                 args.bus!.emit("continue");
               };
             }
+            if (_resolve) {
+              args.bus.removeListener("continue", _resolve);
+            }
             args.bus.removeListener("time-sub", timeSub);
             args.bus.once("time-sub", timeSub);
             args.bus.emit("continue");
           }
           await new Promise((resolve, reject) => {
+            _resolve = resolve;
             args.bus!.once("continue", resolve);
           });
+          _resolve = undefined;
           while (Date.now() - startTime < config.delay_submit) {
             args.bus.emit("time-sub");
             await new Promise((resolve, reject) => {
+              _resolve = resolve;
               args.bus!.once("continue", resolve);
             });
+            _resolve = undefined;
           }
           console.log(_n + "捡漏结束，去下单...");
         } else {

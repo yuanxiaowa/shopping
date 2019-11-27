@@ -70,28 +70,32 @@ export async function requestData(
   data: any,
   method: "get" | "post" = "get",
   version = "6.0",
-  ttid = "#b#ad##_h5"
+  ttid = "#b#ad##_h5",
+  _qs?: any
 ) {
   var t = Date.now() + 1000;
   var data_str = JSON.stringify(data);
   var form: any;
   var token = setting.token;
   token = token && token.split("_")![0];
-  var qs: any = {
-    jsv: "2.5.1",
-    appKey: setting.appKey,
-    api,
-    v: version,
-    type: "originaljson",
-    ecode: 1,
-    dataType: "json",
-    t,
-    ttid,
-    AntiFlood: true,
-    LoginRequest: true,
-    H5Request: true,
-    post: method === "post" ? 1 : undefined
-  };
+  var qs: any = Object.assign(
+    {
+      jsv: "2.5.1",
+      appKey: setting.appKey,
+      api,
+      v: version,
+      type: "originaljson",
+      ecode: 1,
+      dataType: "json",
+      t,
+      ttid,
+      AntiFlood: true,
+      LoginRequest: true,
+      H5Request: true,
+      post: method === "post" ? 1 : undefined
+    },
+    _qs
+  );
   qs.sign = md5([token, t, setting.appKey, data_str].join("&"));
   if (method === "get") {
     qs.data = data_str;

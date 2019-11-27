@@ -151,7 +151,7 @@ function transformOrderData(
       baseDeliverAddressDO.city +
       baseDeliverAddressDO.area +
       baseDeliverAddressDO.addressDetail;
-    // address_1.fields.cornerType = "both";
+    address_1.fields.cornerType = "both";
     [
       address_1.fields,
       ...address_1.events.itemClick.map(item => item.fields.params)
@@ -173,14 +173,14 @@ function transformOrderData(
     if (new_structure) {
       structure = new_structure;
     }
-    /* let { coupon_3, tbgold_1 } = orderData;
+    let { coupon_3, tbgold_1 } = orderData;
     address_1.fields.cornerType = "both";
     if (coupon_3) {
       coupon_3.fields.cornerType = "bottom";
     }
     if (tbgold_1) {
       tbgold_1.fields.cornerType = "top";
-    } */
+    }
   }
   var postdata = {
     params: JSON.stringify({
@@ -334,7 +334,11 @@ export class TaobaoOrderMobile {
           "mtop.trade.order.create.h5",
           postdata,
           "post",
-          "4.0"
+          "4.0",
+          undefined,
+          {
+            [data1.global.secretKey]: data1.global.secretValue
+          }
         );
         logFile(ret, `手机订单提交成功`);
         console.log(`----------手机订单提交成功：${args.title}`);

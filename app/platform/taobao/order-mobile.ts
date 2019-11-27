@@ -294,6 +294,7 @@ export class TaobaoOrderMobile {
     async function handleOrderData() {
       try {
         postdata = transformOrderData(data1, args, undefined, structure);
+        startTime = Date.now();
         logFile(postdata, "订单结算页提交的数据", ".json");
         /* writeFile("a1.json", getTransformData(postdata));
     writeFile("a2.json", getTransformData(await getPageData(args))); */
@@ -310,6 +311,9 @@ export class TaobaoOrderMobile {
         }
       }
     }
+    var _n = args.bus ? 2 : 1;
+    var timeSub;
+
     var submit = async (retryCount = 0) => {
       try {
         if (args.jianlou) {
@@ -319,12 +323,27 @@ export class TaobaoOrderMobile {
             console.log("打开另一个下单");
             this.submitOrder(args);
           } else {
+            if (!timeSub) {
+              timeSub = async function() {
+                await getNewestOrderData();
+                await doJianlou();
+                args.bus!.emit("continue");
+              };
+            }
+            args.bus.removeListener("time-sub", timeSub);
+            args.bus.once("time-sub", timeSub);
             args.bus.emit("continue");
           }
           await new Promise((resolve, reject) => {
             args.bus!.once("continue", resolve);
           });
-          console.log("捡漏结束，去下单...");
+          while (Date.now() - startTime < config.delay_submit) {
+            args.bus.emit("time-sub");
+            await new Promise((resolve, reject) => {
+              args.bus!.once("continue", resolve);
+            });
+          }
+          console.log(_n + "捡漏结束，去下单...");
         } else {
           await delay(config.delay_submit);
         }

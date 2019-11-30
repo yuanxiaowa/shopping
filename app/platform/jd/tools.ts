@@ -12,7 +12,8 @@ import {
   queryFloorCoupons,
   obtainFloorCoupon,
   queryActivityCoupons,
-  obtainActivityCoupon
+  obtainActivityCoupon,
+  getCouponSingle
 } from "./coupon-handlers";
 import {
   delay,
@@ -175,11 +176,12 @@ export async function getFloorCoupons(url: string) {
 }
 
 export async function getActivityCoupons(url: string) {
-  var { items, simpleCoupons } = await queryActivityCoupons(url);
+  var { items, directCoupons,simpleCoupons } = await queryActivityCoupons(url);
   var activityId = /(\w+)\/index.html/.exec(url)![1];
-  simpleCoupons.forEach(url => {
+  directCoupons.forEach(url => {
     setting.req.get(url);
   });
+  simpleCoupons.forEach(getCouponSingle)
   return wrapItems(
     Promise.all(
       items.map(item =>

@@ -243,8 +243,12 @@ export async function queryActivityCoupons(url: string) {
     }
   }
   let activityId = /active\/(\w+)/.exec(url)![1];
-  let simpleCoupons = arr[2].match(/\/\/(jrmkt|btmkt)\.jd\.com\/[^"]+/g) || [];
-  simpleCoupons = simpleCoupons.map(url => `https:${url}`);
+  let directCoupons = arr[2].match(/\/\/(jrmkt|btmkt)\.jd\.com\/[^"]+/g) || [];
+  directCoupons = directCoupons.map(url => `https:${url}`);
+
+  let simpleCoupons =
+    html.match(/\/\/coupon\.m\.jd\.com\/coupons\/show\.action\?[^"']+/g) || [];
+  simpleCoupons = simpleCoupons.map(item => `https:` + item);
   let items: {
     cpId: string;
     args: string;
@@ -297,6 +301,7 @@ export async function queryActivityCoupons(url: string) {
   });
   return {
     items,
+    directCoupons,
     simpleCoupons
   };
 }

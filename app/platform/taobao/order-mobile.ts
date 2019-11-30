@@ -279,7 +279,9 @@ export class TaobaoOrderMobile {
             data1[key] = data[key];
           }
         });
-        structure = data.hierarchy.structure;
+        if (data.hierarchy) {
+          structure = data.hierarchy.structure;
+        }
         if (data.data.submitOrder_1) {
           data1.data = data.data;
         }

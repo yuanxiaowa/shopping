@@ -110,7 +110,14 @@ export class JingrongUtil {
     return harvestJinguo({ userId: userInfo, userToken });
   }
 
-  @timerHourPoint([[7, 9], [11, 13], [18, 20]], 1000 * 20)
+  @timerHourPoint(
+    [
+      [7, 9],
+      [11, 13],
+      [18, 20]
+    ],
+    1000 * 20
+  )
   @log("金果签到")
   signJinguo(workType: number) {
     return signJinguo(workType, 2)();
@@ -156,7 +163,7 @@ export class JingrongUtil {
   @daily()
   @log("执行权益中心操作")
   async doRightCenter() {
-    getRightCenterLucky();
+    // getRightCenterLucky();
     var datas = await getRightCenterCoupons();
     for (let { time, floorInfo } of datas) {
       let diff = moment(time, "HH:mm").diff();

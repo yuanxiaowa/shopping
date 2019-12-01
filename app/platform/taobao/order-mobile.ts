@@ -323,7 +323,7 @@ export class TaobaoOrderMobile {
           if (!args.bus) {
             await delay(config.delay_submit);
             args.bus = new EventEmitter();
-            console.log("打开另一个下单");
+            console.log(`\n${_n}打开另一个捡漏-${args.title}`);
             this.submitOrder(args);
           } else {
             if (!timeSub) {
@@ -337,7 +337,7 @@ export class TaobaoOrderMobile {
               args.bus.removeListener("continue", _resolve);
             }
             args.bus.removeListener("time-sub", timeSub);
-            args.bus.once("time-sub", timeSub);
+            args.bus.on("time-sub", timeSub);
             args.bus.emit("continue");
           }
           await new Promise((resolve, reject) => {
@@ -353,12 +353,12 @@ export class TaobaoOrderMobile {
             });
             _resolve = undefined;
           }
-          console.log(_n + "捡漏结束，去下单...");
+          console.log(_n + "捡漏结束，去下单..." + args.title);
         } else {
           await delay(config.delay_submit);
         }
         startTime = Date.now();
-        console.time("订单提交 " + startTime);
+        console.time(_n + "订单提交 " + startTime);
         let ret = await requestData(
           "mtop.trade.order.create.h5",
           postdata,
@@ -370,8 +370,8 @@ export class TaobaoOrderMobile {
           }
         );
         logFile(ret, `手机订单提交成功`);
-        console.log(`----------手机订单提交成功：${args.title}`);
-        console.timeEnd("订单提交 " + startTime);
+        console.log(_n + `----------手机订单提交成功：${args.title}`);
+        console.timeEnd(_n + "订单提交 " + startTime);
         sendQQMsg(
           `手机订单提交成功，速度去付款(${setting.username})：${args.title}`
         );
@@ -379,7 +379,7 @@ export class TaobaoOrderMobile {
         startTime = Date.now();
         if (retryCount >= 1) {
           console.error(e.message + ":" + args.title);
-          console.error(`已经重试两次，放弃治疗：${args.title}`);
+          console.error(_n + `已经重试两次，放弃治疗：${args.title}`);
           throw e;
         }
         if (
@@ -387,7 +387,7 @@ export class TaobaoOrderMobile {
           e.message.includes("被挤爆")
         ) {
           if (args.jianlou) {
-            console.log(e.message, "正在捡漏重试：" + args.title);
+            console.log(e.message, _n + "正在捡漏重试：" + args.title);
             await getNewestOrderData();
             await doJianlou();
             return submit(retryCount + 1);
@@ -428,7 +428,7 @@ export class TaobaoOrderMobile {
           time: startTime + 1000 * 60 * args.jianlou!
         },
         16,
-        "刷到库存了，去下单---"
+        _n + "刷到库存了，去下单---"
       );
     }
     (async () => {

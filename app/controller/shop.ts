@@ -139,22 +139,25 @@ export default class ShopController extends Controller {
     if (t) {
       let toTime = moment(t);
       if (toTime.diff(moment()) > 0) {
-        let p = taskManager.registerTask(
-          {
-            name: `直接购买`,
-            time: t,
-            platform,
-            comment: data._comment,
-            url: data.url
-          },
-          toTime.valueOf()
-        );
-        data.seckill = true;
-        let p2 = ins.buyDirect(data, p);
-        p2.catch(() => {
-          taskManager.cancelTask(p.id);
-        });
-        ctx.body = await handle(p2, toTime.fromNow() + " 将直接下单");
+        (async () => {
+          let p = taskManager.registerTask(
+            {
+              name: `直接购买`,
+              time: t,
+              platform,
+              comment: data._comment,
+              url: data.url
+            },
+            toTime.valueOf()
+          );
+          data.seckill = true;
+          let p2 = ins.buyDirect(data, p);
+          p2.catch(() => {
+            taskManager.cancelTask(p.id);
+          });
+          ctx.body = await handle(p2, toTime.fromNow() + " 将直接下单");
+        })();
+        ctx.body = await handle(ins.buyDirect(data), "下单成功");
         return;
       }
     }

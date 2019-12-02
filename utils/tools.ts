@@ -140,13 +140,17 @@ export function getCookie(name: string, cookie: string) {
   return "";
 }
 
-export function logFileWrapper(name: string) {
+export function logFileWrapper(name: string, fn = () => "") {
   return async (content: any, label: string, ext = ".txt") => {
     if (typeof content !== "string") {
       content = JSON.stringify(content);
     }
+    var subname = fn();
+    if (subname) {
+      subname += "/";
+    }
     var now = moment();
-    var filename = `.data/${name}/${now.format(
+    var filename = `.data/${name}/${subname}${now.format(
       moment.HTML5_FMT.DATE
     )}/${label}/${now.format("HH_mm_ss.SSS") + ext}`;
     await fs.ensureFile(filename);

@@ -17,18 +17,16 @@ export class Taokouling {
       Cookie:
         "PHPSESSID=pm3qggbm4u7p8373ogu3aljqj4; UM_distinctid=16df26fbfa43f0-03658146aed134-3c375f0d-1fa400-16df26fbfa549c; tkdg_user_info=think%3A%7B%22id%22%3A%2245137%22%2C%22password%22%3A%2229d82efd358b8a2f85ac0b7d99a8fbe2%22%7D; Hm_lvt_73f904bff4492e23046b74fe0d627b3d=1575264071,1575264385,1575264390,1575264467; CNZZDATA1261806159=583648882-1571728999-https%253A%252F%252Fwww.baidu.com%252F%7C1575270309; Hm_lpvt_73f904bff4492e23046b74fe0d627b3d=1575272041"
     },
-    gzip: true,
-    qs: {
-      apikey: "ccNMxlaXdJ"
-    }
+    gzip: true
   });
 
   async resolveText(tkl: string) {
-    var data: string = await request.get(
+    var data: string = await this.req.get(
       "https://api.taokouling.com/tkl/tkljm",
       {
         qs: {
-          tkl
+          tkl,
+          apikey: "ccNMxlaXdJ"
         }
       }
     );
@@ -71,7 +69,7 @@ export async function resolveUrl(url: string) {
   return url;
 }
 
-export var logFile = logFileWrapper("taobao");
+export var logFile = logFileWrapper("taobao", () => setting.username);
 
 export function getItemId(url: string) {
   if (url.startsWith("https://a.m.taobao.com")) {

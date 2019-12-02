@@ -449,7 +449,7 @@ export class TaobaoOrderMobile {
     args: {
       url: string;
       quantity: number;
-      skus?: number[];
+      skuId: string;
       title: string;
     },
     duration: number
@@ -463,7 +463,7 @@ export class TaobaoOrderMobile {
         time,
         comment: args.title,
         async handler() {
-          var data = await getGoodsInfo(args.url, args.skus);
+          var data = await getGoodsInfo(args.url, args.skuId);
           return data.quantity >= args.quantity;
         }
       },
@@ -474,7 +474,7 @@ export class TaobaoOrderMobile {
 
   prev_id = "";
   async buyDirect(args: ArgBuyDirect, p?: Promise<void>) {
-    var data = await getGoodsInfo(args.url, args.skus);
+    var data = await getGoodsInfo(args.url, args.skuId);
     if (!args.ignoreRepeat && this.prev_id === data.itemId) {
       throwError("重复下单");
     }

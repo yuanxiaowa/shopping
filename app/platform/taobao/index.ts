@@ -27,7 +27,8 @@ import { taobaoOrderPc } from "./order-pc";
 import {
   getGoodsInfo,
   getChaoshiGoodsList,
-  getGoodsList
+  getGoodsList,
+  getGoodsDetail
 } from "./goods-mobile";
 import { getCoupons } from "./member";
 import { sixtyCourseList, sixtyCourseReply } from "./activity";
@@ -196,7 +197,9 @@ export class Taobao extends AutoShop {
     return taobaoOrderMobile.cartBuy(args, p);
   }
 
-  getGoodsInfo = getGoodsInfo;
+  async goodsDetail(url: string) {
+    return getGoodsDetail(url);
+  }
 
   async goodsList(args) {
     if (args.name === "chaoshi") {

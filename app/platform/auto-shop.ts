@@ -72,7 +72,7 @@ export default abstract class AutoShop implements AutoShopOptions {
   abstract comment(data: any): Promise<any>;
   abstract commentList(data: { page: number; type: number }): Promise<any>;
   abstract buyDirect(data: ArgBuyDirect, p?: Promise<void>): Promise<any>;
-  abstract getGoodsInfo(url: string, skus?: number[]): Promise<any>;
+  abstract goodsDetail(url: string): Promise<any>;
   async seckillList(name: string): Promise<any> {}
   abstract goodsList(args: ArgSearch): Promise<any>;
   async testOrder(args: { file: string }): Promise<any> {}

@@ -25,6 +25,7 @@ export default (app: Application) => {
   router.post("/resolve/url", controller.shop.resolveUrl);
   router.get("/seckill/list", controller.shop.seckillList);
   router.get("/goods/list", controller.shop.goodsList);
+  router.get("/goods/detail", controller.shop.goodsDetail);
   router.get("/coupons", controller.shop.coupons);
   router.get("/calc/price", controller.shop.calcPrice);
 

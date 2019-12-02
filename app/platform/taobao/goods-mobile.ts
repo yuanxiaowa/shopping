@@ -3,7 +3,54 @@ import setting from "./setting";
 import { ArgSearch } from "../struct";
 import { throwError } from "../../../utils/tools";
 
-export async function getGoodsInfo(url: string, skus?: number[]) {
+export async function getGoodsDetail(url: string) {
+  var itemId = getItemId(url);
+  /* 
+    ttid: "2017@taobao_h5_6.6.0",
+    AntiCreep: "true",
+   */
+  var { apiStack, item } = await requestData(
+    "mtop.taobao.detail.getdetail",
+    { itemNumId: itemId },
+    "get"
+  );
+  let { skuBase, skuCore } = JSON.parse(apiStack[0].value);
+  let sku_ret;
+  if (skuBase) {
+    let { props, skus } = skuBase;
+    function f(i, vids: string[]) {
+      var parent = {
+        pid: props[i].pid,
+        name: props[i].name,
+        children: props[i].values.map(item => {
+          var data: any = {
+            value: item.vid,
+            label: item.name
+          };
+          vids[i] = props[i].pid + ":" + item.vid;
+          if (i < props.length - 1) {
+            Object.assign(data, f(i + 1, vids));
+          } else {
+            let { skuId } = skus.find(item => item.propPath === vids.join(";"));
+            let { quantity, price } = skuCore.sku2info[skuId];
+            data.children = [
+              {
+                label: `￥${price.priceText}, ${quantity}`,
+                value: skuId
+              }
+            ];
+          }
+          return data;
+        })
+      };
+      return parent;
+    }
+    sku_ret = f(0, []);
+  }
+  return { skus: sku_ret, item, title: item.title };
+}
+
+export async function getGoodsInfo(url: string, skuId?: string) {
   var itemId = getItemId(url);
   /* 
     ttid: "2017@taobao_h5_6.6.0",
@@ -14,10 +61,10 @@ export async function getGoodsInfo(url: string, skus?: number[]) {
     { itemNumId: itemId },
     "get"
   );
-  return transformMobileGoodsInfo(data, skus);
+  return transformMobileGoodsInfo(data, skuId);
 }
 
-function transformMobileGoodsInfo({ apiStack, item }, skus?: number[]) {
+function transformMobileGoodsInfo({ apiStack, item }, skuId?: string) {
   let { delivery, trade, skuBase, skuCore, price } = JSON.parse(
     apiStack[0].value
   );
@@ -33,13 +80,17 @@ function transformMobileGoodsInfo({ apiStack, item }, skus?: number[]) {
       msg = trade.reason;
     }
   }
-  let skuId = "0";
-  if (skuBase && skuBase.props) {
+  if (!skuId) {
+    skuId = "0";
+  }
+  /* if (skuBase && skuBase.props) {
     if (skus) {
       let propPath = skuBase.props
         .map(
           ({ pid, values }, i) =>
-            `${pid}:${values[((skus[i] || 0) + values.length) % values.length].vid}`
+            `${pid}:${
+              values[((skus[i] || 0) + values.length) % values.length].vid
+            }`
         )
         .join(";");
       let skuItem = skuBase.skus.find(item => item.propPath === propPath);
@@ -49,7 +100,7 @@ function transformMobileGoodsInfo({ apiStack, item }, skus?: number[]) {
         skuId = skuItem.skuId;
       }
     }
-  }
+  } */
   if (skuCore) {
     if (skuId === "0") {
       let min = Infinity;

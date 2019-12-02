@@ -143,7 +143,7 @@ export class Jingdong extends AutoShop {
     return jingDongOrder.cartBuy(data, p);
   }
 
-  async getGoodsInfo(url: string, skus?: number[] | undefined): Promise<any> {
+  async goodsDetail(url: string): Promise<any> {
     return {
       skuId: getSkuId(url)
     };

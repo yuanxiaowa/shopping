@@ -11,7 +11,7 @@ export interface ArgBuyDirect {
   quantity: number;
   other: any;
   expectedPrice?: number;
-  skus?: number[];
+  skuId?: string;
   jianlou?: number;
   from_cart?: boolean;
   from_pc?: boolean;

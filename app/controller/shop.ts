@@ -155,9 +155,12 @@ export default class ShopController extends Controller {
           p2.catch(() => {
             taskManager.cancelTask(p.id);
           });
-          ctx.body = await handle(p2, toTime.fromNow() + " 将直接下单");
+          await handle(p2, toTime.fromNow() + " 将直接下单");
         })();
-        ctx.body = await handle(ins.buyDirect(data), "下单成功");
+        ctx.body = {
+          code: 0,
+          msg: toTime.fromNow() + " 直接下单"
+        };
         return;
       }
     }
@@ -242,6 +245,12 @@ export default class ShopController extends Controller {
     const { ctx, app } = this;
     var { platform } = ctx.query;
     ctx.body = await handle(app[platform].goodsList(ctx.query));
+  }
+
+  public async goodsDetail() {
+    const { ctx, app } = this;
+    var { platform } = ctx.query;
+    ctx.body = await handle(app[platform].goodsDetail(ctx.query.url));
   }
 
   public async calcPrice() {

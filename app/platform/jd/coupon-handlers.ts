@@ -363,7 +363,10 @@ export async function obtainActivityCoupon(data: {
   // 您今天已经参加过此活动，别太贪心哟，明天再来~ A13
   // 您来早了，活动还没开始哟，请稍后再来~ 20016
   // 您来早了，下一场活动开始时间为 14:00，稍后再来吧！ A8
-  console.log(data.discount + "," + data.limit);
+  console.log(
+    new Date().toLocaleTimeString(),
+    data.discount + "," + data.limit
+  );
   if (
     resData.subCode === "A7" ||
     resData.subCode === "20016" ||

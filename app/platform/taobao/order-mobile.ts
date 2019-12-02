@@ -210,7 +210,7 @@ export class TaobaoOrderMobile {
     var startTime = startDate.getTime();
     console.time("订单结算 " + args.title + startTime);
     // other.memo other.ComplexInput
-    console.log(`----准备进入手机订单结算页：${args.title}`);
+    console.log(`\n----准备进入手机订单结算页：${args.title}`);
     var data1;
     try {
       // {
@@ -256,7 +256,7 @@ export class TaobaoOrderMobile {
       throw e;
     }
     console.timeEnd("订单结算 " + args.title + startTime);
-    console.log(`-----已经进入手机订单结算页：${args.title}`);
+    console.log(`\n-----已经进入手机订单结算页：${args.title}`);
     logFile(data1, "手机订单结算页", ".json");
     console.log(`-----准备提交：${args.title}`);
     var postdata;
@@ -314,46 +314,26 @@ export class TaobaoOrderMobile {
       }
     }
     var _n = args.bus ? 2 : 1;
-    var timeSub;
-    var _resolve;
 
     var submit = async (retryCount = 0) => {
       try {
         if (args.jianlou) {
           if (!args.bus) {
-            await delay(config.delay_submit);
             args.bus = new EventEmitter();
             console.log(`\n${_n}打开另一个捡漏-${args.title}`);
             this.submitOrder(args);
           } else {
-            if (!timeSub) {
-              timeSub = async function() {
-                await getNewestOrderData();
-                await doJianlou();
-                args.bus!.emit("continue");
-              };
+            while (Date.now() - startDate.getTime() < config.delay_submit) {
+              await getNewestOrderData();
+              await doJianlou();
             }
-            if (_resolve) {
-              args.bus.removeListener("continue", _resolve);
-            }
-            args.bus.removeListener("time-sub", timeSub);
-            args.bus.on("time-sub", timeSub);
+            console.log("\n" + _n + "捡漏结束，去通知下单..." + args.title);
             args.bus.emit("continue");
           }
           await new Promise((resolve, reject) => {
-            _resolve = resolve;
             args.bus!.once("continue", resolve);
           });
-          _resolve = undefined;
-          while (Date.now() - startTime < config.delay_submit) {
-            args.bus.emit("time-sub");
-            await new Promise((resolve, reject) => {
-              _resolve = resolve;
-              args.bus!.once("continue", resolve);
-            });
-            _resolve = undefined;
-          }
-          console.log(_n + "捡漏结束，去下单..." + args.title);
+          startDate = new Date();
         } else {
           await delay(config.delay_submit);
         }
@@ -370,7 +350,7 @@ export class TaobaoOrderMobile {
           }
         );
         logFile(ret, `手机订单提交成功`);
-        console.log(_n + `----------手机订单提交成功：${args.title}`);
+        console.log("\n" + _n + `----------手机订单提交成功：${args.title}`);
         console.timeEnd(_n + "订单提交 " + startTime);
         sendQQMsg(
           `手机订单提交成功，速度去付款(${setting.username})：${args.title}`
@@ -387,7 +367,7 @@ export class TaobaoOrderMobile {
           e.message.includes("被挤爆")
         ) {
           if (args.jianlou) {
-            console.log(e.message, _n + "正在捡漏重试：" + args.title);
+            console.log("\n", e.message, _n + "正在捡漏重试：" + args.title);
             await getNewestOrderData();
             await doJianlou();
             return submit(retryCount + 1);
@@ -397,7 +377,7 @@ export class TaobaoOrderMobile {
           e.message.startsWith("购买数量超过了限购数")
         ) {
           if (args.jianlou) {
-            console.error(e.message, "正在捡漏重试：" + args.title);
+            console.error("\n", e.message, "正在捡漏重试：" + args.title);
             await getNewestOrderData();
             await doJianlou();
             return submit(retryCount);
@@ -428,7 +408,7 @@ export class TaobaoOrderMobile {
           time: startTime + 1000 * 60 * args.jianlou!
         },
         16,
-        _n + "刷到库存了，去下单---"
+        "\n" + _n + "刷到库存了，去下单---"
       );
     }
     (async () => {

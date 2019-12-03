@@ -18,30 +18,47 @@ export async function getGoodsDetail(url: string) {
   let sku_ret;
   if (skuBase) {
     let { props, skus } = skuBase;
+    let sortOrders = props
+      .map(({ values }, index) => ({
+        sortOrder: +values[0].sortOrder,
+        index
+      }))
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map(({ index }) => index);
     function f(i, vids: string[]) {
       var parent = {
         pid: props[i].pid,
         name: props[i].name,
-        children: props[i].values.map(item => {
-          var data: any = {
-            value: item.vid,
-            label: item.name
-          };
-          vids[i] = props[i].pid + ":" + item.vid;
-          if (i < props.length - 1) {
-            Object.assign(data, f(i + 1, vids));
-          } else {
-            let { skuId } = skus.find(item => item.propPath === vids.join(";"));
-            let { quantity, price } = skuCore.sku2info[skuId];
-            data.children = [
-              {
-                label: `￥${price.priceText}, ${quantity}`,
-                value: skuId
+        children: props[i].values
+          .map(item => {
+            var data: any = {
+              value: item.vid,
+              label: item.name
+            };
+            vids[i] = props[i].pid + ":" + item.vid;
+            if (i < props.length - 1) {
+              Object.assign(data, f(i + 1, vids));
+            } else {
+              let vid_str = sortOrders.map(i => vids[i]).join(";");
+              let sku = skus.find(item => item.propPath === vid_str);
+              if (!sku) {
+                return;
               }
-            ];
-          }
-          return data;
-        })
+              let { skuId } = sku;
+              let { quantity, price } = skuCore.sku2info[skuId];
+              if (+quantity === 0) {
+                return;
+              }
+              data.children = [
+                {
+                  label: `￥${price.priceText}, ${quantity}`,
+                  value: skuId
+                }
+              ];
+            }
+            return data;
+          })
+          .filter(Boolean)
       };
       return parent;
     }

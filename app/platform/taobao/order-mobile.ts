@@ -323,14 +323,22 @@ export class TaobaoOrderMobile {
             console.log(`\n${_n}打开另一个捡漏-${args.title}`);
             this.submitOrder(args);
           } else {
-            while (Date.now() - startDate.getTime() < config.delay_submit) {
-              await getNewestOrderData();
-              await doJianlou();
+            let b = true;
+            while (
+              Date.now() - startDate.getTime() < config.delay_submit ||
+              b
+            ) {
+              console.log("\n" + _n + "不到时间,再刷");
+              try {
+                await getNewestOrderData();
+                await doJianlou("(时间不够)");
+                b = false;
+              } catch (e) {}
             }
             console.log("\n" + _n + "捡漏结束，去通知下单..." + args.title);
             args.bus.emit("continue");
           }
-          await new Promise((resolve, reject) => {
+          await new Promise(resolve => {
             args.bus!.once("continue", resolve);
           });
           startDate = new Date();
@@ -369,7 +377,7 @@ export class TaobaoOrderMobile {
           if (args.jianlou) {
             console.log("\n", e.message, _n + "正在捡漏重试：" + args.title);
             await getNewestOrderData();
-            await doJianlou();
+            await doJianlou("(挤爆)");
             return submit(retryCount + 1);
           }
         } else if (
@@ -377,9 +385,9 @@ export class TaobaoOrderMobile {
           e.message.startsWith("购买数量超过了限购数")
         ) {
           if (args.jianlou) {
-            console.error("\n", e.message, "正在捡漏重试：" + args.title);
+            console.error("\n", e.message, _n + "正在捡漏重试：" + args.title);
             await getNewestOrderData();
-            await doJianlou();
+            await doJianlou("(变更)");
             return submit(retryCount);
           }
         } else if (
@@ -398,7 +406,7 @@ export class TaobaoOrderMobile {
         throw e;
       }
     };
-    function doJianlou() {
+    function doJianlou(t = "") {
       return taskManager.registerTask(
         {
           name: "捡漏",
@@ -408,7 +416,7 @@ export class TaobaoOrderMobile {
           time: startTime + 1000 * 60 * args.jianlou!
         },
         16,
-        "\n" + _n + "刷到库存了，去下单---"
+        `\n${_n}刷到库存了${t}---${args.title}`
       );
     }
     (async () => {

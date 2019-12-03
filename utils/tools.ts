@@ -543,10 +543,10 @@ export class TaskManager {
               return;
             }
             console.error(e);
-            rejectHandler(`\n${moment().format()} ${title} 任务已取消`);
+            rejectHandler(`\n${moment().format(moment.HTML5_FMT.TIME_SECONDS)} ${title} 任务已取消`);
           }
         };
-        console.log(`\n${moment().format()} 开始任务 ${title}`);
+        console.log(`\n${moment().format(moment.HTML5_FMT.TIME_SECONDS)} 开始任务 ${title}`);
         f();
         if (data.interval) {
           taskData.timer = setTimeout(function f() {

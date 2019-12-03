@@ -328,12 +328,17 @@ export class TaobaoOrderMobile {
               Date.now() - startDate.getTime() < config.delay_submit ||
               b
             ) {
-              console.log("\n" + _n + "不到时间,再刷");
+              console.log("\n" + _n + "不到时间,再刷:" + args.title);
               try {
                 await getNewestOrderData();
                 await doJianlou("(时间不够)");
                 b = false;
-              } catch (e) {}
+              } catch (e) {
+                console.log(
+                  "\n" + _n + "不到时间,出错:" + args.title,
+                  e.message
+                );
+              }
             }
             console.log("\n" + _n + "捡漏结束，去通知下单..." + args.title);
             args.bus.emit("continue");

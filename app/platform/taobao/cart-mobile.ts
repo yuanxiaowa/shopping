@@ -178,7 +178,7 @@ export async function getCartList() {
 export async function addCart(args: {
   url: string;
   quantity: number;
-  skus?: number[];
+  skuId?:string;
 }) {
   var itemId;
   var skuId;
@@ -186,7 +186,7 @@ export async function addCart(args: {
     skuId = RegExp.$1;
     itemId = /id=(\d+)/.exec(args.url)![1];
   } else {
-    var res = await getGoodsInfo(args.url, args.skus);
+    var res = await getGoodsInfo(args.url, args.skuId);
     if (res.quantity === 0) {
       throw new Error("无库存了");
     }

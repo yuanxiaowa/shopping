@@ -150,9 +150,9 @@ export function logFileWrapper(name: string, fn = () => "") {
       subname += "/";
     }
     var now = moment();
-    var filename = `.data/${name}/${subname}${now.format(
+    var filename = `.data/${name}/${now.format(
       moment.HTML5_FMT.DATE
-    )}/${label}/${now.format("HH_mm_ss.SSS") + ext}`;
+    )}/${subname}${label}/${now.format("HH_mm_ss.SSS") + ext}`;
     await fs.ensureFile(filename);
     return writeFile(filename, content);
   };

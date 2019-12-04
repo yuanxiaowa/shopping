@@ -204,13 +204,15 @@ export class TaobaoOrderMobile {
   @Serial(100)
   waitOrder() {}
 
+  prev_submit_time: number;
+
   @Serial(0)
   async submitOrder(args: ArgOrder<any>, retryCount = 0) {
     var startDate = new Date();
     var startTime = startDate.getTime();
     console.time("订单结算 " + args.title + startTime);
     // other.memo other.ComplexInput
-    console.log(`\n----准备进入手机订单结算页：${args.title}`);
+    console.log(`\n😎----准备进入手机订单结算页：${args.title}`);
     var data1;
     try {
       // {
@@ -243,7 +245,7 @@ export class TaobaoOrderMobile {
         "4.0"
       );
     } catch (e) {
-      console.error(`获取订单信息出错：${args.title}`, e);
+      console.error(`\n😵获取订单信息出错：${args.title}`, e);
       if (retryCount >= 1) {
         console.error(`已经重试两次，放弃治疗：${args.title}`);
         throw e;
@@ -350,7 +352,13 @@ export class TaobaoOrderMobile {
         } else {
           await delay(config.delay_submit);
         }
-        startTime = Date.now();
+        let now = Date.now();
+        let diff = 10 * 1000 - (now - this.prev_submit_time);
+        if (diff > 0) {
+          console.log("\n提交订单太快，稍等一下");
+          await delay(diff);
+        }
+        this.prev_submit_time = startTime = now;
         console.time(_n + "订单提交 " + startTime);
         let ret = await requestData(
           "mtop.trade.order.create.h5",
@@ -363,7 +371,7 @@ export class TaobaoOrderMobile {
           }
         );
         logFile(ret, `手机订单提交成功`);
-        console.log("\n" + _n + `----------手机订单提交成功：${args.title}`);
+        console.log(`\n😃${_n} ----------手机订单提交成功：${args.title}`);
         console.timeEnd(_n + "订单提交 " + startTime);
         sendQQMsg(
           `手机订单提交成功，速度去付款(${setting.username})：${args.title}`
@@ -371,7 +379,7 @@ export class TaobaoOrderMobile {
       } catch (e) {
         startTime = Date.now();
         if (retryCount >= 1) {
-          console.error(e.message + ":" + args.title);
+          console.error("\n😝" + e.message + ":" + args.title);
           console.error(_n + `已经重试两次，放弃治疗：${args.title}`);
           throw e;
         }
@@ -380,7 +388,7 @@ export class TaobaoOrderMobile {
           e.message.includes("被挤爆")
         ) {
           if (args.jianlou) {
-            console.log("\n", e.message, _n + "正在捡漏重试：" + args.title);
+            console.log("\n😝", e.message, _n + "正在捡漏重试：" + args.title);
             await getNewestOrderData();
             await doJianlou("(挤爆)");
             return submit(retryCount + 1);
@@ -390,7 +398,11 @@ export class TaobaoOrderMobile {
           e.message.startsWith("购买数量超过了限购数")
         ) {
           if (args.jianlou) {
-            console.error("\n", e.message, _n + "正在捡漏重试：" + args.title);
+            console.error(
+              "\n😝",
+              e.message,
+              _n + "正在捡漏重试：" + args.title
+            );
             await getNewestOrderData();
             await doJianlou("(变更)");
             return submit(retryCount);
@@ -399,7 +411,7 @@ export class TaobaoOrderMobile {
           e.message !== "活动火爆，名额陆续开放，建议后续关注！" &&
           !e.message.startsWith("您已经从购物车购买过此商品")
         ) {
-          console.log(e.message, "正在重试：" + args.title);
+          console.log("\n😝", e.message, "正在重试：" + args.title);
           // B-15034-01-01-001: 您已经从购物车购买过此商品，请勿重复下单
           // RGV587_ERROR: 哎哟喂,被挤爆啦,请稍后重试
           // F-10007-10-10-019: 对不起，系统繁忙，请稍候再试
@@ -421,7 +433,7 @@ export class TaobaoOrderMobile {
           time: startTime + 1000 * 60 * args.jianlou!
         },
         16,
-        `\n${_n}刷到库存了${t}---${args.title}`
+        `\n🐱${_n}刷到库存了${t}---${args.title}`
       );
     }
     (async () => {

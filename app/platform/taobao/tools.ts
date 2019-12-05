@@ -48,9 +48,20 @@ export class Taokouling {
 
 export const taokouling = new Taokouling();
 
+export async function resolveTaokouling(password: string): Promise<string> {
+  var { url } = await requestData(
+    "com.taobao.redbull.getpassworddetail",
+    { password },
+    "get",
+    "1.0"
+  );
+  return url;
+}
+
 export async function resolveUrl(url: string) {
   if (!url.startsWith("http")) {
-    url = await taokouling.resolveText(url);
+    // url = await taokouling.resolveText(url);
+    url = await resolveTaokouling(url);
   }
   if (url.includes("t.cn/")) {
     var page = await newPage();

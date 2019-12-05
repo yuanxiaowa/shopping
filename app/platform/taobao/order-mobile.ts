@@ -332,6 +332,7 @@ export class TaobaoOrderMobile {
             ) {
               console.log("\n" + _n + "不到时间,再刷:" + args.title);
               try {
+                await delay(16);
                 await getNewestOrderData();
                 await doJianlou("(时间不够)");
                 b = false;
@@ -340,6 +341,10 @@ export class TaobaoOrderMobile {
                   "\n" + _n + "不到时间,出错:" + args.title,
                   e.message
                 );
+                if (e.message === "非法请求") {
+                  console.error("......", args.title);
+                  return;
+                }
               }
             }
             console.log("\n" + _n + "捡漏结束，去通知下单..." + args.title);

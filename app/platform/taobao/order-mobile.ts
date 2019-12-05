@@ -319,7 +319,7 @@ export class TaobaoOrderMobile {
 
     var submit = async (retryCount = 0) => {
       try {
-        if (args.jianlou) {
+        if (args.jianlou && !args.no_interaction) {
           if (!args.bus) {
             args.bus = new EventEmitter();
             console.log(`\n${_n}打开另一个捡漏-${args.title}`);
@@ -353,11 +353,11 @@ export class TaobaoOrderMobile {
           await delay(config.delay_submit);
         }
         let now = Date.now();
-        let diff = 10 * 1000 - (now - this.prev_submit_time);
+        /* let diff = 10 * 1000 - (now - this.prev_submit_time);
         if (diff > 0) {
           console.log("\n提交订单太快，稍等一下");
           await delay(diff);
-        }
+        } */
         this.prev_submit_time = startTime = now;
         console.time(_n + "订单提交 " + startTime);
         let ret = await requestData(

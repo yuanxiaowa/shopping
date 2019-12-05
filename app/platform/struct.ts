@@ -29,6 +29,7 @@ export interface ArgOrder<T> {
   title: string;
   qq?: string;
   bus?: EventEmitter;
+  no_interaction?: boolean;
 }
 
 export interface ArgCartBuy {

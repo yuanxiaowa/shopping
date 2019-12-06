@@ -325,7 +325,7 @@ export class TaobaoOrderMobile {
             console.log(`\n${_n}打开另一个捡漏-${args.title}`);
             this.submitOrder(args);
           } else {
-            let b = true;
+            let b = false;
             while (
               Date.now() - startDate.getTime() < config.delay_submit ||
               b
@@ -334,9 +334,9 @@ export class TaobaoOrderMobile {
               try {
                 await delay(16);
                 await getNewestOrderData();
-                await doJianlou("(时间不够)");
-                b = false;
+                await doJianlou(_n + "(时间不够)");
               } catch (e) {
+                b = true;
                 console.log(
                   "\n" + _n + "不到时间,出错:" + args.title,
                   e.message

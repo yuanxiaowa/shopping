@@ -413,6 +413,11 @@ export class TaobaoOrderMobile {
             return submit(retryCount);
           }
         } else if (
+          e.message === "当前访问页面失效，可能您停留时间过长，请重新提交申请"
+        ) {
+          console.error(e);
+          return this.submitOrder(args, retryCount);
+        } else if (
           e.message !== "活动火爆，名额陆续开放，建议后续关注！" &&
           !e.message.startsWith("您已经从购物车购买过此商品")
         ) {
@@ -511,7 +516,7 @@ export class TaobaoOrderMobile {
     this.prev_id = data.itemId;
     if (p) {
       await p;
-    } else {
+    } else if (!args.no_interaction) {
       if (data.quantity < args.quantity) {
         if (args.jianlou) {
           let sp = taobaoOrderPc.waitForStock(

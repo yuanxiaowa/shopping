@@ -17,6 +17,7 @@ export interface ArgBuyDirect {
   from_pc?: boolean;
   diejia?: number;
   ignoreRepeat?: boolean;
+  no_interaction?: boolean;
 }
 
 export interface ArgOrder<T> {

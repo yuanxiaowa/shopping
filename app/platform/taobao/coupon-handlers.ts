@@ -59,12 +59,14 @@ export async function getTaolijin(url: string) {
       (async () => {
         var res = await requestData(
           "mtop.alimama.union.hsf.app.coupon.apply",
-          Object.assign(
-            {
-              couponKey
-            },
-            setting.mteeInfo
-          ),
+          {
+            couponKey,
+            asac: "1A17621S4VF9XKFZ9JX5X7",
+            mteeUa:
+              "121#DZwlkkSZeHMlVlhOGBhGllXY3cY6vujVdqFgxgk5PMxhO6WJEGCIKwa0Oc8fDujlVmgY+zP5DMtlL2b0D445lwlYKarfKuj9LnN9S7LIKMLWA3rJEtj5ll9YOc8fDujllwgY+a/5KM9VOQrJEmD5lwLYAcT+DujVla+AMjlKAQ9PD0g6bqRVpSCvU8WubZ3546ocFtFbMXrDnj29p2D0C6e783aGRdwrYHHXFt4bbZi0JjdeN4jVCZe4GG/mbgiek+IaFtFbbZsbnjxSpXb0k65T8uBhbZs0CeHXF9WbCZsbnTx26MY0C5OfSm2kluVirN1mF9F7bvaFxqxSRZb0C6bDVlHzPQ8RDqiYVUc0hs7cu8ozJ/JYX3BIXj1yF2y4mm8m4CxQMuNJKHryKmWHeqxyWsycKJSY3iHQFpXcJrsJyU6pigImFS82F9pMxxhfJhFetGT2W3XcKHGeDnIFrKtQnUIobnu4BRfvwHKSiyN70hDtznQkmTKPATNtVmz6mFazXr2UboSL1cGNPMPjLHQGUNpNBfIQynYpAdyvmiokWe6ddKtDk9EJftMTiSYhAxlxMmN0WgnqppOvjbGZeeVcyiANW3mYfOx2v+o41jK7/3j2FjMkk0JYqSjv6Y3K2lTHVIxQ1FimWKRULXvhHqCTm0ZTlHzM1T8CTSAJ0ndCXn4sBuZg/+o0q8SKfcOLQiOrdDf9uDtOp8bBy0dWw61YGaELFJF0x/qC8gxgfjh61yY2k3HRjpAYNEa7gn7O9TscURpvys6yWUo7WmUhLH22jaH/N2JSvgKjIFmHF0lduZyYZ5h/MOkmqWnvcHOl+ztSPJZX2dl9YLWCjkQSwBZl/9/4W9H5Wt3kY3IIUJ6BTeNPojs9YqKMvmBVVSEtuxNxbwLwsW0T+6/G31k5/j9AHrTFXSH6tHH5wWOdP+97szBsLoE7xy4PnC3dK9cwoFkEO5fFe8xaOF0VwsRoxsFMyBoKd6tbCwr3G9INHKU3rucbI7gCFj6F3yfrKabHx0GPZZtdSiuaBRGg+9go32kq3wOzrF5G7AZC6LBpOPA9N2Yw/C8EqpBFIe7JYUkl40lL3sSIrijuaBMKI6dfLuv8BmAhlrGPSeg3WsOeabe/OI+uez+WO8TKntY2S1/Ilsh5b9Waql/gCcXUANneKU3tuQwg1DPhhiu8qZOf",
+            umidToken:
+              "TE57CFF6813C4BBE049101EFE049454632A8DA785372116D901100B250B"
+          },
           "get",
           "1.0"
         );
@@ -99,9 +101,8 @@ export async function getTaolijin(url: string) {
         } = await requestData(
           "mtop.alimama.vegas.draw",
           {
-            eh,
-            pid: rightsInstance.pid || "",
             asac: "1A18912HD87JTTJQQI1QKJ",
+            eh,
             extend: JSON.stringify({
               e: encodeURIComponent(new URL(clickUrl).searchParams.get("e")!),
               itemId,
@@ -111,7 +112,12 @@ export async function getTaolijin(url: string) {
               relationId: searchParams.get("activityId"),
               activityId: searchParams.get("activityId"),
               from: searchParams.get("activityId")
-            })
+            }),
+            mteeUa:
+              "121#K1MlkkarjVwlVlh3GBhGllXY3cY6vujVdqFgxgk5PMxhO6WJEGCIKwa0Oc8fDujlVmgY+zP5DMtlL2b0D445lwlYKarfKuj9LnN9S7LIKMLWA3rJEtj5ll9YOc8fDujllwgY+a/5KM9VOQrJEmD5lwLYAcT+DujVla+AMjlKAQ9PD0g6bqRVpSCvU8WubZ3546ocFtFbMXrDnj29p2D0C6e783aGRdwrYHHXFt4bbZi0JjdeN4jVCZe4GG/mbgiek+IaFtFbbZsbnjxSpXb0k65T8uBhbZs0CeHXF9WbCZsbnTx26MY0C5OfSm2kluVirN1mF9F7bvaFxqxSRZb0C60SVw13+Q8RD++pi11OHiv++BjgnvxwPDUS9+b/Ti8Hu/w7d32M0kAevwJMYZjVwkMS/BNs/yJ1smgEKNSJsQ+JJaxAltaIUMaZ8U8JxQbVJz6R4ZvZvzUdSn0APaVEVa+84EZstJRb3K3/aNYc6a0jd35pPZ96dnOBL9EUhFAxYJq/n9p/0DCaCrP1tIDifgB7d/2qv7CwC/KxWE0SJ9QtOMokkNOqoQBj5EEhzMX9H0kh3mFdhhUCSrHVseTG7+J94hkE6tCi9PcUXNTVmFUIJLoIRkIywDsM8DNLxGG2GLxgucMnoNMPb52pmQRnc+2v2r37AFw9yV2ildfvUb7ypqzkRQD7YDgIsXLiJqrzcqcc3UJ8pAeyA2gVIoy2XafLZsssHA0JOZxYSAl/kg2EteWLWgnCyr+8/kQkw/EuWVILbRv0eTkJn5qVISTCXDkL2BNkPZ51PR8oAjQvdxGSUp5NSV2OTdPf/NLANdik2PdezhQ+fpb98ajVk/uQMjOQxVKqBhWZdggSqjihA5tFaIl9RGbjT3Bb2JVTKtwqlwiXpN6AYW+B7BopJJgpKxOkWuK8gnH1fn7NecWAY794Og5o+BwF3JlmSb7uQdFhuCvCvzP67PHDlHbnDWh707QIgMpItSCn+gW1QYMmB+yVB8HYEiBu4lf7pBV5PqBipWkIAPi9GfA/xFT6+M+6RLNWQah0adZtiazI1Bsko5Ak6rfSzL3UOLf7AJ7ARzJVRJoihsuT+RaiWIG9ZAsdhFWxU3kZoMQXdGonUPBJ/o7WoLqxeH1WTPHrbsbUvpKj2M1jDVQnVuWPr2uqeFoL1McMz5FBYphh3lx54jlsTTvbfT6a3TXBoQ==",
+            pid: rightsInstance.pid || "",
+            umidToken:
+              "TE57CFF6813C4BBE049101EFE049454632A8DA785372116D901100B250B"
           },
           "get",
           "1.0"

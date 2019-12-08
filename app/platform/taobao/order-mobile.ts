@@ -323,7 +323,7 @@ export class TaobaoOrderMobile {
           if (!args.bus) {
             args.bus = new EventEmitter();
             console.log(`\n${_n}打开另一个捡漏-${args.title}`);
-            this.submitOrder(args);
+            this.submitOrder(args, 1);
           } else {
             let b = false;
             while (
@@ -386,6 +386,21 @@ export class TaobaoOrderMobile {
         );
       } catch (e) {
         startTime = Date.now();
+        if (
+          e.message.includes("优惠信息变更") ||
+          e.message.startsWith("购买数量超过了限购数")
+        ) {
+          if (args.jianlou) {
+            console.error(
+              "\n😝",
+              e.message,
+              _n + "正在捡漏重试：" + args.title
+            );
+            await getNewestOrderData();
+            await doJianlou("(变更)");
+            return submit(retryCount);
+          }
+        }
         if (retryCount >= 1) {
           console.error("\n😝" + e.message + ":" + args.title);
           console.error(_n + `已经重试两次，放弃治疗：${args.title}`);
@@ -400,20 +415,6 @@ export class TaobaoOrderMobile {
             await getNewestOrderData();
             await doJianlou("(挤爆)");
             return submit(retryCount + 1);
-          }
-        } else if (
-          e.message.includes("优惠信息变更") ||
-          e.message.startsWith("购买数量超过了限购数")
-        ) {
-          if (args.jianlou) {
-            console.error(
-              "\n😝",
-              e.message,
-              _n + "正在捡漏重试：" + args.title
-            );
-            await getNewestOrderData();
-            await doJianlou("(变更)");
-            return submit(retryCount);
           }
         } else if (
           e.message === "当前访问页面失效，可能您停留时间过长，请重新提交申请"

@@ -345,6 +345,9 @@ export class TaobaoOrderMobile {
                   console.error("......", args.title);
                   return;
                 }
+                if (e.message === "超时了") {
+                  return;
+                }
               }
             }
             console.log("\n" + _n + "捡漏结束，去通知下单..." + args.title);

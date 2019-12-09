@@ -60,8 +60,8 @@ export async function resolveTaokouling(password: string): Promise<string> {
 
 export async function resolveUrl(url: string) {
   if (!url.startsWith("http")) {
-    url = await taokouling.resolveText(url);
-    // url = await resolveTaokouling(url);
+    // url = await taokouling.resolveText(url);
+    url = await resolveTaokouling(url);
   }
   if (url.includes("t.cn/")) {
     var page = await newPage();

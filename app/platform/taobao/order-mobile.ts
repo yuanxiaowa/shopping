@@ -345,7 +345,7 @@ export class TaobaoOrderMobile {
                   console.error("......", args.title);
                   return;
                 }
-                if (e.message === "超时了") {
+                if (e.message.includes("超时了")) {
                   return;
                 }
               }
@@ -593,7 +593,12 @@ export class TaobaoOrderMobile {
   }
 
   async cartBuy(
-    args: { items: any[]; jianlou?: number; expectedPrice?: number },
+    args: {
+      items: any[];
+      jianlou?: number;
+      expectedPrice?: number;
+      no_interaction?: boolean;
+    },
     p?: Promise<void>
   ) {
     if (p) {
@@ -608,6 +613,7 @@ export class TaobaoOrderMobile {
       other: {},
       jianlou: args.jianlou,
       expectedPrice: args.expectedPrice,
+      no_interaction: args.no_interaction,
       title: args.items.map(({ title }) => title).join("~")
     });
   }

@@ -519,7 +519,14 @@ export class TaobaoOrderMobile {
     }
     this.prev_id = data.itemId;
     if (p) {
-      await p;
+      try {
+        await p;
+      } catch (e) {
+        if (data.itemId === this.prev_id) {
+          this.prev_id = "";
+        }
+        throw e;
+      }
     } else if (!args.no_interaction) {
       if (data.quantity < args.quantity) {
         if (args.jianlou) {

@@ -401,7 +401,7 @@ interface TaskItem {
   url?: string;
   time?: number | string;
   timer?: any;
-  cancel: () => void;
+  cancel: (msg?: string) => void;
   handler?: () => Promise<any>;
   interval?: {
     handler: () => any;
@@ -463,7 +463,8 @@ export class TaskManager {
           if (taskData.timer) {
             clearTimeout(taskData.timer);
           }
-          reject(msg);
+          this.removeTask(id);
+          reject(new Error(msg));
         };
         if (data.url) {
           if (this.tasks.find(task => task.url === data.url)) {
@@ -573,7 +574,7 @@ export class TaskManager {
     var i = this.tasks.findIndex(item => item.id === id);
     if (i > -1) {
       let { timer, cancel } = this.tasks[i];
-      cancel();
+      cancel("手动取消任务 " + this.tasks[i].comment);
       if (timer) {
         clearTimeout(timer);
       }

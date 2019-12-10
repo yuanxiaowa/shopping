@@ -147,16 +147,31 @@ export class JingDongOrder {
       if (!config.isSubmitOrder) {
         await page.setOfflineMode(true);
       }
-      await page.evaluate(pass => {
+      // await delay(5000);
+      /* await page.evaluate(pass => {
         document.querySelector<HTMLInputElement>(
-          "#shortPassInput"
+          "#shortPassInput,#shortid"
         )!.value = pass;
-      }, user.paypass);
+      }, user.paypass); */
+      // await page.waitForSelector("#shotDot");
+      // await page.click("#shotDot");
+      await page.evaluate(() => {
+        document.querySelector<HTMLInputElement>("#shotDot")!.click();
+      });
+      await delay(100);
+      await page.type("#shotDot", user.paypass);
+      // page.keyboard.type(user.paypass)
+      // // @ts-ignore
+      // global.page = page;
       let action = async () => {
         try {
           console.log("jingdong开始提交下单");
           await page.evaluate(() => {
-            (<HTMLDivElement>document.getElementById("btnPayOnLine")).click();
+            // (<HTMLDivElement>document.getElementById("btnPayOnLine")).click();
+            var links = [
+              ...document.querySelectorAll<HTMLLinkElement>(".mod_btns a")
+            ];
+            links.find(link => link.textContent!.includes("在线支付"))!.click();
           });
           console.log("jingdong点击提交订单按钮，等待回应");
           var res = await page.waitForResponse(res =>
@@ -179,11 +194,13 @@ export class JingDongOrder {
             // @ts-ignore
           } = await page.evaluate(() => window.dealData);
           var skulist: any[] = [];
-          venderCart.forEach(({ products }) => {
-            products.forEach(({ mainSku }) => {
-              skulist.push({
-                skuId: mainSku.id,
-                num: mainSku.num
+          venderCart.forEach(({ mfsuits }) => {
+            mfsuits.forEach(({ products }) => {
+              products.forEach(({ mainSku }) => {
+                skulist.push({
+                  skuId: mainSku.id,
+                  num: mainSku.num
+                });
               });
             });
           });
@@ -227,10 +244,10 @@ export class JingDongOrder {
                 t: 30 * 60 * 1000
               }
             },
-            0
+            0,
+            "刷到库存了，去下单"
           );
           await p;
-          console.log(moment().format(), "jingdong刷到库存了，去下单---");
           return submit();
         } else {
           if (text.includes(`"errId":"0"`)) {

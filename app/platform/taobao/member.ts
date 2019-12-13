@@ -10,6 +10,18 @@ export async function checkLogin() {
     return false;
   }
 }
+export async function getAddresses() {
+  var { code, message, returnValue } = await requestData(
+    "mtop.taobao.mbis.getdeliveraddrlist",
+    {},
+    "get",
+    "1.0"
+  );
+  if (code !== "0") {
+    throw new Error(message);
+  }
+  return JSON.parse(returnValue);
+}
 
 export async function getCoupons({ page }: { page: number }) {
   var html: string = await setting.req.get(

@@ -18,6 +18,7 @@ export interface ArgBuyDirect {
   diejia?: number;
   ignoreRepeat?: boolean;
   no_interaction?: boolean;
+  addressId?: string;
 }
 
 export interface ArgOrder<T> {
@@ -31,6 +32,7 @@ export interface ArgOrder<T> {
   qq?: string;
   bus?: EventEmitter;
   no_interaction?: boolean;
+  addressId?: string;
 }
 
 export interface ArgCartBuy {
@@ -49,4 +51,6 @@ export type ArgCoudan = {
   quantities: number[];
   urls: string[];
   expectedPrice: number;
+  addressId?: string;
+  other: any;
 };

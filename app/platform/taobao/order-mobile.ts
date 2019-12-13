@@ -121,6 +121,10 @@ function transformOrderData(
   var common: any;
 
   var { address_1 } = orderData;
+  if (args.addressId) {
+    address_1.hidden.extensionMap.selectedId = String(args.addressId);
+    console.log(address_1);
+  }
   if (operator === "address_1") {
     let input = linkage.input;
     if (!input) {
@@ -596,7 +600,7 @@ export class TaobaoOrderMobile {
         }
       });
     });
-    return this.cartBuy({ items: datas });
+    return this.cartBuy({ items: datas, ...data });
   }
 
   async cartBuy(
@@ -605,23 +609,24 @@ export class TaobaoOrderMobile {
       jianlou?: number;
       expectedPrice?: number;
       no_interaction?: boolean;
+      addressId?: string;
+      other: any;
     },
     p?: Promise<void>
   ) {
     if (p) {
       await p;
     }
+    var items = args.items;
+    delete args.items;
     return this.submitOrder({
       data: {
         buyNow: "false",
         buyParam: args.items.map(({ settlement }) => settlement).join(","),
         spm: setting.spm
       },
-      other: {},
-      jianlou: args.jianlou,
-      expectedPrice: args.expectedPrice,
-      no_interaction: args.no_interaction,
-      title: args.items.map(({ title }) => title).join("~")
+      title: args.items.map(({ title }) => title).join("~"),
+      ...args
     });
   }
 }

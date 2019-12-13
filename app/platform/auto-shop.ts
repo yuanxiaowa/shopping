@@ -82,6 +82,9 @@ export default abstract class AutoShop implements AutoShopOptions {
   abstract getGoodsCollection(page?: number): Promise<any>;
   abstract delStoreCollection(items: any[]): Promise<any>;
   abstract delGoodsCollection(items: any[]): Promise<any>;
+  async getAddresses() {
+    return [];
+  }
   getCollection(arg: { type: "store" | "goods"; page: number }) {
     if (arg.type === "store") {
       return this.getStoreCollection(arg.page);

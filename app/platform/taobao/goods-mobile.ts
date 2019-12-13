@@ -16,6 +16,8 @@ export async function getGoodsDetail(url: string) {
   );
   let { skuBase, skuCore } = JSON.parse(apiStack[0].value);
   let sku_ret;
+  let quantity = 0;
+  let price: string = "0";
   if (skuBase) {
     let { props, skus } = skuBase;
     let sortOrders = props
@@ -64,7 +66,13 @@ export async function getGoodsDetail(url: string) {
     }
     sku_ret = f(0, []);
   }
-  return { skus: sku_ret, item, title: item.title };
+  if (skuCore && skuCore.sku2info) {
+    if (skuCore.sku2info[0]) {
+      quantity = +skuCore.sku2info[0].quantity;
+      price = skuCore.sku2info[0].price.priceText;
+    }
+  }
+  return { skus: sku_ret, item, title: item.title, quantity, price };
 }
 
 export async function getGoodsInfo(url: string, skuId?: string) {

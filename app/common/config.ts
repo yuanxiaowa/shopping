@@ -8,6 +8,7 @@ import FileCookieStore = require("tough-cookie-filestore");
 import request = require("request-promise-native");
 import iconv = require("iconv-lite");
 import { ensureDirSync, ensureFileSync, writeFileSync } from "fs-extra";
+import brotli = require("brotli");
 
 export const config = {
   isSubmitOrder: true,
@@ -47,6 +48,10 @@ export const global_req = request.defaults({
   // @ts-ignore
   transform(body: any, { headers }: Response) {
     var ctype = headers["content-type"]!;
+    var encoding = headers["content-encoding"];
+    if (encoding === "br") {
+      body = Buffer.from(brotli.decompress(body));
+    }
     if (/charset=([-\w]+)/i.test(ctype)) {
       if (RegExp.$1 && RegExp.$1.toLowerCase() !== "utf-8") {
         return iconv.decode(body, RegExp.$1);

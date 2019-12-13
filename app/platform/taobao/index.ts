@@ -30,7 +30,7 @@ import {
   getGoodsList,
   getGoodsDetail
 } from "./goods-mobile";
-import { getCoupons } from "./member";
+import { getCoupons, getAddresses } from "./member";
 import { sixtyCourseList, sixtyCourseReply } from "./activity";
 import { seckillList } from "./seckill";
 import { getStoreCollection, delStoreCollection } from "./store";
@@ -38,7 +38,6 @@ import { getGoodsCollection, delGoodsCollection } from "./goods-pc";
 import path = require("path");
 import iconv = require("iconv-lite");
 import { jar } from "../../common/config";
-import { Cookie } from "tough-cookie";
 
 export class Taobao extends AutoShop {
   constructor() {
@@ -218,6 +217,7 @@ export class Taobao extends AutoShop {
   delGoodsCollection = delGoodsCollection;
 
   cartToggle = cartToggle;
+  getAddresses = getAddresses;
 
   async loginAction(page: Page) {
     /* await page.waitForNavigation({

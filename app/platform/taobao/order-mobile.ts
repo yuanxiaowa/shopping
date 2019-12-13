@@ -552,10 +552,11 @@ export class TaobaoOrderMobile {
                 quantity: args.quantity,
                 skus: args.skus
               }); */
+              // @ts-ignore
               return this.coudan({
                 urls: [args.url],
                 quantities: [args.quantity],
-                expectedPrice: args.expectedPrice!
+                ...args
               });
             }
             return this.submitOrder(

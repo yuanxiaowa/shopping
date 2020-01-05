@@ -21,6 +21,8 @@ import setting from "./setting";
 import moment = require("moment");
 import { taobaoOrderPc } from "./order-pc";
 import { EventEmitter } from "events";
+import { newPage } from "../../../utils/page";
+const user = require("../../../.data/user.json").taobao;
 
 const request_tags = {
   agencyPay: true,
@@ -47,8 +49,15 @@ function transformOrderData(
     endpoint
   } = orderdata;
   var dataSubmitOrder = data.submitOrder_1;
-  var price = dataSubmitOrder.hidden.extensionMap.showPrice;
   if (operator !== "address_1") {
+    let invalids = structure[root].filter(name => name.startsWith("invalid"));
+    if (invalids.length > 0) {
+      throw {
+        message: `${args.title} 有失效宝贝`,
+        code: 2
+      };
+    }
+    let price = dataSubmitOrder.hidden.extensionMap.showPrice;
     if (typeof args.expectedPrice === "number") {
       if (Number(args.expectedPrice) < Number(price)) {
         throw {
@@ -56,13 +65,6 @@ function transformOrderData(
           code: 2
         };
       }
-    }
-    var invalids = structure[root].filter(name => name.startsWith("invalid"));
-    if (invalids.length > 0) {
-      throw {
-        message: `${args.title} 有失效宝贝`,
-        code: 2
-      };
     }
   }
   // if (dataSubmitOrder.hidden) {
@@ -123,7 +125,6 @@ function transformOrderData(
   var { address_1 } = orderData;
   if (args.addressId) {
     address_1.hidden.extensionMap.selectedId = String(args.addressId);
-    console.log(address_1);
   }
   if (operator === "address_1") {
     let input = linkage.input;
@@ -388,6 +389,9 @@ export class TaobaoOrderMobile {
         sendQQMsg(
           `手机订单提交成功，速度去付款(${setting.username})：${args.title}`
         );
+        if (args.autopay) {
+          pay(ret.alipayWapCashierUrl);
+        }
       } catch (e) {
         startTime = Date.now();
         if (
@@ -623,13 +627,24 @@ export class TaobaoOrderMobile {
     return this.submitOrder({
       data: {
         buyNow: "false",
-        buyParam: args.items.map(({ settlement }) => settlement).join(","),
+        buyParam: items.map(({ settlement }) => settlement).join(","),
         spm: setting.spm
       },
-      title: args.items.map(({ title }) => title).join("~"),
+      other: {},
+      title: items.map(({ title }) => title).join("~"),
       ...args
     });
   }
 }
 
 export const taobaoOrderMobile = new TaobaoOrderMobile();
+
+async function pay(url: string) {
+  if (!user.pass) {
+    return;
+  }
+  var page = await newPage();
+  await page.goto(url);
+  await page.click("#cashierPreConfirm button");
+  await page.type(".J-pwd", user.pass);
+}

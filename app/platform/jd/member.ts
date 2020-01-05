@@ -44,7 +44,7 @@ export async function loginAction(page: Page) {
   });
   console.log("京东手机登录");
   await delay(3000);
-  await page.type("#username", user.username, {
+  await page.type("#username,.mobile ", user.username, {
     delay: 20
   });
   await page.type("#pwd", user.password, {

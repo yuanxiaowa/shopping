@@ -38,11 +38,14 @@ export async function getTaolijin(url: string) {
     "mtop.alimama.vegas.center.flb.coupon.query",
     {
       eh,
-      activityId: searchParams.get("activityId"),
-      isMobile: true
+      activityId: searchParams.get("activityId") || undefined,
+      isMobile: false
     },
     "get",
-    "1.0"
+    "1.0",
+    undefined,
+    undefined,
+    url
   );
   let {
     coupon: {
@@ -170,7 +173,10 @@ export async function getCouponEdetail(url: string) {
       })
     },
     "get",
-    "1.0"
+    "1.0",
+    undefined,
+    undefined,
+    url
   );
   var [data] = res[res.meta.resultListPath];
   var { couponActivityId, itemId, couponKey, retStatus, nCouponInfoMap } = data;

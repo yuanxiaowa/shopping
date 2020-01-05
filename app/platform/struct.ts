@@ -33,6 +33,7 @@ export interface ArgOrder<T> {
   bus?: EventEmitter;
   no_interaction?: boolean;
   addressId?: string;
+  autopay?: boolean;
 }
 
 export interface ArgCartBuy {

@@ -156,7 +156,7 @@ export function signIn() {
       isDouble: boolean;
     };
   }
-  return requestData<T>(`https://ms.jr.jd.com/gw/generic/hy/h5/m/signIn`, {
+  return requestData<T>(`https://ms.jr.jd.com/gw/generic/ghy/h5/m/signIn`, {
     channelSource: "JRAPP"
   });
 }
@@ -899,24 +899,29 @@ export async function getProductJingdou() {
     {
       deviceInfoParam: {
         eid:
-          "TNNEVY6UM2645G3OEU4WPA5OIB7A4MZSUPXMQVREJQ2P5IZKD5RUIEF7AXO6RA5W5SMDN3LPMAPSKAOKQWLD4ADVGU",
+          "DAQ4VHL7JKEBIGBQZB5ZFMGOQTMBQ6YI7AB55QUQPHJ64YCR3GZO3KSE2I7QIJXIMXF2XOBDKCEKFV7C3NOTYEENJQ",
+        dt: "iPhone9,2",
         ma: "",
         im: "",
-        os: "Mac OS X",
-        ip: "114.216.93.33",
-        ia: "",
+        os: "iOS",
+        osv: "12.4.1",
+        ip: "180.117.160.226",
+        apid: "jdapp",
+        ia: "3D52573B-D546-4427-BC41-19BE6C9CE864",
         uu: "",
-        at: "5",
-        fp: "00298405c9256e9b0721fcff560f19ba",
+        cv: "8.4.2",
+        nt: "WIFI",
+        at: "1",
+        fp: "78a608c2ce66553edfe2a87f48790a3e",
         token:
-          "LSQFENNGHIJRZ5YCZIBKYXBNDKMPRH6IRTJIVKQHZOYFNJN5GG5GRCWIAXVLMQWELVJQVMFV2XNO4",
+          "GCXE4YSKLHO4A2DRUAFPEHXUUR2VYS26TMPFRKJX2RG6YJHOAI3L7HJXNHFHFMNI5JGIKZ4ESYL4A",
         macAddress: "",
         imei: "",
         uuid: "",
-        appType: "5",
-        optType:
-          "https://jddx.jd.com/m/reward/product-list.html?cu=true&cu=true&utm_source=kong&utm_medium=jingfen&utm_campaign=t_1001480949_&utm_term=0baf286b8c69423fa1e6ea8f26f5050c"
+        appType: "1",
+        optType: "https://jddx.jd.com/m/reward/product-list.html?from=zqdhdljd"
       },
+      bizsource: "jddx",
       clientType: "sms",
       clientVersion: "11.0"
     },

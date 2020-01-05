@@ -20,7 +20,8 @@
     "autod": "autod",
     "lint": "tslint --project . -c tslint.json",
     "clean": "ets clean",
-    "dev2": "SET other=1 && yarn dev"
+    "dev2": "SET other=1 && yarn dev",
+    "wechat": "SET WECHATY_PUPPET=wechaty-puppet-mock&&node wechat"
   },
   "dependencies": {
     "@types/cheerio": "^0.22.12",

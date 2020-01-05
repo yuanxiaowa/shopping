@@ -109,9 +109,10 @@ export async function requestData(
   method: "get" | "post" = "get",
   version = "6.0",
   ttid = "#b#ad##_h5",
-  _qs?: any
+  _qs?: any,
+  referer?: string
 ) {
-  var t = Date.now() + 1000;
+  var t = Date.now();
   var data_str = JSON.stringify(data);
   var form: any;
   var token = setting.token;
@@ -142,13 +143,20 @@ export async function requestData(
       data: data_str
     };
   }
+  var headers;
+  if (referer) {
+    headers = {
+      referer
+    };
+  }
   var text: string = await setting.req(
     `https://h5api.m.taobao.com/h5/${api}/${version}/`,
     {
       method,
       qs,
       form,
-      timeout: 1000 * 30
+      timeout: 1000 * 30,
+      headers
     }
   );
   var { data, ret } = JSON.parse(text);

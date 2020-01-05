@@ -73,6 +73,7 @@ export class JingrongUtil {
   @log("检查金融签到")
   async doSign() {
     var { resBusiCode, resBusiData } = await getSignInfo();
+    console.log("------------", resBusiCode, resBusiData);
     if (resBusiCode === 0 && !resBusiData.isFlag) {
       await logReq("执行金融签到", signIn);
     }
@@ -185,9 +186,9 @@ export class JingrongUtil {
   @log("浏览产品得京豆")
   async doProductJingdou() {
     // await getProductJingdouInfo();
-    /* while (true) {
+    while (true) {
       await getProductJingdou();
-    } */
+    }
   }
 
   @daily()

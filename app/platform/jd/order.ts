@@ -155,24 +155,40 @@ export class JingDongOrder {
       }, user.paypass); */
       // await page.waitForSelector("#shotDot");
       // await page.click("#shotDot");
-      await page.evaluate(() => {
-        document.querySelector<HTMLInputElement>("#shotDot")!.click();
-      });
-      await delay(100);
-      await page.type("#shotDot", user.paypass);
+      let _ele = await page.$("#shortPassInput");
+      if (_ele) {
+        await page.evaluate(pass => {
+          document.querySelector<HTMLInputElement>(
+            "#shortPassInput"
+          )!.value = pass;
+        }, user.paypass);
+      } else {
+        await page.evaluate(() => {
+          document.querySelector<HTMLInputElement>("#shotDot")!.click();
+        });
+        await delay(100);
+        await page.type("#shotDot", user.paypass);
+      }
       // page.keyboard.type(user.paypass)
       // // @ts-ignore
       // global.page = page;
       let action = async () => {
         try {
           console.log("jingdong开始提交下单");
-          await page.evaluate(() => {
-            // (<HTMLDivElement>document.getElementById("btnPayOnLine")).click();
-            var links = [
-              ...document.querySelectorAll<HTMLLinkElement>(".mod_btns a")
-            ];
-            links.find(link => link.textContent!.includes("在线支付"))!.click();
-          });
+          if (_ele) {
+            await page.evaluate(() => {
+              (<HTMLDivElement>document.getElementById("btnPayOnLine")).click();
+            });
+          } else {
+            await page.evaluate(() => {
+              var links = [
+                ...document.querySelectorAll<HTMLLinkElement>(".mod_btns a")
+              ];
+              links
+                .find(link => link.textContent!.includes("在线支付"))!
+                .click();
+            });
+          }
           console.log("jingdong点击提交订单按钮，等待回应");
           var res = await page.waitForResponse(res =>
             res.url().startsWith("https://wqdeal.jd.com/deal/msubmit/confirm?")
@@ -194,8 +210,30 @@ export class JingDongOrder {
             // @ts-ignore
           } = await page.evaluate(() => window.dealData);
           var skulist: any[] = [];
-          venderCart.forEach(({ mfsuits }) => {
-            mfsuits.forEach(({ products }) => {
+          if (venderCart[0].mfsuits) {
+            venderCart.forEach(({ mfsuits }) => {
+              mfsuits.forEach(({ products }) => {
+                products.forEach(({ mainSku }) => {
+                  skulist.push({
+                    skuId: mainSku.id,
+                    num: mainSku.num
+                  });
+                });
+              });
+            });
+          } else if (venderCart[0].mzsuits) {
+            venderCart.forEach(({ mzsuits }) => {
+              mzsuits.forEach(({ products }) => {
+                products.forEach(({ mainSku }) => {
+                  skulist.push({
+                    skuId: mainSku.id,
+                    num: mainSku.num
+                  });
+                });
+              });
+            });
+          } else {
+            venderCart.forEach(({ products }) => {
               products.forEach(({ mainSku }) => {
                 skulist.push({
                   skuId: mainSku.id,
@@ -203,7 +241,7 @@ export class JingDongOrder {
                 });
               });
             });
-          });
+          }
           var comment = await page.evaluate(() => {
             return Array.from(
               document.querySelectorAll<HTMLLinkElement>(".fn strong")
@@ -224,25 +262,25 @@ export class JingDongOrder {
                 );
                 return !n;
               },
-              time: startTime + args.jianlou * 1000 * 60,
-              interval: {
-                handler: async () => {
-                  // taskManager.cancelTask(p.id);
-                  // page.reload()
-                  page.close();
-                  page = await this.getOrderPage();
-                  page.goto(args.data.submit_url);
-                  await page
-                    .waitForResponse(res => res.url().includes("userasset"))
-                    .then(res => res.text());
-                  await page.evaluate(pass => {
-                    document.querySelector<HTMLInputElement>(
-                      "#shortPassInput"
-                    )!.value = pass;
-                  }, user.paypass);
-                },
-                t: 30 * 60 * 1000
-              }
+              time: startTime + args.jianlou * 1000 * 60
+              // interval: {
+              //   handler: async () => {
+              //     // taskManager.cancelTask(p.id);
+              //     // page.reload()
+              //     page.close();
+              //     page = await this.getOrderPage();
+              //     page.goto(args.data.submit_url);
+              //     await page
+              //       .waitForResponse(res => res.url().includes("userasset"))
+              //       .then(res => res.text());
+              //     await page.evaluate(pass => {
+              //       document.querySelector<HTMLInputElement>(
+              //         "#shortPassInput"
+              //       )!.value = pass;
+              //     }, user.paypass);
+              //   },
+              //   t: 30 * 60 * 1000
+              // }
             },
             0,
             "刷到库存了，去下单"
